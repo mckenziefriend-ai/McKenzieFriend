@@ -71,7 +71,7 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Top Nav */}
+      {/* Navigation */}
       <header
         className={cn(
           "sticky top-0 z-50 bg-white/80 backdrop-blur",
@@ -92,7 +92,7 @@ export default function Home() {
             </span>
           </button>
 
-          <nav className="hidden items-center gap-1 sm:flex">
+          <nav className="hidden items-center gap-1 sm:flex" aria-label="On-page navigation">
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
@@ -138,13 +138,13 @@ export default function Home() {
         </div>
       </header>
 
-      {/* HERO */}
+      {/* Hero */}
       <section id="top" className="relative">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="max-w-3xl">
             <p className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-700">
               <span className="h-2 w-2 rounded-full bg-zinc-900" />
-              Built for clarity, preparation, and calm support
+              Preparation support for litigants in person
             </p>
 
             <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-6xl">
@@ -152,8 +152,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 text-base leading-7 text-zinc-700 sm:text-lg sm:leading-8">
-              A focused support platform for people representing themselves — combining practical preparation tools
-              with optional in-person assistance.
+              A preparation platform combining practical tools with optional McKenzie Friend support (where permitted).
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -161,47 +160,45 @@ export default function Home() {
                 onClick={() => scrollTo("paths")}
                 className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
-                Explore the two paths
+                View the two paths
               </button>
               <button
                 onClick={() => scrollTo("boundaries")}
                 className="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
               >
-                Read the boundaries
+                View boundaries
               </button>
             </div>
 
             <div className="mt-10 grid gap-3 sm:grid-cols-3">
-              <Stat label="Designed for" value="Clarity" />
-              <Stat label="Built around" value="Preparation" />
-              <Stat label="Tone" value="Calm + factual" />
+              <Stat label="Focus" value="Preparation" />
+              <Stat label="Approach" value="Plain language" />
+              <Stat label="Scope" value="Non-advisory" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* TWO CLEAR PATHS */}
+      {/* Two paths */}
       <section id="paths" className="relative border-t border-zinc-200">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <p className="text-xs font-semibold text-zinc-500">02</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Two Clear Paths <span className="text-zinc-500"></span>
-          </h2>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Two clear paths</h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
-            Choose the type of support you need. Keep it practical. Keep it clear.
+            Select the type of support required: personal McKenzie Friend support or AI preparation tools.
           </p>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
             <Card>
               <div className="flex items-center gap-3">
                 <BadgeIcon>👤</BadgeIcon>
-                <h3 className="text-xl font-semibold">Personal McKenzie Friend Support</h3>
+                <h3 className="text-xl font-semibold">Personal McKenzie Friend support</h3>
               </div>
 
-              <p className="mt-6 text-sm font-semibold text-zinc-700">Short explanation:</p>
+              <p className="mt-6 text-sm font-semibold text-zinc-700">Summary</p>
               <Inset>
-                Independent McKenzie Friend assistance for litigants in person. Support may include document
-                organisation, note-taking, quiet assistance in court, and help understanding procedure.
+                Practical assistance for litigants in person, which may include document organisation, note-taking,
+                and quiet support in court. Any role is subject to the court’s directions and applicable rules.
               </Inset>
 
               <div className="mt-7">
@@ -209,7 +206,7 @@ export default function Home() {
                   onClick={() => scrollTo("cta")}
                   className="w-full rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
                 >
-                  Learn about personal support
+                  Proceed
                 </button>
               </div>
             </Card>
@@ -217,13 +214,13 @@ export default function Home() {
             <Card>
               <div className="flex items-center gap-3">
                 <BadgeIcon>🤖</BadgeIcon>
-                <h3 className="text-xl font-semibold">AI Preparation Tools</h3>
+                <h3 className="text-xl font-semibold">AI preparation tools</h3>
               </div>
 
-              <p className="mt-6 text-sm font-semibold text-zinc-700">Short explanation:</p>
+              <p className="mt-6 text-sm font-semibold text-zinc-700">Summary</p>
               <Inset>
-                AI-powered tools designed to help you prepare: organise information, generate checklists, structure
-                notes, draft questions to ask, and understand processes at a general level.
+                Tools intended to assist with preparation (e.g. structuring information, checklists, timelines,
+                and question prompts). Outputs are general and must be reviewed for accuracy and suitability.
               </Inset>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -231,13 +228,13 @@ export default function Home() {
                   onClick={() => scrollTo("cta")}
                   className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
-                  Explore AI tools
+                  Proceed
                 </button>
                 <button
                   onClick={() => scrollTo("boundaries")}
                   className="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
                 >
-                  Read limitations
+                  View limitations
                 </button>
               </div>
             </Card>
@@ -245,62 +242,61 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BOUNDARIES */}
+      {/* Boundaries */}
       <section id="boundaries" className="relative border-t border-zinc-200">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <p className="text-xs font-semibold text-zinc-500">04</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Clear Boundaries <span className="text-zinc-500"></span>
-          </h2>
-          <p className="mt-4 text-base leading-7 text-zinc-700">Visible and calm:</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Boundaries</h2>
 
           <Card>
             <Inset>
               McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
               <br />
               <br />
-              The AI tools provide general information and preparation support only.
+              AI tools provide general information and preparation support only.
               <br />
               <br />
               Personal McKenzie Friend assistance does not include rights of audience or the conduct of litigation
-              unless expressly permitted by the court.
+              unless permitted by the court.
             </Inset>
-
           </Card>
         </div>
       </section>
 
-      {/* WHO */}
+      {/* Who */}
       <section id="who" className="relative border-t border-zinc-200">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <p className="text-xs font-semibold text-zinc-500">05</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Who It’s For</h2>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Who this is for</h2>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-12">
             <Card className="lg:col-span-7">
               <p className="text-base leading-8 text-zinc-800">
-                Designed for individuals representing themselves in the Family Court of England &amp; Wales who want
-                clearer understanding and better preparation.
+                Individuals representing themselves in the Family Court of England &amp; Wales who require clearer
+                preparation and structured information.
               </p>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <Pill>✔ Organise documents + notes</Pill>
-                <Pill>✔ Build a clear timeline</Pill>
-                <Pill>✔ Prepare questions + points</Pill>
-                <Pill>✔ Reduce overwhelm</Pill>
+                <Pill>Document organisation</Pill>
+                <Pill>Chronology and timeline</Pill>
+                <Pill>Hearing preparation</Pill>
+                <Pill>Question prompts</Pill>
               </div>
             </Card>
 
             <Card className="lg:col-span-5">
-  <p className="text-sm font-semibold text-zinc-700">Operating principles</p>
-  <ul className="mt-4 space-y-3 text-sm leading-7 text-zinc-700">
-    <li>• Plain-language summaries; references where relevant.</li>
-    <li>• Preparation-focused support: structure, clarity, and next steps.</li>
-    <li>• Scope-controlled: no conduct of litigation; no rights of audience unless permitted by the court.</li>
-    <li>• Clear limitations and signposting to appropriate professional advice when needed.</li>
-    <li>• Confidentiality-minded handling of information (use only what is necessary).</li>
-  </ul>
-</Card>
+              <p className="text-sm font-semibold text-zinc-700">Operating principles</p>
+              <ul className="mt-4 space-y-3 text-sm leading-7 text-zinc-700">
+                <li>• Plain-language summaries; references where relevant.</li>
+                <li>• Preparation-focused support: structure and clarity.</li>
+                <li>• Scope-controlled: no conduct of litigation; no rights of audience unless permitted by the court.</li>
+                <li>• Clear limitations and signposting where professional advice is required.</li>
+                <li>• Confidentiality-minded handling of information (use only what is necessary).</li>
+              </ul>
+            </Card>
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
       <section id="cta" className="relative border-t border-zinc-200">
@@ -309,7 +305,7 @@ export default function Home() {
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Get started</h2>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
-              Choose a path: personal McKenzie Friend support or AI preparation tools. Clear scope. Clear boundaries.
+              Select a path and review the boundaries before proceeding.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -317,13 +313,13 @@ export default function Home() {
                 href="#paths"
                 className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
-                View the two paths
+                Review the two paths
               </a>
               <a
                 href="#boundaries"
                 className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
               >
-                Read boundaries
+                Review boundaries
               </a>
             </div>
 
@@ -352,13 +348,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8", className)}>
       {children}
