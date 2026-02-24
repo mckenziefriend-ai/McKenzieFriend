@@ -150,14 +150,13 @@ export default function Home() {
   {/* Black overlay */}
   <div className="absolute inset-0 bg-black/60" />
 
-  {/* Overlay text */}
-  <div className="relative z-10 flex items-center justify-center h-full">
-    <h1 className="text-white text-4xl sm:text-6xl font-semibold tracking-tight text-center px-4">
-      McKenzie Friend
-    </h1>
-  </div>
-</section>
-      
+{/* Overlay text */}
+<div className="relative z-10 flex items-center justify-center h-full">
+  <h1 className="text-white text-5xl sm:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+    McKenzie Friend
+  </h1>
+</div>
+  
       {/* Two paths */}
       <section id="paths" className="relative border-t border-zinc-200">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
