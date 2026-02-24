@@ -22,7 +22,6 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
 
   const sectionEls = useRef<Record<string, HTMLElement | null>>({});
-
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
 
   function scrollTo(id: SectionId) {
@@ -32,7 +31,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    // Sticky nav shadow on scroll
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -40,7 +38,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Scrollspy via IntersectionObserver
     const els: HTMLElement[] = [];
     for (const id of sectionIds) {
       const el = document.getElementById(id);
@@ -50,10 +47,11 @@ export default function Home() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Prefer the entry closest to top that is intersecting
         const visible = entries
           .filter((e) => e.isIntersecting)
-          .sort((a, b) => (a.boundingClientRect.top > b.boundingClientRect.top ? 1 : -1));
+          .sort((a, b) =>
+            a.boundingClientRect.top > b.boundingClientRect.top ? 1 : -1
+          );
 
         if (visible[0]?.target?.id) {
           setActive(visible[0].target.id as SectionId);
@@ -61,7 +59,6 @@ export default function Home() {
       },
       {
         root: null,
-        // This makes a section "active" when it's near the top quarter of the viewport
         rootMargin: "-15% 0px -70% 0px",
         threshold: [0.01, 0.1, 0.2],
       }
@@ -73,7 +70,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Smooth scrolling without touching globals.css */}
       <style jsx global>{`
         html {
           scroll-behavior: smooth;
@@ -115,7 +111,9 @@ export default function Home() {
                 onClick={() => scrollTo(s.id)}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-sm transition",
-                  active === s.id ? "bg-white text-black" : "text-white/70 hover:text-white hover:bg-white/10"
+                  active === s.id
+                    ? "bg-white text-black"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
                 )}
               >
                 {s.label}
@@ -166,8 +164,8 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
-              A focused support platform for people representing themselves — combining practical preparation tools with
-              optional in-person assistance (where permitted).
+              A focused support platform for people representing themselves — combining practical preparation tools
+              with optional in-person assistance (where permitted).
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -194,28 +192,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TWO CLEAR PATHS (Split Section) */}
+      {/* TWO CLEAR PATHS */}
       <section id="paths" className="relative border-t border-white/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="flex items-start justify-between gap-6">
-            <div>
-              <p className="text-xs font-semibold text-white/60">02</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Two Clear Paths <span className="text-white/60">(Split Section)</span>
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
-                Choose the type of support you need. Keep it practical. Keep it clear.
-              </p>
-            </div>
-          </div>
+          <p className="text-xs font-semibold text-white/60">02</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+            Two Clear Paths <span className="text-white/60">(Split Section)</span>
+          </h2>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
+            Choose the type of support you need. Keep it practical. Keep it clear.
+          </p>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            {/* Personal Support */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                  👤
-                </div>
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">👤</div>
                 <h3 className="text-xl font-semibold">Personal McKenzie Friend Support</h3>
               </div>
 
@@ -239,12 +230,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* AI Tools */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                  🤖
-                </div>
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">🤖</div>
                 <h3 className="text-xl font-semibold">AI Preparation Tools</h3>
               </div>
 
@@ -275,7 +263,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CLEAR BOUNDARIES (Non-Negotiable) */}
+      {/* BOUNDARIES */}
       <section id="boundaries" className="relative border-t border-white/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <p className="text-xs font-semibold text-white/60">04</p>
@@ -303,7 +291,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* WHO IT'S FOR */}
+      {/* WHO */}
       <section id="who" className="relative border-t border-white/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <p className="text-xs font-semibold text-white/60">05</p>
@@ -338,23 +326,11 @@ export default function Home() {
         </div>
       </section>
 
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs font-semibold text-white/60">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
-    </div>
-  );
-}
-
-            {/* CTA */}
+      {/* CTA */}
       <section id="cta" className="relative border-t border-white/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 sm:p-10">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Get started
-            </h2>
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Get started</h2>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
               Choose a path: personal McKenzie Friend support or AI preparation tools. Clear scope. Clear boundaries.
@@ -367,7 +343,6 @@ function Stat({ label, value }: { label: string; value: string }) {
               >
                 View the two paths
               </a>
-
               <a
                 href="#boundaries"
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
@@ -377,7 +352,8 @@ function Stat({ label, value }: { label: string; value: string }) {
             </div>
 
             <p className="mt-6 text-xs text-white/50">
-              McKenzieFriend.ai provides general information and preparation support. It does not provide regulated legal advice.
+              McKenzieFriend.ai provides general information and preparation support. It does not provide regulated legal
+              advice.
             </p>
           </div>
 
@@ -387,6 +363,18 @@ function Stat({ label, value }: { label: string; value: string }) {
           </footer>
         </div>
       </section>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p className="text-xs font-semibold text-white/60">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+    </div>
+  );
+}
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
