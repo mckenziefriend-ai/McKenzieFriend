@@ -348,6 +348,46 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+            {/* CTA */}
+      <section id="cta" className="relative border-t border-white/10">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 sm:p-10">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Get started
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
+              Choose a path: personal McKenzie Friend support or AI preparation tools. Clear scope. Clear boundaries.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="#paths"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+              >
+                View the two paths
+              </a>
+
+              <a
+                href="#boundaries"
+                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
+              >
+                Read boundaries
+              </a>
+            </div>
+
+            <p className="mt-6 text-xs text-white/50">
+              McKenzieFriend.ai provides general information and preparation support. It does not provide regulated legal advice.
+            </p>
+          </div>
+
+          <footer className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+            <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
+            <span className="text-white/40">England &amp; Wales</span>
+          </footer>
+        </div>
+      </section>
+
 function Pill({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
