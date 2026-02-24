@@ -138,17 +138,17 @@ export default function Home() {
         </div>
       </header>
 
-    {/* Hero */}
+   {/* Hero */}
 <section id="top" className="relative w-full h-[60vh] sm:h-[75vh] overflow-hidden">
   {/* Hero image */}
   <img
     src="/hero.png"
     alt="Hero"
-    className="absolute inset-0 w-full h-full object-cover"
+    className="absolute inset-0 w-full h-full object-contain sm:object-cover scale-90"
   />
 
-  {/* Optional subtle dark overlay for readability */}
-  <div className="absolute inset-0 bg-black/30" />
+  {/* Stronger black overlay */}
+  <div className="absolute inset-0 bg-black/55" />
 
   {/* Overlay text */}
   <div className="relative z-10 flex items-center justify-center h-full">
@@ -157,7 +157,7 @@ export default function Home() {
     </h1>
   </div>
 </section>
-
+      
       {/* Two paths */}
       <section id="paths" className="relative border-t border-zinc-200">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
