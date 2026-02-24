@@ -141,7 +141,7 @@ export default function Home() {
 {/* Hero */}
 <section
   id="top"
-  className="relative w-full h-[28vh] sm:h-[45vh] lg:h-[60vh] overflow-hidden pt-16 sm:pt-0"
+  className="relative w-full h-[28vh] sm:h-[45vh] lg:h-[60vh] overflow-hidden"
 >
   {/* Hero image */}
   <img
@@ -154,7 +154,7 @@ export default function Home() {
   <div className="absolute inset-0 bg-black/60" />
 
   {/* Overlay text */}
-  <div className="relative z-10 flex items-center justify-center h-full">
+  <div className="absolute inset-0 flex items-center justify-center">
     <h1 className="text-white text-3xl sm:text-5xl lg:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
       McKenzie Friend
     </h1>
