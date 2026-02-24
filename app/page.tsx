@@ -139,7 +139,10 @@ export default function Home() {
       </header>
 
 {/* Hero */}
-<section id="top" className="relative w-full h-[40vh] sm:h-[50vh] overflow-hidden">
+<section
+  id="top"
+  className="relative w-full h-[28vh] sm:h-[45vh] lg:h-[60vh] overflow-hidden pt-16 sm:pt-0"
+>
   {/* Hero image */}
   <img
     src="/hero.png"
@@ -152,7 +155,7 @@ export default function Home() {
 
   {/* Overlay text */}
   <div className="relative z-10 flex items-center justify-center h-full">
-    <h1 className="text-white text-5xl sm:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+    <h1 className="text-white text-3xl sm:text-5xl lg:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
       McKenzie Friend
     </h1>
   </div>
