@@ -138,46 +138,25 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section id="top" className="relative">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-700">
-              <span className="h-2 w-2 rounded-full bg-zinc-900" />
-              Preparation support for litigants in person
-            </p>
+    {/* Hero */}
+<section id="top" className="relative w-full h-[60vh] sm:h-[75vh] overflow-hidden">
+  {/* Hero image */}
+  <img
+    src="/hero.png"
+    alt="Hero"
+    className="absolute inset-0 w-full h-full object-cover"
+  />
 
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-6xl">
-              McKenzieFriend<span className="text-zinc-500">.ai</span>
-            </h1>
+  {/* Optional subtle dark overlay for readability */}
+  <div className="absolute inset-0 bg-black/30" />
 
-            <p className="mt-5 text-base leading-7 text-zinc-700 sm:text-lg sm:leading-8">
-              A preparation platform combining practical tools with optional McKenzie Friend support (where permitted).
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button
-                onClick={() => scrollTo("paths")}
-                className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-              >
-                View the two paths
-              </button>
-              <button
-                onClick={() => scrollTo("boundaries")}
-                className="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
-              >
-                View boundaries
-              </button>
-            </div>
-
-            <div className="mt-10 grid gap-3 sm:grid-cols-3">
-              <Stat label="Focus" value="Preparation" />
-              <Stat label="Approach" value="Plain language" />
-              <Stat label="Scope" value="Non-advisory" />
-            </div>
-          </div>
-        </div>
-      </section>
+  {/* Overlay text */}
+  <div className="relative z-10 flex items-center justify-center h-full">
+    <h1 className="text-white text-4xl sm:text-6xl font-semibold tracking-tight text-center px-4">
+      McKenzie Friend
+    </h1>
+  </div>
+</section>
 
       {/* Two paths */}
       <section id="paths" className="relative border-t border-zinc-200">
