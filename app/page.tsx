@@ -139,7 +139,7 @@ export default function Home() {
       </header>
 
 {/* Hero */}
-<section id="top" className="relative w-full h-[60vh] sm:h-[75vh] overflow-hidden">
+<section id="top" className="relative w-full h-[40vh] sm:h-[50vh] overflow-hidden">
   {/* Hero image */}
   <img
     src="/hero.png"
