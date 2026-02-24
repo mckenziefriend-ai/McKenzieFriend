@@ -1,4 +1,3 @@
-// app/page.tsx (THE HOMEPAGE)
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -57,11 +56,7 @@ export default function Home() {
           setActive(visible[0].target.id as SectionId);
         }
       },
-      {
-        root: null,
-        rootMargin: "-15% 0px -70% 0px",
-        threshold: [0.01, 0.1, 0.2],
-      }
+      { root: null, rootMargin: "-15% 0px -70% 0px", threshold: [0.01, 0.1, 0.2] }
     );
 
     els.forEach((el) => observer.observe(el));
@@ -69,38 +64,31 @@ export default function Home() {
   }, [sectionIds]);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-zinc-950">
       <style jsx global>{`
         html {
           scroll-behavior: smooth;
         }
       `}</style>
 
-      {/* Subtle background */}
-      <div className="pointer-events-none fixed inset-0 opacity-70">
-        <div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute bottom-[-220px] left-[-140px] h-[520px] w-[520px] rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute bottom-[-240px] right-[-180px] h-[520px] w-[520px] rounded-full bg-white/5 blur-3xl" />
-      </div>
-
       {/* Top Nav */}
       <header
         className={cn(
-          "sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-black/50",
-          scrolled ? "border-b border-white/10 bg-black/60" : "bg-transparent"
+          "sticky top-0 z-50 bg-white/80 backdrop-blur",
+          scrolled ? "border-b border-zinc-200" : "border-b border-transparent"
         )}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <button
             onClick={() => scrollTo("top")}
-            className="group inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left"
+            className="group inline-flex items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-zinc-50"
             aria-label="Scroll to top"
           >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-sm">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
               MF
             </span>
             <span className="text-sm font-semibold tracking-tight">
-              McKenzieFriend<span className="text-white/60">.ai</span>
+              McKenzieFriend<span className="text-zinc-500">.ai</span>
             </span>
           </button>
 
@@ -112,8 +100,8 @@ export default function Home() {
                 className={cn(
                   "rounded-full px-3 py-1.5 text-sm transition",
                   active === s.id
-                    ? "bg-white text-black"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
                 )}
               >
                 {s.label}
@@ -124,7 +112,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollTo("cta")}
-              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+              className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
             >
               Start
             </button>
@@ -140,7 +128,7 @@ export default function Home() {
                 onClick={() => scrollTo(s.id)}
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-xs transition",
-                  active === s.id ? "bg-white text-black" : "bg-white/10 text-white/80"
+                  active === s.id ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700"
                 )}
               >
                 {s.label}
@@ -152,18 +140,18 @@ export default function Home() {
 
       {/* HERO */}
       <section id="top" className="relative">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-              <span className="h-2 w-2 rounded-full bg-emerald-400/80" />
+            <p className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-700">
+              <span className="h-2 w-2 rounded-full bg-zinc-900" />
               Built for clarity, preparation, and calm support
             </p>
 
             <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-6xl">
-              McKenzieFriend<span className="text-white/60">.ai</span>
+              McKenzieFriend<span className="text-zinc-500">.ai</span>
             </h1>
 
-            <p className="mt-5 text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
+            <p className="mt-5 text-base leading-7 text-zinc-700 sm:text-lg sm:leading-8">
               A focused support platform for people representing themselves — combining practical preparation tools
               with optional in-person assistance (where permitted).
             </p>
@@ -171,13 +159,13 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 onClick={() => scrollTo("paths")}
-                className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+                className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
                 Explore the two paths
               </button>
               <button
                 onClick={() => scrollTo("boundaries")}
-                className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
+                className="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
               >
                 Read the boundaries
               </button>
@@ -193,113 +181,107 @@ export default function Home() {
       </section>
 
       {/* TWO CLEAR PATHS */}
-      <section id="paths" className="relative border-t border-white/10">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold text-white/60">02</p>
+      <section id="paths" className="relative border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <p className="text-xs font-semibold text-zinc-500">02</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Two Clear Paths <span className="text-white/60">(Split Section)</span>
+            Two Clear Paths <span className="text-zinc-500">(Split Section)</span>
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
+          <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
             Choose the type of support you need. Keep it practical. Keep it clear.
           </p>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
+            <Card>
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">👤</div>
+                <BadgeIcon>👤</BadgeIcon>
                 <h3 className="text-xl font-semibold">Personal McKenzie Friend Support</h3>
               </div>
 
-              <p className="mt-6 text-sm font-semibold text-white/70">Short explanation:</p>
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/30 p-5">
-                <p className="text-base leading-7 text-white/80">
-                  Independent McKenzie Friend assistance for litigants in person. Support may include document
-                  organisation, note-taking, quiet assistance in court, and help understanding procedure.
-                </p>
-              </div>
+              <p className="mt-6 text-sm font-semibold text-zinc-700">Short explanation:</p>
+              <Inset>
+                Independent McKenzie Friend assistance for litigants in person. Support may include document
+                organisation, note-taking, quiet assistance in court, and help understanding procedure.
+              </Inset>
 
-              <p className="mt-5 text-sm text-white/60">Keep it factual. No promises.</p>
+              <p className="mt-5 text-sm text-zinc-600">Keep it factual. No promises.</p>
 
               <div className="mt-7">
                 <button
                   onClick={() => scrollTo("cta")}
-                  className="w-full rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90 sm:w-auto"
+                  className="w-full rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
                 >
                   Learn about personal support
                 </button>
               </div>
-            </div>
+            </Card>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
+            <Card>
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">🤖</div>
+                <BadgeIcon>🤖</BadgeIcon>
                 <h3 className="text-xl font-semibold">AI Preparation Tools</h3>
               </div>
 
-              <p className="mt-6 text-sm font-semibold text-white/70">Short explanation:</p>
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/30 p-5">
-                <p className="text-base leading-7 text-white/80">
-                  AI-powered tools designed to help you prepare: organise information, generate checklists, structure
-                  notes, draft questions to ask, and understand processes at a general level.
-                </p>
-              </div>
+              <p className="mt-6 text-sm font-semibold text-zinc-700">Short explanation:</p>
+              <Inset>
+                AI-powered tools designed to help you prepare: organise information, generate checklists, structure
+                notes, draft questions to ask, and understand processes at a general level.
+              </Inset>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={() => scrollTo("cta")}
-                  className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
                   Explore AI tools
                 </button>
                 <button
                   onClick={() => scrollTo("boundaries")}
-                  className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
+                  className="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
                 >
                   Read limitations
                 </button>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* BOUNDARIES */}
-      <section id="boundaries" className="relative border-t border-white/10">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold text-white/60">04</p>
+      <section id="boundaries" className="relative border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <p className="text-xs font-semibold text-zinc-500">04</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Clear Boundaries <span className="text-white/60">(Non-Negotiable)</span>
+            Clear Boundaries <span className="text-zinc-500">(Non-Negotiable)</span>
           </h2>
-          <p className="mt-4 text-base leading-7 text-white/70">Visible and calm:</p>
+          <p className="mt-4 text-base leading-7 text-zinc-700">Visible and calm:</p>
 
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-              <p className="text-base leading-7 text-white/85">
-                McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
-                <br />
-                <br />
-                The AI tools provide general information and preparation support only.
-                <br />
-                <br />
-                Personal McKenzie Friend assistance does not include rights of audience or the conduct of litigation
-                unless expressly permitted by the court.
-              </p>
-            </div>
+          <Card>
+            <Inset>
+              McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
+              <br />
+              <br />
+              The AI tools provide general information and preparation support only.
+              <br />
+              <br />
+              Personal McKenzie Friend assistance does not include rights of audience or the conduct of litigation
+              unless expressly permitted by the court.
+            </Inset>
 
-            <p className="mt-5 text-sm text-white/60">That language protects you.</p>
-          </div>
+            <p className="mt-5 text-sm text-zinc-600">That language protects you.</p>
+          </Card>
         </div>
       </section>
 
       {/* WHO */}
-      <section id="who" className="relative border-t border-white/10">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold text-white/60">05</p>
+      <section id="who" className="relative border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <p className="text-xs font-semibold text-zinc-500">05</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Who It’s For</h2>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
-              <p className="text-base leading-8 text-white/80">
+            <Card className="lg:col-span-7">
+              <p className="text-base leading-8 text-zinc-800">
                 Designed for individuals representing themselves in the Family Court of England &amp; Wales who want
                 clearer understanding and better preparation.
               </p>
@@ -310,56 +292,56 @@ export default function Home() {
                 <Pill>✔ Prepare questions + points</Pill>
                 <Pill>✔ Reduce overwhelm</Pill>
               </div>
-            </div>
+            </Card>
 
-            <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
-              <p className="text-sm font-semibold text-white/70">Principles</p>
-              <ul className="mt-4 space-y-3 text-sm leading-7 text-white/70">
+            <Card className="lg:col-span-5">
+              <p className="text-sm font-semibold text-zinc-700">Principles</p>
+              <ul className="mt-4 space-y-3 text-sm leading-7 text-zinc-700">
                 <li>• Keep it factual.</li>
                 <li>• Keep it calm.</li>
                 <li>• No inflated claims.</li>
                 <li>• Clear limitations.</li>
                 <li>• Practical preparation first.</li>
               </ul>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section id="cta" className="relative border-t border-white/10">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 sm:p-10">
+      <section id="cta" className="relative border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <Card>
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Get started</h2>
 
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
+            <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
               Choose a path: personal McKenzie Friend support or AI preparation tools. Clear scope. Clear boundaries.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#paths"
-                className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
                 View the two paths
               </a>
               <a
                 href="#boundaries"
-                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
+                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
               >
                 Read boundaries
               </a>
             </div>
 
-            <p className="mt-6 text-xs text-white/50">
+            <p className="mt-6 text-xs text-zinc-600">
               McKenzieFriend.ai provides general information and preparation support. It does not provide regulated legal
               advice.
             </p>
-          </div>
+          </Card>
 
-          <footer className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+          <footer className="mt-10 flex flex-col gap-2 border-t border-zinc-200 pt-6 text-xs text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
-            <span className="text-white/40">England &amp; Wales</span>
+            <span className="text-zinc-500">England &amp; Wales</span>
           </footer>
         </div>
       </section>
@@ -369,16 +351,46 @@ export default function Home() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs font-semibold text-white/60">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <p className="text-xs font-semibold text-zinc-600">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-zinc-950">{value}</p>
+    </div>
+  );
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8", className)}>
+      {children}
+    </div>
+  );
+}
+
+function Inset({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-5 text-base leading-7 text-zinc-800">
+      {children}
+    </div>
+  );
+}
+
+function BadgeIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white">
+      {children}
     </div>
   );
 }
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
       {children}
     </div>
   );
