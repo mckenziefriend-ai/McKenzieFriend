@@ -153,13 +153,16 @@ export default function Home() {
   {/* Black overlay */}
   <div className="absolute inset-0 bg-black/60" />
 
-  {/* Overlay text */}
-  <div className="absolute inset-0 flex items-center justify-center">
-    <h1 className="text-white text-3xl sm:text-5xl lg:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
-      McKenzie Friend
-    </h1>
-  </div>
-</section>
+ {/* Overlay text */}
+<div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+  <h1 className="text-white text-3xl sm:text-5xl lg:text-7xl font-semibold tracking-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+    McKenzie Friend
+  </h1>
+
+  <p className="mt-3 text-white/90 text-sm sm:text-lg lg:text-xl font-medium max-w-xl">
+    Independent McKenzie Friend and Court Preparation Technology Developer
+  </p>
+</div>
   
       {/* Two paths */}
       <section id="paths" className="relative border-t border-zinc-200">
