@@ -138,17 +138,17 @@ export default function Home() {
         </div>
       </header>
 
-   {/* Hero */}
+ {/* Hero */}
 <section id="top" className="relative w-full h-[60vh] sm:h-[75vh] overflow-hidden">
   {/* Hero image */}
   <img
     src="/hero.png"
     alt="Hero"
-    className="absolute inset-0 w-full h-full object-contain sm:object-cover scale-90"
+    className="absolute inset-0 w-full h-full object-cover object-center"
   />
 
-  {/* Stronger black overlay */}
-  <div className="absolute inset-0 bg-black/55" />
+  {/* Black overlay */}
+  <div className="absolute inset-0 bg-black/60" />
 
   {/* Overlay text */}
   <div className="relative z-10 flex items-center justify-center h-full">
