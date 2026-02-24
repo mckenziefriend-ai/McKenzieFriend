@@ -74,9 +74,9 @@ export default function Home() {
       {/* Navigation */}
       <header
         className={cn(
-          "sticky top-0 z-50 bg-white/80 backdrop-blur",
-          scrolled ? "border-b border-zinc-200" : "border-b border-transparent"
-        )}
+          "sticky top-0 z-50 bg-white",
+           "border-b border-zinc-200"
+         )}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <button
