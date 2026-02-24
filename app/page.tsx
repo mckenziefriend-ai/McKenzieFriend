@@ -138,7 +138,7 @@ export default function Home() {
         </div>
       </header>
 
- {/* Hero */}
+{/* Hero */}
 <section id="top" className="relative w-full h-[60vh] sm:h-[75vh] overflow-hidden">
   {/* Hero image */}
   <img
@@ -150,12 +150,13 @@ export default function Home() {
   {/* Black overlay */}
   <div className="absolute inset-0 bg-black/60" />
 
-{/* Overlay text */}
-<div className="relative z-10 flex items-center justify-center h-full">
-  <h1 className="text-white text-5xl sm:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
-    McKenzie Friend
-  </h1>
-</div>
+  {/* Overlay text */}
+  <div className="relative z-10 flex items-center justify-center h-full">
+    <h1 className="text-white text-5xl sm:text-7xl font-semibold tracking-tight text-center px-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+      McKenzie Friend
+    </h1>
+  </div>
+</section>
   
       {/* Two paths */}
       <section id="paths" className="relative border-t border-zinc-200">
