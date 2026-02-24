@@ -153,7 +153,7 @@ export default function Home() {
 
             <p className="mt-5 text-base leading-7 text-zinc-700 sm:text-lg sm:leading-8">
               A focused support platform for people representing themselves — combining practical preparation tools
-              with optional in-person assistance (where permitted).
+              with optional in-person assistance.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -185,7 +185,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <p className="text-xs font-semibold text-zinc-500">02</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Two Clear Paths <span className="text-zinc-500">(Split Section)</span>
+            Two Clear Paths <span className="text-zinc-500"></span>
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
             Choose the type of support you need. Keep it practical. Keep it clear.
@@ -203,8 +203,6 @@ export default function Home() {
                 Independent McKenzie Friend assistance for litigants in person. Support may include document
                 organisation, note-taking, quiet assistance in court, and help understanding procedure.
               </Inset>
-
-              <p className="mt-5 text-sm text-zinc-600">Keep it factual. No promises.</p>
 
               <div className="mt-7">
                 <button
@@ -252,7 +250,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <p className="text-xs font-semibold text-zinc-500">04</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Clear Boundaries <span className="text-zinc-500">(Non-Negotiable)</span>
+            Clear Boundaries <span className="text-zinc-500"></span>
           </h2>
           <p className="mt-4 text-base leading-7 text-zinc-700">Visible and calm:</p>
 
@@ -268,7 +266,6 @@ export default function Home() {
               unless expressly permitted by the court.
             </Inset>
 
-            <p className="mt-5 text-sm text-zinc-600">That language protects you.</p>
           </Card>
         </div>
       </section>
@@ -295,18 +292,15 @@ export default function Home() {
             </Card>
 
             <Card className="lg:col-span-5">
-              <p className="text-sm font-semibold text-zinc-700">Principles</p>
-              <ul className="mt-4 space-y-3 text-sm leading-7 text-zinc-700">
-                <li>• Keep it factual.</li>
-                <li>• Keep it calm.</li>
-                <li>• No inflated claims.</li>
-                <li>• Clear limitations.</li>
-                <li>• Practical preparation first.</li>
-              </ul>
-            </Card>
-          </div>
-        </div>
-      </section>
+  <p className="text-sm font-semibold text-zinc-700">Operating principles</p>
+  <ul className="mt-4 space-y-3 text-sm leading-7 text-zinc-700">
+    <li>• Plain-language summaries; references where relevant.</li>
+    <li>• Preparation-focused support: structure, clarity, and next steps.</li>
+    <li>• Scope-controlled: no conduct of litigation; no rights of audience unless permitted by the court.</li>
+    <li>• Clear limitations and signposting to appropriate professional advice when needed.</li>
+    <li>• Confidentiality-minded handling of information (use only what is necessary).</li>
+  </ul>
+</Card>
 
       {/* CTA */}
       <section id="cta" className="relative border-t border-zinc-200">
