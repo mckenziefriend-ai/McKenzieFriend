@@ -106,6 +106,32 @@ export default function Home() {
             Two clear paths
           </h2>
 
+            <DecisionCard
+              title="AI preparation tools"
+              icon="🤖"
+              accent="from-sky-500/20 via-transparent to-transparent"
+            >
+              <p className="mt-2 text-sm text-zinc-700">
+                Tools to support preparation: structure, timelines, prompts, and document organisation.
+              </p>
+
+              <div className="mt-8 flex gap-3 flex-wrap">
+                <a
+                  href="/contact"
+                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                >
+                  Contact us
+                </a>
+
+                <button
+                  onClick={() => scrollTo("boundaries")}
+                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  View limitations
+                </button>
+              </div>
+            </DecisionCard>
+
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
             <DecisionCard
               title="Personal McKenzie Friend support"
@@ -123,32 +149,6 @@ export default function Home() {
                   className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
                 >
                   Proceed with personal support
-                </a>
-
-                <button
-                  onClick={() => scrollTo("boundaries")}
-                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
-                >
-                  View limitations
-                </button>
-              </div>
-            </DecisionCard>
-
-            <DecisionCard
-              title="AI preparation tools"
-              icon="🤖"
-              accent="from-sky-500/20 via-transparent to-transparent"
-            >
-              <p className="mt-2 text-sm text-zinc-700">
-                Tools to support preparation: structure, timelines, prompts, and document organisation.
-              </p>
-
-              <div className="mt-8 flex gap-3 flex-wrap">
-                <a
-                  href="/contact"
-                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
-                >
-                  Contact us
                 </a>
 
                 <button
