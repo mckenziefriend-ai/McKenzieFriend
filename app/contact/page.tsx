@@ -139,7 +139,7 @@ export default function ContactPage() {
               </div>
 
               <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6">
-                <p className="text-sm font-semibold text-zinc-900">Boundaries (quick)</p>
+                <p className="text-sm font-semibold text-zinc-900">Boundaries</p>
                 <ul className="mt-4 space-y-2 text-sm leading-7 text-zinc-700">
                   <li>• No regulated legal advice.</li>
                   <li>• AI outputs are general and must be checked.</li>
