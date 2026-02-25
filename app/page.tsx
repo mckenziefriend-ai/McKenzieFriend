@@ -100,68 +100,68 @@ export default function Home() {
       </section>
 
       {/* Two paths */}
-      <section id="paths" className="border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Two clear paths
-          </h2>
+<section id="paths" className="border-t border-zinc-200">
+  <div className="mx-auto max-w-6xl px-4 py-20">
+    <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      Two clear paths
+    </h2>
 
-            <DecisionCard
-              title="AI preparation tools"
-              icon="🤖"
-              accent="from-sky-500/20 via-transparent to-transparent"
-            >
-              <p className="mt-2 text-sm text-zinc-700">
-                Tools to support preparation: structure, timelines, prompts, and document organisation.
-              </p>
+    <div className="mt-12 grid gap-8 lg:grid-cols-2">
+      <DecisionCard
+        title="AI preparation tools"
+        icon="🤖"
+        accent="from-sky-500/20 via-transparent to-transparent"
+      >
+        <p className="mt-2 text-sm text-zinc-700">
+          Tools to support preparation: structure, timelines, prompts, and document organisation.
+        </p>
 
-              <div className="mt-8 flex gap-3 flex-wrap">
-                <a
-                  href="/contact"
-                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
-                >
-                  Contact us
-                </a>
+        <div className="mt-8 flex gap-3 flex-wrap">
+          <a
+            href="/contact"
+            className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+          >
+            Contact us
+          </a>
 
-                <button
-                  onClick={() => scrollTo("boundaries")}
-                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
-                >
-                  View limitations
-                </button>
-              </div>
-            </DecisionCard>
-
-          <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            <DecisionCard
-              title="Personal McKenzie Friend support"
-              icon="👤"
-              accent="from-amber-500/20 via-transparent to-transparent"
-            >
-              <p className="mt-2 text-sm text-zinc-700">
-                Practical assistance for litigants in person. Document organisation, note-taking,
-                and quiet support in court — subject to the court’s directions.
-              </p>
-
-              <div className="mt-8 flex gap-3 flex-wrap">
-                <a
-                  href="/contact"
-                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
-                >
-                  Proceed with personal support
-                </a>
-
-                <button
-                  onClick={() => scrollTo("boundaries")}
-                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
-                >
-                  View limitations
-                </button>
-              </div>
-            </DecisionCard>
-          </div>
+          <button
+            onClick={() => scrollTo("boundaries")}
+            className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
+          >
+            View limitations
+          </button>
         </div>
-      </section>
+      </DecisionCard>
+
+      <DecisionCard
+        title="Personal McKenzie Friend support"
+        icon="👤"
+        accent="from-amber-500/20 via-transparent to-transparent"
+      >
+        <p className="mt-2 text-sm text-zinc-700">
+          Practical assistance for litigants in person. Document organisation, note-taking,
+          and quiet support in court — subject to the court’s directions.
+        </p>
+
+        <div className="mt-8 flex gap-3 flex-wrap">
+          <a
+            href="/contact"
+            className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+          >
+            Proceed with personal support
+          </a>
+
+          <button
+            onClick={() => scrollTo("boundaries")}
+            className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
+          >
+            View limitations
+          </button>
+        </div>
+      </DecisionCard>
+    </div>
+  </div>
+</section>
 
       {/* Boundaries */}
       <section id="boundaries" className="border-t border-zinc-200">
