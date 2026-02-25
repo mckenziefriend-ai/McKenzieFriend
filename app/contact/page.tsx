@@ -149,6 +149,8 @@ export default function ContactPage() {
                 </ul>
               </div>
 
+              </div> {/* <-- CLOSES the lg:col-span-5 left column */}
+
             {/* Right: form */}
             <div className="lg:col-span-7">
               <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
