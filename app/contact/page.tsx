@@ -217,7 +217,6 @@ export default function ContactPage() {
                         <label className="text-sm font-semibold text-zinc-900">
                           Message <span className="text-zinc-500">(required)</span>
                         </label>
-                        <span className="text-xs text-zinc-500">Aim for 2–6 sentences</span>
                       </div>
 
 
