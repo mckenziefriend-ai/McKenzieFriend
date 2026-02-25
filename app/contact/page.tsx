@@ -147,14 +147,7 @@ export default function ContactPage() {
                 </ul>
               </div>
 
-              <div className="mt-8 text-sm leading-7 text-zinc-700">
-                <p className="font-semibold text-zinc-900">Response expectations</p>
-                <p className="mt-2">
-                  We aim to reply with clarifying questions and next steps. Include any deadlines so your enquiry can be
-                  prioritised appropriately.
-                </p>
-              </div>
-            </div>
+            
 
             {/* Right: form */}
             <div className="lg:col-span-7">
