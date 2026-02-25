@@ -22,5 +22,43 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    Helvetica, sans-serif;
+}
+
+/* ---------- Hero utilities (minimal, authoritative) ---------- */
+
+.hero-surface {
+  /* Deep navy gradient: Top #0B1A2B → Fade #111827 */
+  background: linear-gradient(180deg, #0b1a2b 0%, #111827 70%, #0b1220 100%);
+}
+
+.hero-glow {
+  /* Very faint center glow behind headline */
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.06) 18%,
+    rgba(255, 255, 255, 0.02) 38%,
+    rgba(255, 255, 255, 0) 60%
+  );
+}
+
+/* Optional “tech layer”: abstract, very subtle grid (no icons) */
+.hero-grid {
+  background-image: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 64px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px,
+      transparent 64px
+    );
+  opacity: 0.18; /* “almost invisible” */
 }
