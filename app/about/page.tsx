@@ -89,9 +89,6 @@ export default function AboutPage() {
               and the design of these AI preparation tools.
             </div>
 
-            <p className="mt-5 text-sm text-zinc-600">
-              Short. Relatable. Professional.
-            </p>
           </div>
         </div>
       </section>
@@ -155,7 +152,7 @@ export default function AboutPage() {
       <section>
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Boundaries (plain and direct)
+            Boundaries
           </h2>
 
           <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
