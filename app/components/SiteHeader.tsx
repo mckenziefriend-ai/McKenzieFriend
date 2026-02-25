@@ -7,32 +7,29 @@ function cn(...classes: Array<string | false | undefined | null>) {
 }
 
 type Props = {
-  /** Optional: for home page only, let logo scroll to top instead of navigating */
   onHomeClick?: () => void;
 };
 
 export default function SiteHeader({ onHomeClick }: Props) {
   const pathname = usePathname();
 
-  const NAVY = "bg-[#0B1A2B] hover:bg-[#0B1A2B]/95";
-
-  const baseBtn =
-    "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition " +
-    "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
-
-  const activeBtn = cn(
-    "border-transparent text-white",
-    NAVY
-  );
-
   const isHome = pathname === "/";
   const isAbout = pathname === "/about";
   const isContact = pathname === "/contact";
 
+  const navBtn =
+    "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition";
+
+  const inactive =
+    "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
+
+  const active =
+    "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
+
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Brand / logo */}
+        {/* Brand */}
         {onHomeClick ? (
           <button
             onClick={onHomeClick}
@@ -61,15 +58,27 @@ export default function SiteHeader({ onHomeClick }: Props) {
 
         {/* Nav */}
         <nav className="flex items-center gap-2">
-          <a href="/" className={cn(baseBtn, isHome && activeBtn)} aria-current={isHome ? "page" : undefined}>
+          <a
+            href="/"
+            className={cn(navBtn, isHome ? active : inactive)}
+            aria-current={isHome ? "page" : undefined}
+          >
             Home
           </a>
 
-          <a href="/about" className={cn(baseBtn, isAbout && activeBtn)} aria-current={isAbout ? "page" : undefined}>
+          <a
+            href="/about"
+            className={cn(navBtn, isAbout ? active : inactive)}
+            aria-current={isAbout ? "page" : undefined}
+          >
             About
           </a>
 
-          <a href="/contact" className={cn(baseBtn, isContact && activeBtn)} aria-current={isContact ? "page" : undefined}>
+          <a
+            href="/contact"
+            className={cn(navBtn, isContact ? active : inactive)}
+            aria-current={isContact ? "page" : undefined}
+          >
             Contact
           </a>
         </nav>
