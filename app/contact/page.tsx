@@ -11,7 +11,9 @@ export default function ContactPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
@@ -147,7 +149,14 @@ export default function ContactPage() {
                 </ul>
               </div>
 
-            
+              <div className="mt-8 text-sm leading-7 text-zinc-700">
+                <p className="font-semibold text-zinc-900">Response expectations</p>
+                <p className="mt-2">
+                  We aim to reply with clarifying questions and next steps. Include any deadlines so your
+                  enquiry can be prioritised appropriately.
+                </p>
+              </div>
+            </div>
 
             {/* Right: form */}
             <div className="lg:col-span-7">
@@ -179,7 +188,6 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form onSubmit={onSubmit} className="mt-6 space-y-6">
-                  
                     {/* Contact details */}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field label="Full name" required>
@@ -210,8 +218,8 @@ export default function ContactPage() {
                         <label className="text-sm font-semibold text-zinc-900">
                           Message <span className="text-zinc-500">(required)</span>
                         </label>
+                        <span className="text-xs text-zinc-500">Aim for 2–6 sentences</span>
                       </div>
-
 
                       <textarea
                         value={message}
@@ -278,40 +286,5 @@ function Field({
       </label>
       <div className="mt-2">{children}</div>
     </div>
-  );
-}
-
-function RadioCard({
-  name,
-  checked,
-  onChange,
-  title,
-  subtitle,
-}: {
-  name: string;
-  checked: boolean;
-  onChange: () => void;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <label
-      className={cn(
-        "cursor-pointer rounded-2xl border p-4 transition",
-        checked
-          ? "border-zinc-900 bg-white shadow-sm"
-          : "border-zinc-200 bg-white hover:border-zinc-300"
-      )}
-    >
-      <input
-        type="radio"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
-      <div className="text-sm font-semibold text-zinc-900">{title}</div>
-      <div className="mt-1 text-xs text-zinc-600">{subtitle}</div>
-    </label>
   );
 }
