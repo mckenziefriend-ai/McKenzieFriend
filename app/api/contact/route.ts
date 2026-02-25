@@ -60,7 +60,7 @@ ${message}
     const { data, error } = await resend.emails.send({
       from, // e.g. "McKenzieFriend.ai <onboarding@resend.dev>"
       to,   // your inbox email
-      replyTo: email, // so you can reply directly to the user
+      reply_to: email, // so you can reply directly to the user
       subject,
       text,
       html,
