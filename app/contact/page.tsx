@@ -149,15 +149,6 @@ export default function ContactPage() {
                 </ul>
               </div>
 
-              <div className="mt-8 text-sm leading-7 text-zinc-700">
-                <p className="font-semibold text-zinc-900">Response expectations</p>
-                <p className="mt-2">
-                  We aim to reply with clarifying questions and next steps. Include any deadlines so your
-                  enquiry can be prioritised appropriately.
-                </p>
-              </div>
-            </div>
-
             {/* Right: form */}
             <div className="lg:col-span-7">
               <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
@@ -218,7 +209,6 @@ export default function ContactPage() {
                         <label className="text-sm font-semibold text-zinc-900">
                           Message <span className="text-zinc-500">(required)</span>
                         </label>
-                        <span className="text-xs text-zinc-500">Aim for 2–6 sentences</span>
                       </div>
 
                       <textarea
