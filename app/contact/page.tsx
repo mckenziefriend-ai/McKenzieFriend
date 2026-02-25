@@ -220,12 +220,6 @@ export default function ContactPage() {
                         <span className="text-xs text-zinc-500">Aim for 2–6 sentences</span>
                       </div>
 
-                      <div className="mt-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                        <p className="text-xs font-semibold text-zinc-700">A simple way to write this:</p>
-                        <p className="mt-2 text-xs leading-6 text-zinc-600">
-                          1) What’s happening? 2) Any deadlines? 3) What help do you need?
-                        </p>
-                      </div>
 
                       <textarea
                         value={message}
