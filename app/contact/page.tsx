@@ -2,14 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-type ServiceType = "personal" | "ai" | "unsure";
-
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
 }
 
 export default function ContactPage() {
-  const [service, setService] = useState<ServiceType>("unsure");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -38,7 +35,6 @@ export default function ContactPage() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          service,
           name: name.trim(),
           email: email.trim(),
           message: message.trim(),
@@ -190,36 +186,7 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form onSubmit={onSubmit} className="mt-6 space-y-6">
-                    {/* Service */}
-                    <div>
-                      <label className="text-sm font-semibold text-zinc-900">
-                        What are you looking for?
-                      </label>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                        <RadioCard
-                          name="service"
-                          checked={service === "personal"}
-                          onChange={() => setService("personal")}
-                          title="Personal support"
-                          subtitle="Independent McKenzie Friend"
-                        />
-                        <RadioCard
-                          name="service"
-                          checked={service === "ai"}
-                          onChange={() => setService("ai")}
-                          title="AI tools"
-                          subtitle="Preparation & structure"
-                        />
-                        <RadioCard
-                          name="service"
-                          checked={service === "unsure"}
-                          onChange={() => setService("unsure")}
-                          title="Not sure"
-                          subtitle="Help me choose"
-                        />
-                      </div>
-                    </div>
-
+                  
                     {/* Contact details */}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field label="Full name" required>
