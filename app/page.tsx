@@ -148,7 +148,7 @@ export default function Home() {
             href="/contact"
             className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
           >
-            Proceed with personal support
+            Contact us
           </a>
 
           <button
