@@ -77,7 +77,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-white/80 sm:text-lg">
-              Independent McKenzie Friend & Developer of AI Court Preparation Tools
+              AI Preparation for Court. Independent McKenzie Friend Support.
             </p>
 
             <div className="mt-6 space-y-2 text-white/70">
