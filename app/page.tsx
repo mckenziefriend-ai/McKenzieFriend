@@ -32,19 +32,12 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Navigation (simplified) */}
-      <header
-        className={cn(
-          "sticky top-0 z-50 border-b border-zinc-200",
-          "bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75"
-        )}
-      >
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          {/* Brand */}
           <button
             onClick={() => scrollTo("top")}
-            className="group inline-flex items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-zinc-50"
-            aria-label="Scroll to top"
+            className="group inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-zinc-50"
           >
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
               MF
@@ -54,28 +47,20 @@ export default function Home() {
             </span>
           </button>
 
-          {/* Only: About / Contact / Start */}
-          <nav className="flex items-center gap-2" aria-label="Primary">
+          <nav className="flex items-center gap-2">
             <a
               href="/about"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900"
+              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
             >
               About
             </a>
 
             <a
               href="/contact"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900"
+              className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
             >
               Contact
             </a>
-
-            <button
-              onClick={() => scrollTo("paths")}
-              className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-            >
-              Start
-            </button>
           </nav>
         </div>
       </header>
@@ -83,79 +68,66 @@ export default function Home() {
       {/* Hero */}
       <section id="top" className="relative overflow-hidden">
         <div className="hero-surface relative">
-          {/* Optional subtle grid */}
-          <div className="hero-grid pointer-events-none absolute inset-0" />
-          {/* Center glow */}
-          <div className="hero-glow pointer-events-none absolute inset-0" />
+          <div className="hero-grid absolute inset-0 pointer-events-none" />
+          <div className="hero-glow absolute inset-0 pointer-events-none" />
 
-          <div className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6 sm:py-24 lg:py-28">
-            <h1 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-20 text-center">
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
               McKenzieFriend<span className="text-white/80">.ai</span>
             </h1>
 
-            <p className="mt-5 max-w-2xl text-pretty text-base font-medium leading-7 text-white/80 sm:text-lg">
-              Independent McKenzie Friend &amp; Developer of AI Court Preparation Tools
+            <p className="mt-5 max-w-2xl text-white/80 sm:text-lg">
+              Independent McKenzie Friend & Developer of AI Court Preparation Tools
             </p>
 
-            <div className="mt-6 max-w-2xl space-y-2">
-              <p className="text-sm leading-6 text-white/70 sm:text-base">
-                For litigants in person in England &amp; Wales.
-              </p>
-              <p className="text-xs leading-5 text-white/60">
+            <div className="mt-6 space-y-2 text-white/70">
+              <p>For litigants in person in England & Wales.</p>
+              <p className="text-xs text-white/60">
                 Not a law firm. Not regulated legal advice.
               </p>
             </div>
 
-            <div className="mt-10 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
-                onClick={() => scrollTo("paths")}
-                className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-white/90"
+            <div className="mt-10">
+              <a
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-white/90"
               >
-                Choose a path
-              </button>
-              <button
-                onClick={() => scrollTo("boundaries")}
-                className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Read boundaries
-              </button>
+                Contact us
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Two paths */}
-      <section id="paths" className="relative border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold text-zinc-500">02</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+      <section id="paths" className="border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Two clear paths
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
-            Choose the support you need — personal McKenzie Friend support, or AI preparation tools.
-          </p>
 
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
             <DecisionCard
-              accent="from-amber-500/20 via-amber-500/0 to-transparent"
               title="Personal McKenzie Friend support"
               icon="👤"
+              accent="from-amber-500/20 via-transparent to-transparent"
             >
-              <p className="mt-2 text-sm leading-7 text-zinc-700">
-                Practical assistance for litigants in person. Document organisation, note-taking, and quiet support in
-                court — always subject to the court’s directions and applicable rules.
+              <p className="mt-2 text-sm text-zinc-700">
+                Practical assistance for litigants in person. Document organisation, note-taking,
+                and quiet support in court — subject to the court’s directions.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={() => scrollTo("cta")}
-                  className="w-full rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
+              <div className="mt-8 flex gap-3 flex-wrap">
+                <a
+                  href="/contact"
+                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
                 >
                   Proceed with personal support
-                </button>
+                </a>
+
                 <button
                   onClick={() => scrollTo("boundaries")}
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 sm:w-auto"
+                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
                 >
                   View limitations
                 </button>
@@ -163,25 +135,25 @@ export default function Home() {
             </DecisionCard>
 
             <DecisionCard
-              accent="from-sky-500/20 via-sky-500/0 to-transparent"
               title="AI preparation tools"
               icon="🤖"
+              accent="from-sky-500/20 via-transparent to-transparent"
             >
-              <p className="mt-2 text-sm leading-7 text-zinc-700">
-                Tools to support preparation: structure, checklists, timelines, and question prompts. Outputs are
-                general and should be reviewed for accuracy and suitability.
+              <p className="mt-2 text-sm text-zinc-700">
+                Tools to support preparation: structure, timelines, prompts, and document organisation.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={() => scrollTo("cta")}
-                  className="w-full rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
+              <div className="mt-8 flex gap-3 flex-wrap">
+                <a
+                  href="/contact"
+                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
                 >
-                  Proceed with AI tools
-                </button>
+                  Contact us
+                </a>
+
                 <button
                   onClick={() => scrollTo("boundaries")}
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 sm:w-auto"
+                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
                 >
                   View limitations
                 </button>
@@ -192,105 +164,62 @@ export default function Home() {
       </section>
 
       {/* Boundaries */}
-      <section id="boundaries" className="relative border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold text-zinc-500">03</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+      <section id="boundaries" className="border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Boundaries
           </h2>
 
           <Card>
             <Inset>
               McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
-              <br />
-              <br />
-              AI tools provide general information and preparation support only.
-              <br />
-              <br />
-              Personal McKenzie Friend assistance does not include rights of audience or the conduct of litigation
-              unless permitted by the court.
+              <br /><br />
+              AI tools provide general preparation support only.
+              <br /><br />
+              Personal assistance does not include rights of audience or conduct of litigation unless permitted by the court.
             </Inset>
           </Card>
         </div>
       </section>
 
       {/* Who */}
-      <section id="who" className="relative border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold text-zinc-500">04</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+      <section id="who" className="border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Who this is for
           </h2>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-12">
-            <Card className="lg:col-span-7">
-              <p className="text-base leading-8 text-zinc-800">
-                Individuals representing themselves in the Family Court of England &amp; Wales who want clearer
-                preparation and more structured information.
-              </p>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <Pill>Document organisation</Pill>
-                <Pill>Chronology and timeline</Pill>
-                <Pill>Hearing preparation</Pill>
-                <Pill>Question prompts</Pill>
-              </div>
-            </Card>
-
-            <Card className="lg:col-span-5">
-              <p className="text-sm font-semibold text-zinc-700">Operating principles</p>
-              <ul className="mt-4 space-y-3 text-sm leading-7 text-zinc-700">
-                <li>• Plain-language summaries; references where relevant.</li>
-                <li>• Preparation-focused support: structure and clarity.</li>
-                <li>• Scope-controlled: no conduct of litigation; no rights of audience unless permitted by the court.</li>
-                <li>• Clear limitations and signposting where professional advice is required.</li>
-                <li>• Confidentiality-minded handling of information (use only what is necessary).</li>
-              </ul>
-            </Card>
-          </div>
+          <Card className="mt-10">
+            Individuals representing themselves in the Family Court of England & Wales who want clearer preparation and structured information.
+          </Card>
         </div>
       </section>
 
       {/* CTA */}
-      <section id="cta" className="relative border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <section id="cta" className="border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-20">
           <Card>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Get started</h2>
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Get started
+            </h2>
 
-            <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-700">
-              Choose a path, then review the boundaries before proceeding.
+            <p className="mt-4 text-zinc-700">
+              Contact us to discuss your situation and the most suitable support.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8">
               <a
-                href="#paths"
-                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
               >
-                Review the two paths
-              </a>
-              <a
-                href="#boundaries"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
-              >
-                Review boundaries
-              </a>
-              <a
-                href="/about"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
-              >
-                Read about this service
+                Contact us
               </a>
             </div>
-
-            <p className="mt-6 text-xs text-zinc-600">
-              McKenzieFriend.ai provides general information and preparation support. It does not provide regulated legal
-              advice.
-            </p>
           </Card>
 
-          <footer className="mt-10 flex flex-col gap-2 border-t border-zinc-200 pt-6 text-xs text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
+          <footer className="mt-10 border-t border-zinc-200 pt-6 text-xs text-zinc-600 flex justify-between">
             <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
-            <span className="text-zinc-500">England &amp; Wales</span>
+            <span>England & Wales</span>
           </footer>
         </div>
       </section>
@@ -303,48 +232,19 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 }
 
 function Inset({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-5 text-base leading-7 text-zinc-800">
-      {children}
-    </div>
-  );
+  return <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-5">{children}</div>;
 }
 
-function BadgeIcon({ children }: { children: React.ReactNode }) {
+function DecisionCard({ title, icon, accent, children }: any) {
   return (
-    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white">
-      {children}
-    </div>
-  );
-}
-
-function Pill({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">{children}</div>;
-}
-
-function DecisionCard({
-  title,
-  icon,
-  accent,
-  children,
-}: {
-  title: string;
-  icon: string;
-  accent: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-7 sm:p-9",
-        "shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
-      )}
-    >
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-b", accent)} />
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm hover:shadow-md transition">
+      <div className={`absolute inset-0 bg-gradient-to-b ${accent}`} />
       <div className="relative">
         <div className="flex items-center gap-3">
-          <BadgeIcon>{icon}</BadgeIcon>
-          <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white">
+            {icon}
+          </div>
+          <h3 className="text-xl font-semibold">{title}</h3>
         </div>
         {children}
       </div>
