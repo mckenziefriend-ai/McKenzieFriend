@@ -1,27 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type SectionId = "top" | "paths" | "boundaries" | "who" | "cta";
-
-const SECTIONS: { id: SectionId; label: string }[] = [
-  { id: "top", label: "Home" },
-  { id: "paths", label: "Two Paths" },
-  { id: "boundaries", label: "Boundaries" },
-  { id: "who", label: "Who It’s For" },
-  { id: "cta", label: "Get Started" },
-];
 
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
 }
 
 export default function Home() {
-  const [active, setActive] = useState<SectionId>("top");
   const [scrolled, setScrolled] = useState(false);
-
-  const sectionEls = useRef<Record<string, HTMLElement | null>>({});
-  const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
 
   function scrollTo(id: SectionId) {
     const el = document.getElementById(id);
@@ -36,33 +24,6 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const els: HTMLElement[] = [];
-    for (const id of sectionIds) {
-      const el = document.getElementById(id);
-      sectionEls.current[id] = el;
-      if (el) els.push(el);
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) =>
-            a.boundingClientRect.top > b.boundingClientRect.top ? 1 : -1
-          );
-
-        if (visible[0]?.target?.id) {
-          setActive(visible[0].target.id as SectionId);
-        }
-      },
-      { root: null, rootMargin: "-15% 0px -70% 0px", threshold: [0.01, 0.1, 0.2] }
-    );
-
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [sectionIds]);
-
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <style jsx global>{`
@@ -71,14 +32,15 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Navigation */}
+      {/* Navigation (simplified) */}
       <header
         className={cn(
-          "sticky top-0 z-50 bg-white/92 backdrop-blur supports-[backdrop-filter]:bg-white/80",
-          "border-b border-zinc-200"
+          "sticky top-0 z-50 border-b border-zinc-200",
+          "bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75"
         )}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+          {/* Brand */}
           <button
             onClick={() => scrollTo("top")}
             className="group inline-flex items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-zinc-50"
@@ -92,74 +54,34 @@ export default function Home() {
             </span>
           </button>
 
-          <nav className="hidden items-center gap-1 sm:flex" aria-label="On-page navigation">
-            {SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => scrollTo(s.id)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-sm transition",
-                  active === s.id
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-                )}
-              >
-                {s.label}
-              </button>
-            ))}
-
+          {/* Only: About / Contact / Start */}
+          <nav className="flex items-center gap-2" aria-label="Primary">
             <a
               href="/about"
-              className="ml-1 rounded-full px-3 py-1.5 text-sm text-zinc-600 transition hover:text-zinc-900 hover:bg-zinc-100"
+              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900"
             >
               About
             </a>
-          </nav>
 
-          <div className="flex items-center gap-2">
             <a
-              href="/about"
-              className="hidden rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 sm:inline-flex"
+              href="/contact"
+              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900"
             >
-              About
+              Contact
             </a>
+
             <button
-              onClick={() => scrollTo("cta")}
+              onClick={() => scrollTo("paths")}
               className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
             >
               Start
             </button>
-          </div>
-        </div>
-
-        {/* Mobile nav */}
-        <div className="sm:hidden">
-          <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3">
-            {SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => scrollTo(s.id)}
-                className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-xs transition",
-                  active === s.id ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700"
-                )}
-              >
-                {s.label}
-              </button>
-            ))}
-            <a
-              href="/about"
-              className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs text-zinc-700"
-            >
-              About
-            </a>
-          </div>
+          </nav>
         </div>
       </header>
 
       {/* Hero */}
       <section id="top" className="relative overflow-hidden">
-        {/* Surface */}
         <div className="hero-surface relative">
           {/* Optional subtle grid */}
           <div className="hero-grid pointer-events-none absolute inset-0" />
@@ -214,15 +136,14 @@ export default function Home() {
           </p>
 
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            {/* Personal card */}
             <DecisionCard
               accent="from-amber-500/20 via-amber-500/0 to-transparent"
               title="Personal McKenzie Friend support"
               icon="👤"
             >
               <p className="mt-2 text-sm leading-7 text-zinc-700">
-                Practical assistance for litigants in person. Document organisation, note-taking, and quiet support
-                in court — always subject to the court’s directions and applicable rules.
+                Practical assistance for litigants in person. Document organisation, note-taking, and quiet support in
+                court — always subject to the court’s directions and applicable rules.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -241,7 +162,6 @@ export default function Home() {
               </div>
             </DecisionCard>
 
-            {/* AI card */}
             <DecisionCard
               accent="from-sky-500/20 via-sky-500/0 to-transparent"
               title="AI preparation tools"
@@ -379,11 +299,7 @@ export default function Home() {
 }
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn("rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8", className)}>{children}</div>;
 }
 
 function Inset({ children }: { children: React.ReactNode }) {
@@ -403,11 +319,7 @@ function BadgeIcon({ children }: { children: React.ReactNode }) {
 }
 
 function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
-      {children}
-    </div>
-  );
+  return <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">{children}</div>;
 }
 
 function DecisionCard({
@@ -428,7 +340,6 @@ function DecisionCard({
         "shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
       )}
     >
-      {/* subtle accent wash */}
       <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-b", accent)} />
       <div className="relative">
         <div className="flex items-center gap-3">
