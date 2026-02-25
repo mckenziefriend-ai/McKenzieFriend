@@ -28,44 +28,43 @@ export default function SiteHeader({ onHomeClick }: Props) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
-        {/* Row 1: Brand */}
-        <div className="flex items-center justify-between">
-          {onHomeClick ? (
-            <button
-              onClick={onHomeClick}
-              className="group inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-zinc-50"
-              aria-label="Go to home"
-            >
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
-                MF
-              </span>
-              <span className="text-sm font-semibold tracking-tight">
-                McKenzieFriend<span className="text-zinc-500">.ai</span>
-              </span>
-            </button>
-          ) : (
-            <a
-              href="/"
-              className="group inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-zinc-50"
-              aria-label="Go to home"
-            >
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
-                MF
-              </span>
-              <span className="text-sm font-semibold tracking-tight">
-                McKenzieFriend<span className="text-zinc-500">.ai</span>
-              </span>
-            </a>
-          )}
-        </div>
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        {/* Brand */}
+        {onHomeClick ? (
+          <button
+            onClick={onHomeClick}
+            className="group inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-zinc-50 shrink-0"
+            aria-label="Go to home"
+          >
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
+              MF
+            </span>
+            <span className="text-sm font-semibold tracking-tight">
+              McKenzieFriend<span className="text-zinc-500">.ai</span>
+            </span>
+          </button>
+        ) : (
+          <a
+            href="/"
+            className="group inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-zinc-50 shrink-0"
+            aria-label="Go to home"
+          >
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
+              MF
+            </span>
+            <span className="text-sm font-semibold tracking-tight">
+              McKenzieFriend<span className="text-zinc-500">.ai</span>
+            </span>
+          </a>
+        )}
 
-        {/* Row 2: Nav (mobile scroll) */}
+        {/* Nav: stays on same line; scrolls on small screens */}
         <nav
           className={cn(
-            "mt-3 flex items-center gap-2 overflow-x-auto pb-1",
-            "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-            "sm:mt-0 sm:justify-end sm:overflow-visible sm:pb-0"
+            "flex items-center gap-2",
+            "min-w-0 flex-1 justify-end",
+            "overflow-x-auto whitespace-nowrap",
+            "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           )}
           aria-label="Primary"
         >
