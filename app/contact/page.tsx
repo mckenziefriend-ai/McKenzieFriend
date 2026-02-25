@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import SiteHeader from "../components/SiteHeader";
 
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
@@ -57,38 +58,7 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-white text-zinc-950">
-      {/* Header (simplified) */}
-      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <a
-            href="/"
-            className="group inline-flex items-center gap-2 rounded-md px-2 py-1 hover:bg-zinc-50"
-          >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-xs font-semibold">
-              MF
-            </span>
-            <span className="text-sm font-semibold tracking-tight">
-              McKenzieFriend<span className="text-zinc-500">.ai</span>
-            </span>
-          </a>
-
-          <nav className="flex items-center gap-2">
-            <a
-              href="/about"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
-            >
-              About
-            </a>
-
-            <span
-              className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
-              aria-current="page"
-            >
-              Contact
-            </span>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -98,6 +68,7 @@ export default function ContactPage() {
 
           <div className="mx-auto max-w-6xl px-4 py-16 text-white sm:px-6 sm:py-18">
             <p className="text-xs font-semibold text-white/60">Contact</p>
+
             <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
               Enquire with McKenzieFriend<span className="text-white/80">.ai</span>
             </h1>
@@ -148,8 +119,7 @@ export default function ContactPage() {
                   <li>• Personal support is subject to court permission and rules.</li>
                 </ul>
               </div>
-
-              </div> {/* <-- CLOSES the lg:col-span-5 left column */}
+            </div>
 
             {/* Right: form */}
             <div className="lg:col-span-7">
@@ -164,6 +134,7 @@ export default function ContactPage() {
                     <p className="mt-2 text-sm leading-7 text-zinc-700">
                       Thanks — your enquiry has been received. We’ll respond with next steps.
                     </p>
+
                     <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                       <a
                         href="/"
@@ -181,7 +152,6 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form onSubmit={onSubmit} className="mt-6 space-y-6">
-                    {/* Contact details */}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field label="Full name" required>
                         <input
@@ -205,19 +175,16 @@ export default function ContactPage() {
                       </Field>
                     </div>
 
-                    {/* Message */}
                     <div>
-                      <div className="flex items-baseline justify-between">
-                        <label className="text-sm font-semibold text-zinc-900">
-                          Message <span className="text-zinc-500">(required)</span>
-                        </label>
-                      </div>
+                      <label className="text-sm font-semibold text-zinc-900">
+                        Message <span className="text-zinc-500">(required)</span>
+                      </label>
 
                       <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         rows={8}
-                        className="mt-4 w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-zinc-900"
+                        className="mt-3 w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-zinc-900"
                         placeholder="Write your message here…"
                       />
                     </div>
