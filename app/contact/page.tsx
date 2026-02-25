@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 type ServiceType = "personal" | "ai" | "unsure";
-type CourtType = "family" | "civil" | "other";
+type CourtType = "family" | "other";
 type CaseStage = "pre" | "ongoing" | "hearing" | "post" | "unsure";
 type Urgency = "none" | "weeks4" | "days7" | "urgent";
 
@@ -151,7 +151,6 @@ export default function ContactPage() {
                   Helpful details (if you know them)
                 </p>
                 <ul className="mt-4 space-y-2 text-sm leading-7 text-zinc-700">
-                  <li>• Whether this is Family Court or Civil.</li>
                   <li>• Your current stage (pre-proceedings, hearing pending, etc.).</li>
                   <li>• Any upcoming hearing date and court location.</li>
                   <li>• What you need help with (timeline, bundle, questions, statements, etc.).</li>
@@ -261,14 +260,13 @@ export default function ContactPage() {
 
                     {/* Case context */}
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field label="Court type">
+                      <Field label="Court">
                         <select
                           value={courtType}
                           onChange={(e) => setCourtType(e.target.value as CourtType)}
                           className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-zinc-900"
                         >
                           <option value="family">Family Court</option>
-                          <option value="civil">Civil</option>
                           <option value="other">Other / unsure</option>
                         </select>
                       </Field>
@@ -334,7 +332,7 @@ export default function ContactPage() {
                       </Field>
                     </div>
 
-                    {/* Message (good + easy) */}
+                    {/* Message */}
                     <div>
                       <div className="flex items-baseline justify-between">
                         <label className="text-sm font-semibold text-zinc-900">
@@ -373,7 +371,7 @@ export default function ContactPage() {
                         disabled={status === "submitting"}
                         className={cn(
                           "inline-flex items-center justify-center rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800",
-                          status === "submitting" && "opacity-60 pointer-events-none"
+                          status === "submitting" && "pointer-events-none opacity-60"
                         )}
                       >
                         {status === "submitting" ? "Sending…" : "Send enquiry"}
@@ -442,13 +440,7 @@ function RadioCard({
           : "border-zinc-200 bg-white hover:border-zinc-300"
       )}
     >
-      <input
-        type="radio"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="sr-only" />
       <div className="text-sm font-semibold text-zinc-900">{title}</div>
       <div className="mt-1 text-xs text-zinc-600">{subtitle}</div>
     </label>
