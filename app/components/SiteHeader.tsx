@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Image from "next/image";
+import NextImage from "next/image";
 
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
@@ -19,16 +19,17 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const isContact = pathname === "/contact";
 
   /**
-   * Goal:
-   * - Logo never squeezed/stretched: keep w-auto + h fixed, add min-width container so it can't be cramped.
-   * - Buttons always visible on all devices: allow nav to wrap (2 rows on very small screens),
-   *   keep tap targets, and prevent overflow.
+   * Targets:
+   * - Logo: never stretched/squeezed (keep w-auto + fixed height, object-contain)
+   * - Mobile: stay ONE row (no wrapping)
+   * - All buttons visible on mobile (shrink button padding/font on the smallest breakpoint)
+   * - Desktop: logo bigger
    */
 
+  // Smaller on the smallest screens so 3 buttons fit in one row; scales up on larger screens.
   const navBtn =
-    "inline-flex items-center justify-center rounded-full font-semibold transition leading-none " +
-    "whitespace-nowrap " +
-    "px-3 py-2 text-xs sm:px-4 sm:py-2 sm:text-sm";
+    "inline-flex items-center justify-center rounded-full font-semibold transition leading-none whitespace-nowrap " +
+    "px-2 py-1 text-[11px] sm:px-4 sm:py-2 sm:text-sm";
 
   const inactive =
     "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
@@ -37,61 +38,42 @@ export default function SiteHeader({ onHomeClick }: Props) {
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
   const Logo = (
-    <span
-      className={
-        // Reserve space so the logo stays fully visible and doesn't get compressed by the nav
-        "relative block h-8 w-[140px] sm:w-[160px] md:w-[180px] " +
-        "shrink-0"
-      }
-    >
-      <Image
-        src="/logo.png"
-        alt="McKenzieFriend logo"
-        fill
-        priority
-        sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, 180px"
-        className="object-contain"
-      />
-    </span>
+    <NextImage
+      src="/logo.png"
+      alt="McKenzieFriend logo"
+      width={220}
+      height={56}
+      priority
+      // Responsive height: small on mobile (so nav stays one row), large on desktop.
+      className="h-6 w-auto object-contain sm:h-8 md:h-10"
+    />
   );
 
-  const BrandWrapperClasses =
-    "group inline-flex shrink-0 items-center rounded-md px-2 py-1 hover:bg-zinc-50";
+  const BrandClasses =
+    "group inline-flex flex-none items-center rounded-md px-1 py-1 hover:bg-zinc-50";
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
-      <div
-        className={
-          // On tiny screens: stack brand + nav so nothing gets cramped.
-          // From sm and up: one row.
-          "mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 " +
-          "sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6"
-        }
-      >
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6">
         {/* Brand */}
         {onHomeClick ? (
           <button
             onClick={onHomeClick}
-            className={BrandWrapperClasses}
+            className={BrandClasses}
             aria-label="Go to home"
             type="button"
           >
             {Logo}
           </button>
         ) : (
-          <a href="/" className={BrandWrapperClasses} aria-label="Go to home">
+          <a href="/" className={BrandClasses} aria-label="Go to home">
             {Logo}
           </a>
         )}
 
-        {/* Nav */}
+        {/* Nav: force single row */}
         <nav
-          className={
-            // Always show all buttons: allow wrapping (2 rows if needed),
-            // never overflow off-screen, keep centered on mobile.
-            "flex flex-wrap items-center justify-center gap-2 " +
-            "whitespace-normal sm:justify-end"
-          }
+          className="flex flex-none flex-nowrap items-center gap-1 whitespace-nowrap sm:gap-2"
           aria-label="Primary"
         >
           <a
