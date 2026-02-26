@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import NextImage from "next/image";
 
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
@@ -31,37 +32,39 @@ export default function SiteHeader({ onHomeClick }: Props) {
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6">
-       {onHomeClick ? (
-  <button
-    onClick={onHomeClick}
-    className="group inline-flex items-center rounded-md px-2 py-1 hover:bg-zinc-50"
-    aria-label="Go to home"
-  >
-    <Image
-      src="/logo.svg"
-      alt="McKenzieFriend logo"
-      width={140}
-      height={32}
-      className="h-8 w-auto"
-      priority
-    />
-  </button>
-) : (
-  <a
-    href="/"
-    className="group inline-flex items-center rounded-md px-2 py-1 hover:bg-zinc-50"
-    aria-label="Go to home"
-  >
-    <Image
-      src="/logo.svg"
-      alt="McKenzieFriend logo"
-      width={140}
-      height={32}
-      className="h-8 w-auto"
-      priority
-    />
-  </a>
-)}
+        {/* Brand */}
+        {onHomeClick ? (
+          <button
+            onClick={onHomeClick}
+            className="group inline-flex min-w-0 items-center rounded-md px-2 py-1 hover:bg-zinc-50"
+            aria-label="Go to home"
+          >
+            <NextImage
+              src="/logo.png"
+              alt="McKenzieFriend logo"
+              width={140}
+              height={32}
+              className="h-8 w-auto"
+              priority
+            />
+          </button>
+        ) : (
+          <a
+            href="/"
+            className="group inline-flex min-w-0 items-center rounded-md px-2 py-1 hover:bg-zinc-50"
+            aria-label="Go to home"
+          >
+            <NextImage
+              src="/logo.png"
+              alt="McKenzieFriend logo"
+              width={140}
+              height={32}
+              className="h-8 w-auto"
+              priority
+            />
+          </a>
+        )}
+
         {/* Nav: always one row on mobile + desktop */}
         <nav
           className="flex flex-none items-center gap-1 whitespace-nowrap sm:gap-2"
