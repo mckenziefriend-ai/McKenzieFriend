@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import NextImage from "next/image";
 
 function cn(...classes: Array<string | false | undefined | null>) {
-  return classes.filter(Boolean).join(" ");
+ return classes.filter(Boolean).join(" ");
 }
 
 type Props = {
@@ -18,10 +18,14 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const isAbout = pathname === "/about";
   const isContact = pathname === "/contact";
 
-  // Comfortable tap size mobile, normal desktop
+  /**
+   * Balanced button sizing:
+   * - Mobile: readable but compact
+   * - Desktop: comfortable but not oversized
+   */
   const navBtn =
-    "inline-flex items-center justify-center rounded-full font-semibold transition leading-none whitespace-nowrap " +
-    "px-3 py-1.5 text-sm sm:px-4 sm:py-2";
+    "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
+    "px-3 py-1.5 text-sm";
 
   const inactive =
     "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
@@ -30,20 +34,17 @@ export default function SiteHeader({ onHomeClick }: Props) {
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
   /**
-   * LOGO RULES (this fixes everything):
-   * - Fixed visual height across devices
-   * - Width auto (keeps proportions)
-   * - Never shrinks
-   * - Never grows huge
+   * LOGO — fixed small size everywhere
+   * This is the key change.
    */
   const Logo = (
     <NextImage
       src="/logo.png"
       alt="McKenzieFriend logo"
-      width={220}
-      height={60}
+      width={160}
+      height={40}
       priority
-      className="h-[28px] w-auto object-contain shrink-0"
+      className="h-[26px] w-auto object-contain shrink-0"
     />
   );
 
@@ -53,7 +54,6 @@ export default function SiteHeader({ onHomeClick }: Props) {
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        {/* Brand */}
         {onHomeClick ? (
           <button
             onClick={onHomeClick}
@@ -69,7 +69,6 @@ export default function SiteHeader({ onHomeClick }: Props) {
           </a>
         )}
 
-        {/* Nav — forced single row */}
         <nav className="flex flex-none flex-nowrap items-center gap-2" aria-label="Primary">
           <a
             href="/"
