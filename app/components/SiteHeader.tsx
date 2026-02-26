@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import NextImage from "next/image";
 
 function cn(...classes: Array<string | false | undefined | null>) {
- return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(" ");
 }
 
 type Props = {
@@ -19,13 +19,13 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const isContact = pathname === "/contact";
 
   /**
-   * Balanced button sizing:
-   * - Mobile: readable but compact
-   * - Desktop: comfortable but not oversized
+   * Buttons
+   * - Mobile: compact but readable
+   * - Desktop: normal
    */
   const navBtn =
     "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
-    "px-3 py-1.5 text-sm";
+    "px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-sm";
 
   const inactive =
     "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
@@ -34,17 +34,19 @@ export default function SiteHeader({ onHomeClick }: Props) {
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
   /**
-   * LOGO — fixed small size everywhere
-   * This is the key change.
+   * Logo
+   * - Smaller on mobile so everything fits nicely
+   * - Normal size on desktop
+   * - Always keeps proportions
    */
   const Logo = (
     <NextImage
       src="/logo.png"
       alt="McKenzieFriend logo"
-      width={160}
-      height={40}
+      width={180}
+      height={48}
       priority
-      className="h-[26px] w-auto object-contain shrink-0"
+      className="h-6 sm:h-8 w-auto object-contain shrink-0"
     />
   );
 
@@ -54,6 +56,8 @@ export default function SiteHeader({ onHomeClick }: Props) {
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        
+        {/* Brand */}
         {onHomeClick ? (
           <button
             onClick={onHomeClick}
@@ -69,6 +73,7 @@ export default function SiteHeader({ onHomeClick }: Props) {
           </a>
         )}
 
+        {/* Nav */}
         <nav className="flex flex-none flex-nowrap items-center gap-2" aria-label="Primary">
           <a
             href="/"
