@@ -18,18 +18,10 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const isAbout = pathname === "/about";
   const isContact = pathname === "/contact";
 
-  /**
-   * Goals:
-   * - Logo always fully visible (no stretch/squeeze): w-auto + fixed height, object-contain.
-   * - Desktop logo not huge: cap at a moderate height.
-   * - Mobile buttons not tiny, but still fit in ONE row: use tight but readable sizing,
-   *   and prevent header from wrapping.
-   */
-
-  // Mobile: readable but compact; Desktop: normal.
+  // Comfortable tap size mobile, normal desktop
   const navBtn =
     "inline-flex items-center justify-center rounded-full font-semibold transition leading-none whitespace-nowrap " +
-    "px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm";
+    "px-3 py-1.5 text-sm sm:px-4 sm:py-2";
 
   const inactive =
     "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
@@ -37,16 +29,21 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const active =
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
-  // Keep logo fully visible and reasonably sized across breakpoints.
-  // Mobile slightly smaller so nav fits; desktop capped so it doesn't get huge.
+  /**
+   * LOGO RULES (this fixes everything):
+   * - Fixed visual height across devices
+   * - Width auto (keeps proportions)
+   * - Never shrinks
+   * - Never grows huge
+   */
   const Logo = (
     <NextImage
       src="/logo.png"
       alt="McKenzieFriend logo"
-      width={200}
-      height={48}
+      width={220}
+      height={60}
       priority
-      className="h-7 w-auto object-contain sm:h-8 md:h-9"
+      className="h-8 w-auto object-contain shrink-0"
     />
   );
 
@@ -55,7 +52,7 @@ export default function SiteHeader({ onHomeClick }: Props) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         {/* Brand */}
         {onHomeClick ? (
           <button
@@ -72,11 +69,8 @@ export default function SiteHeader({ onHomeClick }: Props) {
           </a>
         )}
 
-        {/* Nav: single row always */}
-        <nav
-          className="flex flex-none flex-nowrap items-center gap-1.5 whitespace-nowrap sm:gap-2"
-          aria-label="Primary"
-        >
+        {/* Nav — forced single row */}
+        <nav className="flex flex-none flex-nowrap items-center gap-2" aria-label="Primary">
           <a
             href="/"
             className={cn(navBtn, isHome ? active : inactive)}
