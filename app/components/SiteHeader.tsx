@@ -19,17 +19,17 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const isContact = pathname === "/contact";
 
   /**
-   * Targets:
-   * - Logo: never stretched/squeezed (keep w-auto + fixed height, object-contain)
-   * - Mobile: stay ONE row (no wrapping)
-   * - All buttons visible on mobile (shrink button padding/font on the smallest breakpoint)
-   * - Desktop: logo bigger
+   * Goals:
+   * - Logo always fully visible (no stretch/squeeze): w-auto + fixed height, object-contain.
+   * - Desktop logo not huge: cap at a moderate height.
+   * - Mobile buttons not tiny, but still fit in ONE row: use tight but readable sizing,
+   *   and prevent header from wrapping.
    */
 
-  // Smaller on the smallest screens so 3 buttons fit in one row; scales up on larger screens.
+  // Mobile: readable but compact; Desktop: normal.
   const navBtn =
     "inline-flex items-center justify-center rounded-full font-semibold transition leading-none whitespace-nowrap " +
-    "px-2 py-1 text-[11px] sm:px-4 sm:py-2 sm:text-sm";
+    "px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm";
 
   const inactive =
     "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
@@ -37,15 +37,16 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const active =
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
+  // Keep logo fully visible and reasonably sized across breakpoints.
+  // Mobile slightly smaller so nav fits; desktop capped so it doesn't get huge.
   const Logo = (
     <NextImage
       src="/logo.png"
       alt="McKenzieFriend logo"
-      width={220}
-      height={56}
+      width={200}
+      height={48}
       priority
-      // Responsive height: small on mobile (so nav stays one row), large on desktop.
-      className="h-6 w-auto object-contain sm:h-8 md:h-10"
+      className="h-7 w-auto object-contain sm:h-8 md:h-9"
     />
   );
 
@@ -71,9 +72,9 @@ export default function SiteHeader({ onHomeClick }: Props) {
           </a>
         )}
 
-        {/* Nav: force single row */}
+        {/* Nav: single row always */}
         <nav
-          className="flex flex-none flex-nowrap items-center gap-1 whitespace-nowrap sm:gap-2"
+          className="flex flex-none flex-nowrap items-center gap-1.5 whitespace-nowrap sm:gap-2"
           aria-label="Primary"
         >
           <a
