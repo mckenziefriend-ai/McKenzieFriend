@@ -46,7 +46,7 @@ export default function SiteHeader({ onHomeClick }: Props) {
       width={180}
       height={48}
       priority
-      className="h-6 sm:h-8 w-auto object-contain shrink-0"
+      className="h-[22px] sm:h-[30px] w-auto object-contain shrink-0"
     />
   );
 
