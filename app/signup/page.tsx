@@ -54,36 +54,45 @@ export default function SignupPage() {
             Secure access to your McKenzieFriend.ai workspace
           </p>
 
-          <p className="text-xs text-gray-500 text-center mt-2">
-            For litigants in person in England & Wales
-          </p>
-
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <input
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
 
-            <input
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                Email
+              </label>
+              <input
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                Password
+              </label>
+              <input
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg bg-black text-white font-medium hover:opacity-90 transition disabled:opacity-60"
+              className="w-full py-3 rounded-lg text-white font-medium transition disabled:opacity-60"
+              style={{ backgroundColor: "#0C1A2B" }}
             >
               {loading ? "Creating account..." : "Create account"}
             </button>
+
           </form>
 
           {error && (
@@ -94,7 +103,7 @@ export default function SignupPage() {
 
           <p className="text-sm text-gray-700 text-center mt-6">
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-black hover:underline">
+            <Link href="/login" className="font-medium hover:underline">
               Log in
             </Link>
           </p>
