@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SiteHeader from "./components/SiteHeader";
+import SignedOutPopup from "./components/SignedOutPopup";
 
 type SectionId = "top" | "paths" | "boundaries" | "who" | "cta";
 
@@ -26,180 +27,184 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <style jsx global>{`
-        html {
-          scroll-behavior: smooth;
-        }
-      `}</style>
+    <>
+      <SignedOutPopup />
 
-      <SiteHeader onHomeClick={() => scrollTo("top")} />
+      <div className="min-h-screen bg-white text-zinc-950">
+        <style jsx global>{`
+          html {
+            scroll-behavior: smooth;
+          }
+        `}</style>
 
-      {/* Hero */}
-      <section id="top" className="relative overflow-hidden">
-        <div className="hero-surface relative">
-          <div className="hero-grid absolute inset-0 pointer-events-none" />
-          <div className="hero-glow absolute inset-0 pointer-events-none" />
+        <SiteHeader onHomeClick={() => scrollTo("top")} />
 
-          <div className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6">
-            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
-              McKenzieFriend<span className="text-white/80">.ai</span>
-            </h1>
+        {/* Hero */}
+        <section id="top" className="relative overflow-hidden">
+          <div className="hero-surface relative">
+            <div className="hero-grid absolute inset-0 pointer-events-none" />
+            <div className="hero-glow absolute inset-0 pointer-events-none" />
 
-            <p className="mt-5 max-w-2xl text-white/80 sm:text-lg">
-              AI Preparation for Family Court. Independent McKenzie Friend Support.
-            </p>
+            <div className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6">
+              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
+                McKenzieFriend<span className="text-white/80">.ai</span>
+              </h1>
 
-            <div className="mt-6 space-y-2 text-white/70">
-              <p>For litigants in person in England &amp; Wales.</p>
-              <p className="text-xs text-white/60">
-                Not a law firm. Not regulated legal advice.
-              </p>
-            </div>
-
-            <div className="mt-10">
-              <a
-                href="/contact"
-                className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-white/90"
-              >
-                Contact us
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Two paths */}
-      <section id="paths" className="border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Two clear paths
-          </h2>
-
-          <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            <DecisionCard
-              title="AI preparation tools"
-              icon="🤖"
-              accent="from-sky-500/20 via-transparent to-transparent"
-            >
-              <p className="mt-2 text-sm text-zinc-700">
-                Tools to support preparation: structure, timelines, prompts, and document organisation.
+              <p className="mt-5 max-w-2xl text-white/80 sm:text-lg">
+                AI Preparation for Family Court. Independent McKenzie Friend Support.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-6 space-y-2 text-white/70">
+                <p>For litigants in person in England &amp; Wales.</p>
+                <p className="text-xs text-white/60">
+                  Not a law firm. Not regulated legal advice.
+                </p>
+              </div>
+
+              <div className="mt-10">
                 <a
                   href="/contact"
-                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-white/90"
                 >
                   Contact us
                 </a>
-
-                <button
-                  onClick={() => scrollTo("boundaries")}
-                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
-                >
-                  View limitations
-                </button>
               </div>
-            </DecisionCard>
-
-            <DecisionCard
-              title="Personal McKenzie Friend support"
-              icon="👤"
-              accent="from-amber-500/20 via-transparent to-transparent"
-            >
-              <p className="mt-2 text-sm text-zinc-700">
-                Practical assistance for litigants in person. Document organisation, note-taking, and quiet support in
-                court — subject to the court’s directions.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <a
-                  href="/contact"
-                  className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
-                >
-                  Proceed with personal support
-                </a>
-
-                <button
-                  onClick={() => scrollTo("boundaries")}
-                  className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
-                >
-                  View limitations
-                </button>
-              </div>
-            </DecisionCard>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Boundaries */}
-      <section id="boundaries" className="border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Boundaries
-          </h2>
-
-          <Card className="mt-10">
-            <Inset>
-              McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
-              <br />
-              <br />
-              AI tools provide general preparation support only.
-              <br />
-              <br />
-              Personal assistance does not include rights of audience or conduct of litigation unless permitted by the
-              court.
-            </Inset>
-          </Card>
-        </div>
-      </section>
-
-      {/* Who */}
-      <section id="who" className="border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Who this is for
-          </h2>
-
-          <Card className="mt-10">
-            Individuals representing themselves in the Family Court of England &amp; Wales who want clearer preparation
-            and structured information.
-          </Card>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section id="cta" className="border-t border-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <Card>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Get started
+        {/* Two paths */}
+        <section id="paths" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Two clear paths
             </h2>
 
-            <p className="mt-4 text-zinc-700">
-              Contact us to discuss your situation and the most suitable support.
-            </p>
-
-            <div className="mt-8">
-              <a
-                href="/contact"
-                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+            <div className="mt-12 grid gap-8 lg:grid-cols-2">
+              <DecisionCard
+                title="AI preparation tools"
+                icon="🤖"
+                accent="from-sky-500/20 via-transparent to-transparent"
               >
-                Contact us
-              </a>
-            </div>
-          </Card>
+                <p className="mt-2 text-sm text-zinc-700">
+                  Tools to support preparation: structure, timelines, prompts, and document organisation.
+                </p>
 
-          <footer className="mt-10 border-t border-zinc-200 pt-6 text-xs text-zinc-600">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
-              <span className="text-zinc-500">England &amp; Wales</span>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <a
+                    href="/contact"
+                    className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                  >
+                    Contact us
+                  </a>
+
+                  <button
+                    onClick={() => scrollTo("boundaries")}
+                    className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    View limitations
+                  </button>
+                </div>
+              </DecisionCard>
+
+              <DecisionCard
+                title="Personal McKenzie Friend support"
+                icon="👤"
+                accent="from-amber-500/20 via-transparent to-transparent"
+              >
+                <p className="mt-2 text-sm text-zinc-700">
+                  Practical assistance for litigants in person. Document organisation, note-taking, and quiet support in
+                  court — subject to the court’s directions.
+                </p>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <a
+                    href="/contact"
+                    className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                  >
+                    Proceed with personal support
+                  </a>
+
+                  <button
+                    onClick={() => scrollTo("boundaries")}
+                    className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    View limitations
+                  </button>
+                </div>
+              </DecisionCard>
             </div>
-          </footer>
-        </div>
-      </section>
-    </div>
+          </div>
+        </section>
+
+        {/* Boundaries */}
+        <section id="boundaries" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Boundaries
+            </h2>
+
+            <Card className="mt-10">
+              <Inset>
+                McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
+                <br />
+                <br />
+                AI tools provide general preparation support only.
+                <br />
+                <br />
+                Personal assistance does not include rights of audience or conduct of litigation unless permitted by the
+                court.
+              </Inset>
+            </Card>
+          </div>
+        </section>
+
+        {/* Who */}
+        <section id="who" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Who this is for
+            </h2>
+
+            <Card className="mt-10">
+              Individuals representing themselves in the Family Court of England &amp; Wales who want clearer preparation
+              and structured information.
+            </Card>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section id="cta" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <Card>
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                Get started
+              </h2>
+
+              <p className="mt-4 text-zinc-700">
+                Contact us to discuss your situation and the most suitable support.
+              </p>
+
+              <div className="mt-8">
+                <a
+                  href="/contact"
+                  className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                >
+                  Contact us
+                </a>
+              </div>
+            </Card>
+
+            <footer className="mt-10 border-t border-zinc-200 pt-6 text-xs text-zinc-600">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
+                <span className="text-zinc-500">England &amp; Wales</span>
+              </div>
+            </footer>
+          </div>
+        </section>
+      </div>
+    </>
   );
 }
 
