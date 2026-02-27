@@ -18,9 +18,24 @@ export default async function DashboardPage() {
       <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         {/* Navy surface */}
         <div className="relative overflow-hidden rounded-3xl border border-zinc-200 shadow-sm">
-          <div className="dashboard-surface relative">
-            <div className="hero-grid absolute inset-0 pointer-events-none" />
-            <div className="hero-glow absolute inset-0 pointer-events-none" />
+          {/* Background gradient */}
+          <div className="relative bg-gradient-to-b from-[#0B1A2B] via-[#111827] to-[#0B1220]">
+            {/* Subtle grid */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.18]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(0deg, rgba(255,255,255,0.045), rgba(255,255,255,0.045) 1px, transparent 1px, transparent 64px), repeating-linear-gradient(90deg, rgba(255,255,255,0.035), rgba(255,255,255,0.035) 1px, transparent 1px, transparent 64px)",
+              }}
+            />
+            {/* Glow */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0.02) 38%, rgba(255,255,255,0) 60%)",
+              }}
+            />
 
             <div className="relative px-6 py-10 sm:px-10">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -118,44 +133,6 @@ export default async function DashboardPage() {
             <span className="text-zinc-500">England &amp; Wales</span>
           </div>
         </footer>
-
-        {/* Local page styles to ensure navy surface + subtle grid/glow */}
-        <style jsx global>{`
-          .dashboard-surface {
-            background: linear-gradient(
-              180deg,
-              #0b1a2b 0%,
-              #111827 70%,
-              #0b1220 100%
-            );
-          }
-          .hero-glow {
-            background: radial-gradient(
-              circle at 50% 40%,
-              rgba(255, 255, 255, 0.12) 0%,
-              rgba(255, 255, 255, 0.06) 18%,
-              rgba(255, 255, 255, 0.02) 38%,
-              rgba(255, 255, 255, 0) 60%
-            );
-          }
-          .hero-grid {
-            background-image: repeating-linear-gradient(
-                0deg,
-                rgba(255, 255, 255, 0.045),
-                rgba(255, 255, 255, 0.045) 1px,
-                transparent 1px,
-                transparent 64px
-              ),
-              repeating-linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.035),
-                rgba(255, 255, 255, 0.035) 1px,
-                transparent 1px,
-                transparent 64px
-              );
-            opacity: 0.18;
-          }
-        `}</style>
       </main>
     </div>
   );
