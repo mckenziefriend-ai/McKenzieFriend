@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import NextImage from "next/image";
+import { createClient } from "@/lib/supabase/browser";
 
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
@@ -15,6 +16,7 @@ type Props = {
 export default function SiteHeader({ onHomeClick }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean>(false);
 
   const isHome = pathname === "/";
   const isAbout = pathname === "/about";
@@ -24,6 +26,27 @@ export default function SiteHeader({ onHomeClick }: Props) {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Track auth state (client-side)
+  useEffect(() => {
+    const supabase = createClient();
+
+    let mounted = true;
+
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (mounted) setSignedIn(!!data.user);
+    })();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setSignedIn(!!session?.user);
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   /**
    * Buttons
@@ -40,12 +63,17 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const active =
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
-  /**
-   * Logo
-   * - Smaller on mobile so everything fits nicely
-   * - Normal size on desktop
-   * - Always keeps proportions
-   */
+  // Auth button styles (more prominent)
+  const authBase =
+    "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
+    "px-4 py-2 text-sm sm:px-5";
+
+  const authPrimary =
+    "bg-[#0C1A2B] text-white hover:bg-[#16263D] shadow-sm hover:shadow";
+
+  const authSecondary =
+    "border border-[#0C1A2B] text-[#0C1A2B] bg-white hover:bg-zinc-50";
+
   const Logo = (
     <NextImage
       src="/logo.png"
@@ -103,6 +131,39 @@ export default function SiteHeader({ onHomeClick }: Props) {
     </>
   );
 
+  const AuthLinks = useMemo(() => {
+    if (signedIn) {
+      return (
+        <a
+          href="/dashboard"
+          className={cn(authBase, authPrimary)}
+          onClick={() => setMobileOpen(false)}
+        >
+          Your Dashboard
+        </a>
+      );
+    }
+
+    return (
+      <>
+        <a
+          href="/login"
+          className={cn(authBase, authSecondary)}
+          onClick={() => setMobileOpen(false)}
+        >
+          Log in
+        </a>
+        <a
+          href="/signup"
+          className={cn(authBase, authPrimary)}
+          onClick={() => setMobileOpen(false)}
+        >
+          Sign up
+        </a>
+      </>
+    );
+  }, [signedIn]);
+
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -138,7 +199,12 @@ export default function SiteHeader({ onHomeClick }: Props) {
           <NavLinks />
         </nav>
 
-        {/* Mobile hamburger (buttons hidden on mobile, shown in menu) */}
+        {/* Desktop Auth (prominent) */}
+        <div className="hidden sm:flex items-center gap-2">
+          {AuthLinks}
+        </div>
+
+        {/* Mobile hamburger */}
         <div className="sm:hidden flex items-center">
           <button
             type="button"
@@ -148,7 +214,6 @@ export default function SiteHeader({ onHomeClick }: Props) {
             aria-controls="mobile-nav"
             onClick={() => setMobileOpen((v) => !v)}
           >
-            {/* Hamburger / Close icon */}
             {mobileOpen ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -196,6 +261,39 @@ export default function SiteHeader({ onHomeClick }: Props) {
           className="mx-auto max-w-7xl px-4 py-3 sm:px-6"
         >
           <div className="flex flex-col gap-2">
+            {/* Mobile auth first, prominent, full-width */}
+            <div className="flex flex-col gap-2 pb-2">
+              <div className="grid gap-2">
+                {signedIn ? (
+                  <a
+                    href="/dashboard"
+                    className={cn("w-full", authBase, authPrimary)}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Your Dashboard
+                  </a>
+                ) : (
+                  <>
+                    <a
+                      href="/signup"
+                      className={cn("w-full", authBase, authPrimary)}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Sign up
+                    </a>
+                    <a
+                      href="/login"
+                      className={cn("w-full", authBase, authSecondary)}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Log in
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile nav links */}
             <NavLinks mobile />
           </div>
         </nav>
