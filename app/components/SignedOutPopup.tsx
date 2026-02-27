@@ -23,31 +23,29 @@ export default function SignedOutPopup() {
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-6">
-      <div className="pointer-events-none absolute inset-0 bg-black/10" />
-      <div className="pointer-events-auto w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white">
-            ✓
-          </div>
-
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-zinc-900">
-              You have been signed out of your McKenzieFriend.ai account.
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+return (
+  <div className="fixed right-4 top-20 z-[9999] sm:right-6 sm:top-24">
+    <div className="w-[min(92vw,420px)] rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white">
+          ✓
         </div>
+
+        <div className="flex-1">
+          <div className="text-sm font-semibold text-zinc-900">
+            You have been signed out of your McKenzieFriend.ai account.
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
+          aria-label="Close"
+        >
+          ✕
+        </button>
       </div>
     </div>
-  );
-}
+  </div>
+);
