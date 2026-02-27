@@ -61,7 +61,7 @@ export default function SignupPage() {
                 Email
               </label>
               <input
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#0C1A2B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
