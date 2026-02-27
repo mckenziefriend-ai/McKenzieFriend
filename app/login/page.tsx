@@ -51,35 +51,48 @@ export default function LoginPage() {
           </h1>
 
           <p className="text-sm text-gray-600 text-center mt-2">
-            Log in to continue to your legal AI workspace
+            Log in to continue to your workspace
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <input
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
 
-            <input
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                Email
+              </label>
+              <input
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                Password
+              </label>
+              <input
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg bg-black text-white font-medium hover:opacity-90 transition disabled:opacity-60"
+              className="w-full py-3 rounded-lg text-white font-medium transition disabled:opacity-60"
+              style={{ backgroundColor: "#0C1A2B" }}
             >
               {loading ? "Logging in..." : "Log in"}
             </button>
+
           </form>
 
           {error && (
@@ -90,7 +103,7 @@ export default function LoginPage() {
 
           <p className="text-sm text-gray-700 text-center mt-6">
             Don’t have an account?{" "}
-            <Link href="/signup" className="font-medium text-black hover:underline">
+            <Link href="/signup" className="font-medium hover:underline">
               Sign up
             </Link>
           </p>
