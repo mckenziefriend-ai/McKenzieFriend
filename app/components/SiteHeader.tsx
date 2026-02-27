@@ -30,7 +30,6 @@ export default function SiteHeader({ onHomeClick }: Props) {
   // Track auth state (client-side)
   useEffect(() => {
     const supabase = createClient();
-
     let mounted = true;
 
     (async () => {
@@ -49,9 +48,8 @@ export default function SiteHeader({ onHomeClick }: Props) {
   }, []);
 
   /**
-   * Buttons
-   * - Mobile: compact but readable
-   * - Desktop: normal
+   * Shared button base (nav + auth)
+   * Keeps sizing consistent across the header.
    */
   const navBtn =
     "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
@@ -63,16 +61,16 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const active =
     "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
 
-  // Auth button styles (more prominent)
-  const authBase =
-    "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
-    "px-4 py-2 text-sm sm:px-5";
+  // Auth buttons: prominent but same “family” as nav pills
+  const authPrimary = cn(
+    navBtn,
+    "border border-transparent bg-[#0C1A2B] text-white hover:bg-[#16263D] shadow-sm"
+  );
 
-  const authPrimary =
-    "bg-[#0C1A2B] text-white hover:bg-[#16263D] shadow-sm hover:shadow";
-
-  const authSecondary =
-    "border border-[#0C1A2B] text-[#0C1A2B] bg-white hover:bg-zinc-50";
+  const authSecondary = cn(
+    navBtn,
+    "border border-[#0C1A2B] text-[#0C1A2B] bg-white hover:bg-zinc-50"
+  );
 
   const Logo = (
     <NextImage
@@ -131,14 +129,10 @@ export default function SiteHeader({ onHomeClick }: Props) {
     </>
   );
 
-  const AuthLinks = useMemo(() => {
+  const DesktopAuth = useMemo(() => {
     if (signedIn) {
       return (
-        <a
-          href="/dashboard"
-          className={cn(authBase, authPrimary)}
-          onClick={() => setMobileOpen(false)}
-        >
+        <a href="/dashboard" className={authPrimary}>
           Your Dashboard
         </a>
       );
@@ -146,105 +140,102 @@ export default function SiteHeader({ onHomeClick }: Props) {
 
     return (
       <>
-        <a
-          href="/login"
-          className={cn(authBase, authSecondary)}
-          onClick={() => setMobileOpen(false)}
-        >
+        <a href="/login" className={authSecondary}>
           Log in
         </a>
-        <a
-          href="/signup"
-          className={cn(authBase, authPrimary)}
-          onClick={() => setMobileOpen(false)}
-        >
+        <a href="/signup" className={authPrimary}>
           Sign up
         </a>
       </>
     );
-  }, [signedIn]);
+  }, [signedIn, authPrimary, authSecondary]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        {/* Brand */}
-        {onHomeClick ? (
-          <button
-            onClick={() => {
-              setMobileOpen(false);
-              onHomeClick();
-            }}
-            className={BrandClasses}
-            aria-label="Go to home"
-            type="button"
-          >
-            {Logo}
-          </button>
-        ) : (
-          <a
-            href="/"
-            className={BrandClasses}
-            aria-label="Go to home"
-            onClick={() => setMobileOpen(false)}
-          >
-            {Logo}
-          </a>
-        )}
-
-        {/* Desktop Nav */}
-        <nav
-          className="hidden sm:flex flex-none flex-nowrap items-center gap-2"
-          aria-label="Primary"
-        >
-          <NavLinks />
-        </nav>
-
-        {/* Desktop Auth (prominent) */}
-        <div className="hidden sm:flex items-center gap-2">
-          {AuthLinks}
-        </div>
-
-        {/* Mobile hamburger */}
-        <div className="sm:hidden flex items-center">
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white p-2 text-zinc-800 hover:bg-zinc-50"
-            aria-label="Open menu"
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-nav"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            {mobileOpen ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5"
+      {/* Desktop uses 3-column grid so nav is truly centered */}
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+        <div className="flex items-center justify-between sm:grid sm:grid-cols-3 sm:items-center">
+          {/* Left: Brand */}
+          <div className="flex items-center sm:justify-start">
+            {onHomeClick ? (
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  onHomeClick();
+                }}
+                className={BrandClasses}
+                aria-label="Go to home"
+                type="button"
               >
-                <path d="M18 6 6 18" />
-                <path d="M6 6l12 12" />
-              </svg>
+                {Logo}
+              </button>
             ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5"
+              <a
+                href="/"
+                className={BrandClasses}
+                aria-label="Go to home"
+                onClick={() => setMobileOpen(false)}
               >
-                <path d="M4 6h16" />
-                <path d="M4 12h16" />
-                <path d="M4 18h16" />
-              </svg>
+                {Logo}
+              </a>
             )}
-          </button>
+          </div>
+
+          {/* Center: Desktop Nav (truly centered) */}
+          <nav
+            className="hidden sm:flex items-center justify-center gap-2"
+            aria-label="Primary"
+          >
+            <NavLinks />
+          </nav>
+
+          {/* Right: Desktop Auth */}
+          <div className="hidden sm:flex items-center justify-end gap-2">
+            {DesktopAuth}
+          </div>
+
+          {/* Mobile hamburger (shown only on mobile) */}
+          <div className="sm:hidden flex items-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white p-2 text-zinc-800 hover:bg-zinc-50"
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav"
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              {mobileOpen ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5"
+                >
+                  <path d="M4 6h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -261,36 +252,34 @@ export default function SiteHeader({ onHomeClick }: Props) {
           className="mx-auto max-w-7xl px-4 py-3 sm:px-6"
         >
           <div className="flex flex-col gap-2">
-            {/* Mobile auth first, prominent, full-width */}
-            <div className="flex flex-col gap-2 pb-2">
-              <div className="grid gap-2">
-                {signedIn ? (
+            {/* Mobile auth row (two-column, cleaner) */}
+            <div className="grid grid-cols-2 gap-2 pb-2">
+              {signedIn ? (
+                <a
+                  href="/dashboard"
+                  className={cn(authPrimary, "col-span-2 w-full")}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Your Dashboard
+                </a>
+              ) : (
+                <>
                   <a
-                    href="/dashboard"
-                    className={cn("w-full", authBase, authPrimary)}
+                    href="/signup"
+                    className={cn(authPrimary, "w-full")}
                     onClick={() => setMobileOpen(false)}
                   >
-                    Your Dashboard
+                    Sign up
                   </a>
-                ) : (
-                  <>
-                    <a
-                      href="/signup"
-                      className={cn("w-full", authBase, authPrimary)}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      Sign up
-                    </a>
-                    <a
-                      href="/login"
-                      className={cn("w-full", authBase, authSecondary)}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      Log in
-                    </a>
-                  </>
-                )}
-              </div>
+                  <a
+                    href="/login"
+                    className={cn(authSecondary, "w-full")}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Log in
+                  </a>
+                </>
+              )}
             </div>
 
             {/* Mobile nav links */}
