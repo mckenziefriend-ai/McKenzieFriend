@@ -37,8 +37,8 @@ export default function SignupPage() {
           <Image
             src="/logo.png"
             alt="Logo"
-            width={60}
-            height={60}
+            width={200}
+            height={200}
             priority
           />
         </div>
