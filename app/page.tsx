@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SiteHeader from "./components/SiteHeader";
+import { Suspense } from "react";
 import SignedOutPopup from "./components/SignedOutPopup";
 
 type SectionId = "top" | "paths" | "boundaries" | "who" | "cta";
@@ -27,10 +28,12 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+  <>
+    <Suspense fallback={null}>
       <SignedOutPopup />
+    </Suspense>
 
-      <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen bg-white text-zinc-950">
         <style jsx global>{`
           html {
             scroll-behavior: smooth;
