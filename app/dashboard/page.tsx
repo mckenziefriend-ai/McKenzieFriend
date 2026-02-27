@@ -12,77 +12,83 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const email = user.email ?? "Unknown";
-  const displayName =
-    (user.user_metadata?.full_name as string | undefined) ??
-    (user.user_metadata?.name as string | undefined) ??
-    "Account";
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        {/* Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              Dashboard
-            </h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              Signed in as <span className="font-medium text-zinc-900">{email}</span>
-            </p>
-          </div>
+        {/* Navy surface */}
+        <div className="relative overflow-hidden rounded-3xl border border-zinc-200 shadow-sm">
+          <div className="dashboard-surface relative">
+            <div className="hero-grid absolute inset-0 pointer-events-none" />
+            <div className="hero-glow absolute inset-0 pointer-events-none" />
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-            >
-              Home
-            </Link>
+            <div className="relative px-6 py-10 sm:px-10">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                    Dashboard
+                  </h1>
+                  <p className="mt-2 text-sm text-white/75">
+                    Signed in as{" "}
+                    <span className="font-medium text-white">{email}</span>
+                  </p>
+                </div>
 
-            <form action="/auth/signout" method="post">
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
-              >
-                Sign out
-              </button>
-            </form>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15"
+                  >
+                    Home
+                  </Link>
+
+                  <form action="/auth/signout" method="post">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-white/15 hover:bg-[#0A1726]"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div className="mt-8 grid gap-5 md:grid-cols-3">
+                <Tile
+                  title="Documents"
+                  desc="Upload and organise case documents."
+                  href="#"
+                />
+                <Tile
+                  title="Timeline"
+                  desc="Build a structured chronology."
+                  href="#"
+                />
+                <Tile
+                  title="Checklists"
+                  desc="Preparation steps and templates."
+                  href="#"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Content */}
+        {/* White section */}
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          {/* Welcome / Status */}
           <Card className="lg:col-span-2">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <h2 className="text-xl font-semibold">Welcome, {displayName}</h2>
-                <p className="mt-2 text-sm text-zinc-700">
-                  This is a clean shell dashboard. Plug your actual features into the
-                  tiles below (documents, timelines, uploads, chat, etc.).
-                </p>
-              </div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Getting started
+            </h2>
+            <p className="mt-2 text-sm text-zinc-700">
+              Choose a section to begin. Your workspace will appear here as tools
+              are enabled.
+            </p>
 
-              <Pill>Authenticated</Pill>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Stat label="Account" value="Active" />
-              <Stat label="User ID" value={user.id.slice(0, 8) + "…"} />
-              <Stat
-                label="Email verified"
-                value={user.email_confirmed_at ? "Yes" : "No"}
-              />
-              <Stat
-                label="Provider"
-                value={(user.app_metadata?.provider as string | undefined) ?? "email"}
-              />
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/contact"
-                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-3 text-sm font-semibold text-white hover:bg-[#0A1726]"
               >
                 Contact support
               </Link>
@@ -95,58 +101,15 @@ export default async function DashboardPage() {
             </div>
           </Card>
 
-          {/* Quick actions */}
           <Card>
-            <h3 className="text-lg font-semibold">Quick actions</h3>
-            <p className="mt-2 text-sm text-zinc-700">
-              Add links to the key flows you want users to hit first.
-            </p>
-
-            <div className="mt-6 space-y-3">
-              <ActionRow
-                title="Start a new case pack"
-                desc="Create a folder structure and checklist."
-                href="#"
-              />
-              <ActionRow
-                title="Upload documents"
-                desc="Drop PDFs and evidence bundles."
-                href="#"
-              />
-              <ActionRow
-                title="Generate a timeline"
-                desc="Turn notes into a structured chronology."
-                href="#"
-              />
-            </div>
-
-            <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600">
-              <div className="font-semibold text-zinc-800">Reminder</div>
+            <h3 className="text-lg font-semibold">Notes</h3>
+            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600">
+              <div className="font-semibold text-zinc-800">Boundary</div>
               <div className="mt-1">
-                This product is not a law firm and does not provide regulated legal
-                advice.
+                Not a law firm. Not regulated legal advice.
               </div>
             </div>
           </Card>
-
-          {/* Tiles */}
-          <div className="lg:col-span-3 grid gap-6 md:grid-cols-3">
-            <Tile
-              title="Documents"
-              desc="Storage + tagging + export-ready bundles."
-              badge="Coming soon"
-            />
-            <Tile
-              title="Prompts & templates"
-              desc="Structured prompts for statements, schedules, and checklists."
-              badge="Coming soon"
-            />
-            <Tile
-              title="Hearings"
-              desc="Dates, reminders, and court-day notes."
-              badge="Coming soon"
-            />
-          </div>
         </div>
 
         <footer className="mt-12 border-t border-zinc-200 pt-6 text-xs text-zinc-600">
@@ -155,6 +118,44 @@ export default async function DashboardPage() {
             <span className="text-zinc-500">England &amp; Wales</span>
           </div>
         </footer>
+
+        {/* Local page styles to ensure navy surface + subtle grid/glow */}
+        <style jsx global>{`
+          .dashboard-surface {
+            background: linear-gradient(
+              180deg,
+              #0b1a2b 0%,
+              #111827 70%,
+              #0b1220 100%
+            );
+          }
+          .hero-glow {
+            background: radial-gradient(
+              circle at 50% 40%,
+              rgba(255, 255, 255, 0.12) 0%,
+              rgba(255, 255, 255, 0.06) 18%,
+              rgba(255, 255, 255, 0.02) 38%,
+              rgba(255, 255, 255, 0) 60%
+            );
+          }
+          .hero-grid {
+            background-image: repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.045),
+                rgba(255, 255, 255, 0.045) 1px,
+                transparent 1px,
+                transparent 64px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.035),
+                rgba(255, 255, 255, 0.035) 1px,
+                transparent 1px,
+                transparent 64px
+              );
+            opacity: 0.18;
+          }
+        `}</style>
       </main>
     </div>
   );
@@ -183,24 +184,7 @@ function Card({
   );
 }
 
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-800">
-      {children}
-    </span>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-      <div className="text-xs font-semibold text-zinc-600">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-zinc-900">{value}</div>
-    </div>
-  );
-}
-
-function ActionRow({
+function Tile({
   title,
   desc,
   href,
@@ -212,42 +196,16 @@ function ActionRow({
   return (
     <Link
       href={href}
-      className="group block rounded-xl border border-zinc-200 bg-white p-4 hover:bg-zinc-50"
+      className="group relative block overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-6 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/15"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-sm font-semibold text-zinc-900">{title}</div>
-          <div className="mt-1 text-xs text-zinc-600">{desc}</div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
+      <div className="relative">
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-base font-semibold">{title}</h3>
+          <span className="text-white/60 group-hover:text-white/80">→</span>
         </div>
-        <div className="mt-0.5 text-zinc-400 group-hover:text-zinc-600">→</div>
+        <p className="mt-2 text-sm text-white/75">{desc}</p>
       </div>
     </Link>
-  );
-}
-
-function Tile({
-  title,
-  desc,
-  badge,
-}: {
-  title: string;
-  desc: string;
-  badge?: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-      <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/[0.03] via-transparent to-transparent" />
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold">{title}</h3>
-          {badge ? (
-            <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700">
-              {badge}
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-2 text-sm text-zinc-700">{desc}</p>
-      </div>
-    </div>
   );
 }
