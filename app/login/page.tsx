@@ -1,3 +1,4 @@
+// app/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,16 +34,13 @@ export default function LoginPage() {
 
   return (
     <section className="relative min-h-screen overflow-hidden">
-      
       <div className="hero-surface absolute inset-0">
         <div className="hero-grid absolute inset-0 pointer-events-none" />
         <div className="hero-glow absolute inset-0 pointer-events-none" />
       </div>
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
-
         <div className="w-full max-w-md rounded-2xl bg-white/90 backdrop-blur-xl shadow-2xl p-8 border border-white/20">
-
           <div className="flex justify-center mb-5">
             <Image src="/logo.png" alt="Logo" width={160} height={160} priority />
           </div>
@@ -55,11 +54,8 @@ export default function LoginPage() {
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Email
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">Email</label>
               <input
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#0C1A2B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
                 type="email"
@@ -71,32 +67,40 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Password
-              </label>
-              <input
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#0C1A2B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <label className="block text-sm text-gray-600 mb-1">Password</label>
+
+              <div className="relative">
+                <input
+                  className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 text-[#0C1A2B] placeholder-gray-400 caret-[#0C1A2B] focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-auto h-9 px-3 rounded-md text-sm font-medium text-[#0C1A2B]/80 hover:text-[#0C1A2B] hover:bg-zinc-100 transition"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
 
             <button
-  type="submit"
-  disabled={loading}
-  className="w-full py-3 rounded-lg text-white font-medium transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] bg-[#0C1A2B] hover:bg-[#16263D]"
->
-  {loading ? "Logging in..." : "Log in"}
-</button>
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-lg text-white font-medium transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] bg-[#0C1A2B] hover:bg-[#16263D]"
+            >
+              {loading ? "Logging in..." : "Log in"}
+            </button>
           </form>
 
           {error && (
-            <p className="text-sm text-red-600 mt-4 text-center">
-              {error}
-            </p>
+            <p className="text-sm text-red-600 mt-4 text-center">{error}</p>
           )}
 
           <p className="text-sm text-gray-700 text-center mt-6">
@@ -109,7 +113,6 @@ export default function LoginPage() {
           <p className="text-[11px] text-gray-500 text-center mt-6">
             Not a law firm. Not regulated legal advice.
           </p>
-
         </div>
       </div>
     </section>
