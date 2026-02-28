@@ -24,8 +24,10 @@ function formatDateUK(dateISO: string) {
 export default async function ExportChronologyPage({
   params,
 }: {
-  params: { caseid: string };
+  params: Promise<{ caseid: string }>;
 }) {
+  const { caseid: caseId } = await params;
+
   const supabase = await createClient();
 
   const {
@@ -43,8 +45,6 @@ export default async function ExportChronologyPage({
   const cookieStore = await cookies();
   const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
   if (!unlocked) redirect("/dashboard");
-
-  const caseId = params.caseid;
 
   const { data: caseRow } = await supabase
     .from("cases")
