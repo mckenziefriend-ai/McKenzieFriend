@@ -19,7 +19,9 @@ export default async function ChronologyPage() {
 
   if (!profile?.is_private_beta) redirect("/");
 
-  const unlocked = cookies().get("chrono_unlocked")?.value === "1";
+  const cookieStore = await cookies();
+  const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
+
   if (!unlocked) redirect("/dashboard");
 
   return (
@@ -27,9 +29,7 @@ export default async function ChronologyPage() {
       <h1 className="text-3xl font-semibold tracking-tight">
         Chronology generator
       </h1>
-      <p className="mt-2 text-sm text-zinc-700">
-        Private development screen.
-      </p>
+      <p className="mt-2 text-sm text-zinc-700">Private development screen.</p>
     </main>
   );
 }
