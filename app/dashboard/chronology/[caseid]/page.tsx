@@ -15,7 +15,7 @@ type EventRow = {
 export default async function CasePage({
   params,
 }: {
-  params: { caseid: string };
+  params: Record<string, string>;
 }) {
   const supabase = await createClient();
 
@@ -35,7 +35,9 @@ export default async function CasePage({
   const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
   if (!unlocked) redirect("/dashboard");
 
-  const caseId = params.caseid;
+  // ✅ works whether your folder is [caseid] or [caseId]
+  const caseId = params.caseid ?? params.caseId;
+  if (!caseId) redirect("/dashboard/chronology");
 
   const { data: caseRow } = await supabase
     .from("cases")
