@@ -6,7 +6,6 @@ export async function POST(req: Request) {
   const password = String(form.get("password") ?? "");
 
   const expected = process.env.DASHBOARD_CHRONOLOGY_PASSWORD ?? "";
-
   if (!expected) {
     return NextResponse.json(
       { error: "Missing DASHBOARD_CHRONOLOGY_PASSWORD env var" },
@@ -20,7 +19,8 @@ export async function POST(req: Request) {
     });
   }
 
-  cookies().set("chrono_unlocked", "1", {
+  const cookieStore = await cookies();
+  cookieStore.set("chrono_unlocked", "1", {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
