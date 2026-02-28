@@ -6,8 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 export default async function EditEventPage({
   params,
 }: {
-  params: { caseid: string; eventid: string };
+  params: Promise<{ caseid: string; eventid: string }>;
 }) {
+  const { caseid: caseId, eventid: eventId } = await params;
+
   const supabase = await createClient();
 
   const {
@@ -26,10 +28,6 @@ export default async function EditEventPage({
   const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
   if (!unlocked) redirect("/dashboard");
 
-  const caseId = params.caseid;
-  const eventId = params.eventid;
-
-  // Ensure case exists & belongs to user (RLS will enforce too)
   const { data: caseRow } = await supabase
     .from("cases")
     .select("id,title")
@@ -37,7 +35,6 @@ export default async function EditEventPage({
     .single();
   if (!caseRow) redirect("/dashboard/chronology");
 
-  // Load event (must belong to this case)
   const { data: ev } = await supabase
     .from("case_events")
     .select("id,case_id,event_date,date_unknown,summary,evidence")
@@ -82,9 +79,7 @@ export default async function EditEventPage({
       <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-semibold text-zinc-600">
-              EDIT EVENT
-            </div>
+            <div className="text-xs font-semibold text-zinc-600">EDIT EVENT</div>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight">
               {caseRow.title}
             </h1>
