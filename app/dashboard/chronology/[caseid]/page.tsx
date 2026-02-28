@@ -49,18 +49,19 @@ export default async function CasePage({
     .select("id,event_date,date_unknown,summary,evidence,created_at")
     .eq("case_id", caseId);
 
-  const sortedEvents = (events as EventRow[] | null)?.slice().sort((a, b) => {
-    const au = !!a.date_unknown || !a.event_date;
-    const bu = !!b.date_unknown || !b.event_date;
-    if (au !== bu) return au ? 1 : -1;
+  const sortedEvents =
+    (events as EventRow[] | null)?.slice().sort((a, b) => {
+      const au = !!a.date_unknown || !a.event_date;
+      const bu = !!b.date_unknown || !b.event_date;
+      if (au !== bu) return au ? 1 : -1;
 
-    if (a.event_date && b.event_date) {
-      if (a.event_date < b.event_date) return -1;
-      if (a.event_date > b.event_date) return 1;
-    }
+      if (a.event_date && b.event_date) {
+        if (a.event_date < b.event_date) return -1;
+        if (a.event_date > b.event_date) return 1;
+      }
 
-    return (a.created_at ?? "").localeCompare(b.created_at ?? "");
-  }) ?? [];
+      return (a.created_at ?? "").localeCompare(b.created_at ?? "");
+    }) ?? [];
 
   async function addEvent(formData: FormData) {
     "use server";
@@ -235,15 +236,24 @@ export default async function CasePage({
                       ) : null}
                     </div>
 
-                    <form action={deleteEvent}>
-                      <input type="hidden" name="event_id" value={ev.id} />
-                      <button
-                        type="submit"
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/dashboard/chronology/${caseId}/events/${ev.id}`}
                         className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
                       >
-                        Delete
-                      </button>
-                    </form>
+                        Edit
+                      </Link>
+
+                      <form action={deleteEvent}>
+                        <input type="hidden" name="event_id" value={ev.id} />
+                        <button
+                          type="submit"
+                          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 </div>
               ))}
