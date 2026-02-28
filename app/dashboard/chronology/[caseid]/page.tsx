@@ -1,253 +1,249 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+"use client";
 
-type EventRow = {
-  id: string;
-  event_date: string | null;
-  date_unknown: boolean | null;
-  summary: string;
-  evidence: string | null;
-  created_at: string | null;
-};
+import { useMemo, useState } from "react";
+import SiteHeader from "../components/SiteHeader";
 
-export default async function CasePage({
-  params,
-}: {
-  params: { caseId: string };
-}) {
-  const supabase = await createClient();
+function cn(...classes: Array<string | false | undefined | null>) {
+  return classes.filter(Boolean).join(" ");
+}
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+export default function ContactPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_private_beta")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.is_private_beta) redirect("/");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle"
+  );
+  const [error, setError] = useState<string | null>(null);
 
-  const cookieStore = await cookies();
-  const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
-  if (!unlocked) redirect("/dashboard");
+  const canSubmit = useMemo(() => {
+    const looksLikeEmail = email.includes("@") && email.includes(".");
+    return name.trim().length >= 2 && looksLikeEmail && message.trim().length >= 10;
+  }, [name, email, message]);
 
-  const { data: caseRow } = await supabase
-    .from("cases")
-    .select("id,title,created_at")
-    .eq("id", params.caseId)
-    .single();
-  if (!caseRow) redirect("/dashboard/chronology");
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
 
-  const { data: events } = await supabase
-    .from("case_events")
-    .select("id,event_date,date_unknown,summary,evidence,created_at")
-    .eq("case_id", params.caseId);
-
-  const sortedEvents = (events as EventRow[] | null)?.slice().sort((a, b) => {
-    // Unknown dates at the end
-    const au = !!a.date_unknown || !a.event_date;
-    const bu = !!b.date_unknown || !b.event_date;
-    if (au !== bu) return au ? 1 : -1;
-
-    // Both known: sort by date ascending
-    if (a.event_date && b.event_date) {
-      if (a.event_date < b.event_date) return -1;
-      if (a.event_date > b.event_date) return 1;
+    if (!canSubmit) {
+      setError("Please complete your name, a valid email, and a brief message.");
+      return;
     }
 
-    // Tie-breaker: created_at ascending
-    const ac = a.created_at ?? "";
-    const bc = b.created_at ?? "";
-    return ac.localeCompare(bc);
-  }) ?? [];
+    setStatus("submitting");
 
-  async function addEvent(formData: FormData) {
-    "use server";
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          message: message.trim(),
+        }),
+      });
 
-    const caseId = params.caseId;
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Submission failed.");
+      }
 
-    const dateUnknown = String(formData.get("date_unknown") ?? "") === "on";
-    const eventDateRaw = String(formData.get("event_date") ?? "").trim();
-    const summary = String(formData.get("summary") ?? "").trim();
-    const evidence = String(formData.get("evidence") ?? "").trim();
-
-    if (!summary) return;
-
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    await supabase.from("case_events").insert({
-      case_id: caseId,
-      date_unknown: dateUnknown,
-      event_date: dateUnknown || !eventDateRaw ? null : eventDateRaw,
-      summary,
-      evidence: evidence ? evidence : null,
-    });
-
-    redirect(`/dashboard/chronology/${caseId}`);
-  }
-
-  async function deleteEvent(formData: FormData) {
-    "use server";
-
-    const caseId = params.caseId;
-    const eventId = String(formData.get("event_id") ?? "");
-    if (!eventId) return;
-
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    await supabase.from("case_events").delete().eq("id", eventId);
-
-    redirect(`/dashboard/chronology/${caseId}`);
+      setStatus("success");
+    } catch (err: any) {
+      setStatus("error");
+      setError(err?.message || "Something went wrong. Please try again.");
+    }
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              {caseRow.title}
+    <main className="min-h-screen bg-white text-zinc-950">
+      <SiteHeader />
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="hero-surface relative">
+          <div className="hero-grid pointer-events-none absolute inset-0" />
+          <div className="hero-glow pointer-events-none absolute inset-0" />
+
+          <div className="mx-auto max-w-6xl px-4 py-16 text-white sm:px-6 sm:py-18">
+            <p className="text-xs font-semibold text-white/60">Contact</p>
+
+            <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
+              Enquire with McKenzieFriend<span className="text-white/80">.ai</span>
             </h1>
-            <p className="mt-2 text-sm text-zinc-700">
-              Add events. Keep it factual and short.
+
+            <p className="mt-6 max-w-3xl text-pretty text-base leading-7 text-white/80 sm:text-lg">
+              Use this form to enquire about independent McKenzie Friend support or AI preparation tools.
+              We’ll respond with next steps and any clarification questions.
             </p>
+
+            <div className="mt-6 max-w-2xl space-y-2">
+              <p className="text-sm leading-6 text-white/70 sm:text-base">
+                For litigants in person in England &amp; Wales.
+              </p>
+              <p className="text-xs leading-5 text-white/60">
+                Not a law firm. Not regulated legal advice.
+              </p>
+            </div>
           </div>
-
-          <Link
-            href="/dashboard/chronology"
-            className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-          >
-            Back
-          </Link>
         </div>
+      </section>
 
-        {/* Add event */}
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-lg font-semibold">Add an event</h2>
+      {/* Form */}
+      <section className="border-t border-zinc-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <div className="grid gap-10 lg:grid-cols-12">
+            {/* Left: guidance */}
+            <div className="lg:col-span-5">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                What to include
+              </h2>
 
-          <form action={addEvent} className="mt-4 grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Date
-                </label>
-                <input
-                  name="event_date"
-                  type="date"
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
+              <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <p className="text-sm font-semibold text-zinc-900">
+                  Helpful details (if you can)
+                </p>
+                <ul className="mt-4 space-y-2 text-sm leading-7 text-zinc-700">
+                  <li>• What’s happening and what you want help with.</li>
+                  <li>• Any deadlines or upcoming dates you’re working to.</li>
+                  <li>• What you have already prepared (documents, notes, timeline, etc.).</li>
+                </ul>
               </div>
 
-              <div className="flex items-end">
-                <label className="inline-flex items-center gap-2 text-sm text-zinc-700">
-                  <input
-                    name="date_unknown"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-zinc-300"
-                  />
-                  Date unknown
-                </label>
+              <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6">
+                <p className="text-sm font-semibold text-zinc-900">Boundaries</p>
+                <ul className="mt-4 space-y-2 text-sm leading-7 text-zinc-700">
+                  <li>• No regulated legal advice.</li>
+                  <li>• AI outputs are general and must be checked.</li>
+                  <li>• Personal support is subject to court permission and rules.</li>
+                </ul>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-zinc-700">
-                What happened
-              </label>
-              <textarea
-                name="summary"
-                placeholder="One or two sentences. Stick to facts."
-                className="mt-1 min-h-[96px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-              />
-            </div>
+            {/* Right: form */}
+            <div className="lg:col-span-7">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
+                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  Enquiry form
+                </h2>
 
-            <div>
-              <label className="text-xs font-semibold text-zinc-700">
-                Evidence (optional)
-              </label>
-              <input
-                name="evidence"
-                placeholder="e.g. WhatsApp messages, police ref, email from school"
-                className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-              />
-            </div>
+                {status === "success" ? (
+                  <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                    <p className="text-base font-semibold text-zinc-900">Message sent.</p>
+                    <p className="mt-2 text-sm leading-7 text-zinc-700">
+                      Thanks — your enquiry has been received. We’ll respond with next steps.
+                    </p>
 
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-              >
-                Add event
-              </button>
-            </div>
-          </form>
-        </div>
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                      <a
+                        href="/"
+                        className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
+                      >
+                        Back to home
+                      </a>
+                      <a
+                        href="/about"
+                        className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                      >
+                        About
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={onSubmit} className="mt-6 space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Full name" required>
+                        <input
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-zinc-900"
+                          placeholder="Your name"
+                          autoComplete="name"
+                        />
+                      </Field>
 
-        {/* Events list */}
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Events</h2>
-            <span className="text-xs text-zinc-500">
-              {sortedEvents.length} total
-            </span>
-          </div>
-
-          {sortedEvents.length > 0 ? (
-            <div className="mt-4 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
-              {sortedEvents.map((ev) => (
-                <div key={ev.id} className="bg-white p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-zinc-600">
-                        {ev.date_unknown || !ev.event_date
-                          ? "Date unknown"
-                          : new Date(ev.event_date).toLocaleDateString()}
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-zinc-900">
-                        {ev.summary}
-                      </div>
-                      {ev.evidence ? (
-                        <div className="mt-2 text-xs text-zinc-600">
-                          <span className="font-semibold text-zinc-700">
-                            Evidence:
-                          </span>{" "}
-                          {ev.evidence}
-                        </div>
-                      ) : null}
+                      <Field label="Email" required>
+                        <input
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-zinc-900"
+                          placeholder="you@example.com"
+                          autoComplete="email"
+                          inputMode="email"
+                        />
+                      </Field>
                     </div>
 
-                    <form action={deleteEvent}>
-                      <input type="hidden" name="event_id" value={ev.id} />
+                    <div>
+                      <label className="text-sm font-semibold text-zinc-900">
+                        Message <span className="text-zinc-500">(required)</span>
+                      </label>
+
+                      <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        rows={8}
+                        className="mt-3 w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-zinc-900"
+                        placeholder="Write your message here…"
+                      />
+                    </div>
+
+                    {error ? (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                        {error}
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <button
                         type="submit"
-                        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                        disabled={status === "submitting"}
+                        className={cn(
+                          "inline-flex items-center justify-center rounded-xl bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800",
+                          status === "submitting" && "pointer-events-none opacity-60"
+                        )}
                       >
-                        Delete
+                        {status === "submitting" ? "Sending…" : "Send enquiry"}
                       </button>
-                    </form>
-                  </div>
-                </div>
-              ))}
+
+                      <p className="text-xs text-zinc-600">
+                        By sending, you confirm you understand this is not regulated legal advice.
+                      </p>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-              No events yet. Add your first event above.
+          </div>
+
+          <footer className="mt-14 border-t border-zinc-200 pt-6 text-xs text-zinc-600">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
+              <span className="text-zinc-500">England &amp; Wales</span>
             </div>
-          )}
+          </footer>
         </div>
-      </main>
+      </section>
+    </main>
+  );
+}
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-zinc-900">
+        {label} {required ? <span className="text-zinc-500">*</span> : null}
+      </label>
+      <div className="mt-2">{children}</div>
     </div>
   );
 }
