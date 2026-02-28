@@ -5,26 +5,26 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Record<string, string | string[] | undefined>;
+  params: Promise<{ caseid: string }>;
 }) {
-  const raw = Object.values(params)[0];
-  const caseId = Array.isArray(raw) ? raw[0] : raw;
+  const { caseid } = await params;
 
   return {
-    title: caseId ? `CASE ${caseId}` : "NO PARAMS",
+    title: caseid ? `CASE ${caseid}` : "NO PARAMS",
   };
 }
 
 export default async function CaseTracer({
   params,
 }: {
-  params: Record<string, string | string[] | undefined>;
+  params: Promise<{ caseid: string }>;
 }) {
-  // If this page is matched, params will NOT be {}
+  const p = await params;
+
   return (
     <div style={{ padding: 24, fontFamily: "system-ui" }}>
       <h1>Case tracer</h1>
-      <pre>{JSON.stringify(params, null, 2)}</pre>
+      <pre>{JSON.stringify(p, null, 2)}</pre>
     </div>
   );
 }
