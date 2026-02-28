@@ -3,6 +3,9 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import PrintButton from "../../components/PrintButton";
+import ExportHeaderFields from "../../components/ExportHeaderFields";
+
+export const dynamic = "force-dynamic";
 
 type EventRow = {
   id: string;
@@ -87,14 +90,37 @@ export default async function ExportChronologyPage({
       <style>{`
         @media print {
           .print-hidden { display: none !important; }
+          .print-only { display: block !important; }
           body { background: #fff !important; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { margin: 16mm; }
           table { page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
+
+          /* Page numbers */
+          .print-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-size: 10px;
+            color: #71717a;
+          }
+          .print-footer .page::after {
+            content: "Page " counter(page) " of " counter(pages);
+          }
         }
+        .print-only { display: none; }
       `}</style>
+
+      {/* Print footer (only shows on print) */}
+      <div className="print-footer print-only">
+        <div className="flex items-center justify-between">
+          <div>Chronology of Events</div>
+          <div className="page" />
+        </div>
+      </div>
 
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
         <div className="print-hidden flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -118,6 +144,12 @@ export default async function ExportChronologyPage({
           </div>
         </div>
 
+        {/* Optional case details (prints into the doc) */}
+        <div className="mt-6">
+          <ExportHeaderFields />
+        </div>
+
+        {/* Main header card */}
         <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8 print:shadow-none">
           <div className="text-xs font-semibold text-zinc-600">
             CHRONOLOGY OF EVENTS
@@ -127,20 +159,22 @@ export default async function ExportChronologyPage({
             {caseRow.title}
           </h1>
 
-          <div className="mt-3 text-xs text-zinc-600">
-            Generated: {generatedOn}
-          </div>
+          <div className="mt-3 text-xs text-zinc-600">Generated: {generatedOn}</div>
 
           <div className="mt-6 text-sm text-zinc-800">
             <div className="font-semibold">Notes</div>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700">
-              <li>Entries are provided by the user and presented in date order.</li>
+              <li>
+                This chronology summarises events in date order based on the
+                information provided.
+              </li>
               <li>“Date unknown” entries are listed separately at the end.</li>
-              <li>Keep language factual and specific.</li>
+              <li>Keep language factual, specific, and concise.</li>
             </ul>
           </div>
         </div>
 
+        {/* Dated */}
         <div className="mt-8">
           <h2 className="text-sm font-semibold text-zinc-900">Dated events</h2>
 
@@ -148,6 +182,7 @@ export default async function ExportChronologyPage({
             <table className="w-full border-collapse text-sm">
               <thead className="bg-zinc-50">
                 <tr className="text-left text-xs font-semibold text-zinc-700">
+                  <th className="w-[56px] border-b border-zinc-200 px-4 py-3">No.</th>
                   <th className="w-[140px] border-b border-zinc-200 px-4 py-3">
                     Date
                   </th>
@@ -159,8 +194,11 @@ export default async function ExportChronologyPage({
               </thead>
               <tbody>
                 {dated.length > 0 ? (
-                  dated.map((r) => (
+                  dated.map((r, idx) => (
                     <tr key={r.id} className="align-top">
+                      <td className="border-b border-zinc-200 px-4 py-3 text-xs font-semibold text-zinc-700">
+                        {idx + 1}
+                      </td>
                       <td className="border-b border-zinc-200 px-4 py-3 text-xs font-semibold text-zinc-700">
                         {formatDateUK(r.event_date!)}
                       </td>
@@ -174,7 +212,7 @@ export default async function ExportChronologyPage({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="px-4 py-5 text-sm text-zinc-700">
+                    <td colSpan={4} className="px-4 py-5 text-sm text-zinc-700">
                       No dated events.
                     </td>
                   </tr>
@@ -184,15 +222,15 @@ export default async function ExportChronologyPage({
           </div>
         </div>
 
+        {/* Undated */}
         <div className="mt-10">
-          <h2 className="text-sm font-semibold text-zinc-900">
-            Undated events
-          </h2>
+          <h2 className="text-sm font-semibold text-zinc-900">Undated events</h2>
 
           <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm print:shadow-none">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-zinc-50">
                 <tr className="text-left text-xs font-semibold text-zinc-700">
+                  <th className="w-[56px] border-b border-zinc-200 px-4 py-3">No.</th>
                   <th className="w-[140px] border-b border-zinc-200 px-4 py-3">
                     Date
                   </th>
@@ -204,8 +242,11 @@ export default async function ExportChronologyPage({
               </thead>
               <tbody>
                 {undated.length > 0 ? (
-                  undated.map((r) => (
+                  undated.map((r, idx) => (
                     <tr key={r.id} className="align-top">
+                      <td className="border-b border-zinc-200 px-4 py-3 text-xs font-semibold text-zinc-700">
+                        {idx + 1}
+                      </td>
                       <td className="border-b border-zinc-200 px-4 py-3 text-xs font-semibold text-zinc-700">
                         Date unknown
                       </td>
@@ -219,7 +260,7 @@ export default async function ExportChronologyPage({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="px-4 py-5 text-sm text-zinc-700">
+                    <td colSpan={4} className="px-4 py-5 text-sm text-zinc-700">
                       No undated events.
                     </td>
                   </tr>
