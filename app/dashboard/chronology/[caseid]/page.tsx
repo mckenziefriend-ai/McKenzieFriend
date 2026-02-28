@@ -15,36 +15,114 @@ type EventRow = {
 export default async function CasePage({
   params,
 }: {
-  params: Record<string, string>;
+  params: { caseid: string };
 }) {
   const supabase = await createClient();
 
   const {
     data: { user },
+    error: userErr,
   } = await supabase.auth.getUser();
+
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("is_private_beta")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
   if (!profile?.is_private_beta) redirect("/");
 
   const cookieStore = await cookies();
   const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
   if (!unlocked) redirect("/dashboard");
 
-  // ✅ works whether your folder is [caseid] or [caseId]
-  const caseId = params.caseid ?? params.caseId;
-  if (!caseId) redirect("/dashboard/chronology");
+  const caseId = params.caseid;
 
-  const { data: caseRow } = await supabase
+  // ✅ IMPORTANT: use maybeSingle so we can see the real error
+  const { data: caseRow, error: caseErr } = await supabase
     .from("cases")
-    .select("id,title,created_at")
+    .select("id,title,created_at,user_id")
     .eq("id", caseId)
-    .single();
-  if (!caseRow) redirect("/dashboard/chronology");
+    .maybeSingle();
+
+  // If missing/blocked, show diagnostics instead of bouncing away
+  if (!caseRow) {
+    return (
+      <div className="min-h-screen bg-white text-zinc-950">
+        <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Case not accessible
+              </h1>
+              <p className="mt-2 text-sm text-zinc-700">
+                This page couldn’t load the case. The details below will tell us why.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/chronology"
+              className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
+            >
+              Back
+            </Link>
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="text-sm font-semibold text-zinc-900">Debug</div>
+
+            <div className="mt-3 grid gap-3 text-sm">
+              <div>
+                <span className="font-semibold">caseId:</span>{" "}
+                <span className="font-mono">{caseId}</span>
+              </div>
+              <div>
+                <span className="font-semibold">unlocked cookie:</span>{" "}
+                {String(unlocked)}
+              </div>
+              <div>
+                <span className="font-semibold">user id:</span>{" "}
+                <span className="font-mono">{user.id}</span>
+              </div>
+              <div>
+                <span className="font-semibold">user email:</span> {user.email}
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4">
+              <div>
+                <div className="text-xs font-semibold text-zinc-600">
+                  auth.getUser() error
+                </div>
+                <pre className="mt-2 overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700">
+                  {JSON.stringify(userErr, null, 2)}
+                </pre>
+              </div>
+
+              <div>
+                <div className="text-xs font-semibold text-zinc-600">
+                  profiles query error
+                </div>
+                <pre className="mt-2 overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700">
+                  {JSON.stringify(profileErr, null, 2)}
+                </pre>
+              </div>
+
+              <div>
+                <div className="text-xs font-semibold text-zinc-600">
+                  cases query error
+                </div>
+                <pre className="mt-2 overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700">
+                  {JSON.stringify(caseErr, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const { data: events } = await supabase
     .from("case_events")
@@ -238,24 +316,15 @@ export default async function CasePage({
                       ) : null}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/dashboard/chronology/${caseId}/events/${ev.id}`}
+                    <form action={deleteEvent}>
+                      <input type="hidden" name="event_id" value={ev.id} />
+                      <button
+                        type="submit"
                         className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
                       >
-                        Edit
-                      </Link>
-
-                      <form action={deleteEvent}>
-                        <input type="hidden" name="event_id" value={ev.id} />
-                        <button
-                          type="submit"
-                          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                        >
-                          Delete
-                        </button>
-                      </form>
-                    </div>
+                        Delete
+                      </button>
+                    </form>
                   </div>
                 </div>
               ))}
