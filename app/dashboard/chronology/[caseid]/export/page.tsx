@@ -77,14 +77,6 @@ export default async function ExportChronologyPage({
     .slice()
     .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
 
-  const generatedOn = new Date().toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <style>{`
@@ -117,19 +109,32 @@ export default async function ExportChronologyPage({
       {/* Print footer (only shows on print) */}
       <div className="print-footer print-only">
         <div className="flex items-center justify-between">
-          <div>Chronology of Events</div>
+          <div>Chronology</div>
           <div className="page" />
         </div>
       </div>
 
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="print-hidden flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Screen controls + disclaimers (NOT printed) */}
+        <div className="print-hidden flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-sm font-semibold text-zinc-900">
               Export preview
             </div>
             <div className="mt-1 text-xs text-zinc-600">
               Use Print to save as PDF.
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700">
+              <div className="font-semibold text-zinc-900">Before you export</div>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>Check spelling, dates, and names carefully.</li>
+                <li>Keep language factual and specific.</li>
+                <li>
+                  This tool helps draft documents and is not a substitute for
+                  legal advice.
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -144,33 +149,18 @@ export default async function ExportChronologyPage({
           </div>
         </div>
 
-        {/* Optional case details (prints into the doc) */}
+        {/* Formal court caption (prints) + optional inputs (screen) */}
         <div className="mt-6">
           <ExportHeaderFields />
         </div>
 
-        {/* Main header card */}
-        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8 print:shadow-none">
-          <div className="text-xs font-semibold text-zinc-600">
-            CHRONOLOGY OF EVENTS
+        {/* Print-facing title (clean, court-like) */}
+        <div className="mt-6">
+          <div className="text-center font-bold tracking-tight text-zinc-900">
+            CHRONOLOGY
           </div>
-
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+          <div className="mt-1 text-center text-sm text-zinc-700">
             {caseRow.title}
-          </h1>
-
-          <div className="mt-3 text-xs text-zinc-600">Generated: {generatedOn}</div>
-
-          <div className="mt-6 text-sm text-zinc-800">
-            <div className="font-semibold">Notes</div>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700">
-              <li>
-                This chronology summarises events in date order based on the
-                information provided.
-              </li>
-              <li>“Date unknown” entries are listed separately at the end.</li>
-              <li>Keep language factual, specific, and concise.</li>
-            </ul>
           </div>
         </div>
 
@@ -182,7 +172,9 @@ export default async function ExportChronologyPage({
             <table className="w-full border-collapse text-sm">
               <thead className="bg-zinc-50">
                 <tr className="text-left text-xs font-semibold text-zinc-700">
-                  <th className="w-[56px] border-b border-zinc-200 px-4 py-3">No.</th>
+                  <th className="w-[56px] border-b border-zinc-200 px-4 py-3">
+                    No.
+                  </th>
                   <th className="w-[140px] border-b border-zinc-200 px-4 py-3">
                     Date
                   </th>
@@ -230,7 +222,9 @@ export default async function ExportChronologyPage({
             <table className="w-full border-collapse text-sm">
               <thead className="bg-zinc-50">
                 <tr className="text-left text-xs font-semibold text-zinc-700">
-                  <th className="w-[56px] border-b border-zinc-200 px-4 py-3">No.</th>
+                  <th className="w-[56px] border-b border-zinc-200 px-4 py-3">
+                    No.
+                  </th>
                   <th className="w-[140px] border-b border-zinc-200 px-4 py-3">
                     Date
                   </th>
