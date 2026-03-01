@@ -3,7 +3,6 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import PrintButton from "../../components/PrintButton";
-import ExportHeaderFields from "../../components/ExportHeaderFields";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +21,24 @@ function formatDateUK(dateISO: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+function formatHearingUK(iso?: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function upperOrEmpty(s?: string | null) {
+  const v = (s ?? "").trim();
+  return v ? v.toUpperCase() : "";
 }
 
 export default async function ExportChronologyPage({
@@ -51,7 +68,9 @@ export default async function ExportChronologyPage({
 
   const { data: caseRow } = await supabase
     .from("cases")
-    .select("id,title,created_at")
+    .select(
+      "id,title,created_at,court_name,case_number,applicant,respondent,hearing_type,hearing_datetime,children_involved"
+    )
     .eq("id", caseId)
     .single();
   if (!caseRow) redirect("/dashboard/chronology");
@@ -77,6 +96,17 @@ export default async function ExportChronologyPage({
     .slice()
     .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
 
+  const hearingLineParts = [
+    caseRow.hearing_type ? String(caseRow.hearing_type).trim() : "",
+    caseRow.hearing_datetime ? formatHearingUK(caseRow.hearing_datetime) : "",
+  ].filter(Boolean);
+
+  const childrenLines =
+    String(caseRow.children_involved ?? "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <style>{`
@@ -90,7 +120,6 @@ export default async function ExportChronologyPage({
           tr { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
 
-          /* Page numbers */
           .print-footer {
             position: fixed;
             bottom: 0;
@@ -106,7 +135,6 @@ export default async function ExportChronologyPage({
         .print-only { display: none; }
       `}</style>
 
-      {/* Print footer (only shows on print) */}
       <div className="print-footer print-only">
         <div className="flex items-center justify-between">
           <div>Chronology</div>
@@ -126,7 +154,9 @@ export default async function ExportChronologyPage({
             </div>
 
             <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700">
-              <div className="font-semibold text-zinc-900">Before you export</div>
+              <div className="font-semibold text-zinc-900">
+                Before you export
+              </div>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>Check spelling, dates, and names carefully.</li>
                 <li>Keep language factual and specific.</li>
@@ -149,19 +179,66 @@ export default async function ExportChronologyPage({
           </div>
         </div>
 
-        {/* Formal court caption (prints) + optional inputs (screen) */}
-        <div className="mt-6">
-          <ExportHeaderFields />
+        {/* Printed caption */}
+        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm print:shadow-none sm:p-8">
+          <div className="text-xs font-semibold text-zinc-700">
+            {upperOrEmpty(
+              caseRow.court_name ? `IN THE ${caseRow.court_name}` : ""
+            )}
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div>
+              <div className="text-[11px] font-semibold text-zinc-600">
+                Applicant
+              </div>
+              <div className="mt-0.5 text-sm font-semibold text-zinc-900">
+                {caseRow.applicant ?? ""}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold text-zinc-600">
+                Respondent
+              </div>
+              <div className="mt-0.5 text-sm font-semibold text-zinc-900">
+                {caseRow.respondent ?? ""}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold text-zinc-600">
+                Case number
+              </div>
+              <div className="mt-0.5 text-sm font-semibold text-zinc-900">
+                {caseRow.case_number ?? ""}
+              </div>
+            </div>
+          </div>
+
+          {hearingLineParts.length > 0 ? (
+            <div className="mt-4 text-xs text-zinc-700">
+              <span className="font-semibold text-zinc-900">Hearing:</span>{" "}
+              {hearingLineParts.join(" • ")}
+            </div>
+          ) : null}
+
+          {childrenLines.length > 0 ? (
+            <div className="mt-4 text-xs text-zinc-700">
+              <div className="font-semibold text-zinc-900">Children:</div>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {childrenLines.map((c, i) => (
+                  <li key={`${c}-${i}`}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
 
-        {/* Print-facing title (clean, court-like) */}
-        <div className="mt-6">
-          <div className="text-center font-bold tracking-tight text-zinc-900">
+        {/* Document title */}
+        <div className="mt-6 text-center">
+          <div className="font-bold tracking-tight text-zinc-900">
             CHRONOLOGY
           </div>
-          <div className="mt-1 text-center text-sm text-zinc-700">
-            {caseRow.title}
-          </div>
+          <div className="mt-1 text-sm text-zinc-700">{caseRow.title}</div>
         </div>
 
         {/* Dated */}
