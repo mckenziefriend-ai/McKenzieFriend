@@ -128,6 +128,24 @@ export default async function CasePage({
     redirect(`/dashboard/chronology/${caseId}`);
   }
 
+  async function deleteCase(formData: FormData) {
+    "use server";
+
+    const confirm = String(formData.get("confirm") ?? "").trim();
+    if (confirm !== "DELETE") return;
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
+
+    // RLS ensures only owner can delete. FK cascade removes events.
+    await supabase.from("cases").delete().eq("id", caseId);
+
+    redirect("/dashboard/chronology");
+  }
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
@@ -223,7 +241,7 @@ export default async function CasePage({
           </form>
         </div>
 
-        {/* Dated */}
+        {/* Dated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold">Dated events</h2>
@@ -281,13 +299,11 @@ export default async function CasePage({
           )}
         </div>
 
-        {/* Undated */}
+        {/* Undated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold">Undated events</h2>
-            <span className="text-xs text-zinc-500">
-              {undated.length} total
-            </span>
+            <span className="text-xs text-zinc-500">{undated.length} total</span>
           </div>
 
           {undated.length > 0 ? (
@@ -339,6 +355,34 @@ export default async function CasePage({
               No undated events.
             </div>
           )}
+        </div>
+
+        {/* Danger zone */}
+        <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 p-6 sm:p-8">
+          <div className="text-sm font-semibold text-red-900">
+            Delete this case
+          </div>
+          <div className="mt-1 text-sm text-red-800">
+            This permanently deletes the case and all events. This cannot be
+            undone.
+          </div>
+
+          <form action={deleteCase} className="mt-4 grid gap-3 sm:max-w-sm">
+            <label className="text-xs font-semibold text-red-900">
+              Type <span className="font-bold">DELETE</span> to confirm
+            </label>
+            <input
+              name="confirm"
+              className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-red-300"
+              placeholder="DELETE"
+            />
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+            >
+              Permanently delete case
+            </button>
+          </form>
         </div>
       </main>
     </div>
