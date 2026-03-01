@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import CourtAutocomplete from "@/app/dashboard/chronology/components/CourtAutocomplete";
+import CourtAutocomplete from "../components/CourtAutocomplete";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,6 @@ function formatDateUK(dateISO: string) {
   });
 }
 
-// For datetime-local input
 function toDatetimeLocal(iso?: string | null) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -34,20 +33,10 @@ function toDatetimeLocal(iso?: string | null) {
   )}:${pad(d.getMinutes())}`;
 }
 
-// From datetime-local -> ISO (UTC). Good enough for now.
 function fromDatetimeLocal(v: string) {
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString();
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ caseid: string }>;
-}) {
-  const { caseid } = await params;
-  return { title: `Chronology • ${caseid}` };
 }
 
 export default async function CasePage({
@@ -75,14 +64,16 @@ export default async function CasePage({
   const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
   if (!unlocked) redirect("/dashboard");
 
-  const { data: caseRow } = await supabase
+  const { data: caseRow, error: caseErr } = await supabase
     .from("cases")
     .select(
-      "id,title,created_at,court_name,court_slug,case_number,applicant,respondent,hearing_type,hearing_datetime,children_involved"
+      "id,title,created_at,court_name,court_slug,case_number,hearing_title,hearing_datetime,proceedings_heading,proceedings_lines,applicant,respondent,children_involved"
     )
     .eq("id", caseId)
     .single();
-  if (!caseRow) redirect("/dashboard/chronology");
+
+  // If this errors, don't silently bounce — bounce to list (keeps behaviour clean)
+  if (caseErr || !caseRow) redirect("/dashboard/chronology");
 
   const { data: events } = await supabase
     .from("case_events")
@@ -111,9 +102,11 @@ export default async function CasePage({
     const court_name = String(formData.get("court_name") ?? "").trim();
     const court_slug = String(formData.get("court_slug") ?? "").trim();
     const case_number = String(formData.get("case_number") ?? "").trim();
+
     const applicant = String(formData.get("applicant") ?? "").trim();
     const respondent = String(formData.get("respondent") ?? "").trim();
-    const hearing_type = String(formData.get("hearing_type") ?? "").trim();
+
+    const hearing_title = String(formData.get("hearing_title") ?? "").trim();
     const hearing_dt_raw = String(formData.get("hearing_datetime") ?? "").trim();
     const children_involved = String(formData.get("children_involved") ?? "").trim();
 
@@ -134,7 +127,7 @@ export default async function CasePage({
         case_number: case_number || null,
         applicant: applicant || null,
         respondent: respondent || null,
-        hearing_type: hearing_type || null,
+        hearing_title: hearing_title || null,
         hearing_datetime,
         children_involved: children_involved || null,
       })
@@ -230,7 +223,7 @@ export default async function CasePage({
           </div>
         </div>
 
-        {/* Court heading (saved to case) */}
+        {/* Court heading */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <h2 className="text-lg font-semibold">Court heading</h2>
 
@@ -258,7 +251,7 @@ export default async function CasePage({
                 </label>
                 <input
                   name="applicant"
-                  defaultValue={caseRow.applicant ?? ""}
+                  defaultValue={(caseRow as any).applicant ?? ""}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                 />
               </div>
@@ -269,25 +262,26 @@ export default async function CasePage({
                 </label>
                 <input
                   name="respondent"
-                  defaultValue={caseRow.respondent ?? ""}
+                  defaultValue={(caseRow as any).respondent ?? ""}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-zinc-700">
-                  Hearing type
+                  Hearing title
                 </label>
                 <input
-                  name="hearing_type"
-                  defaultValue={caseRow.hearing_type ?? ""}
+                  name="hearing_title"
+                  defaultValue={caseRow.hearing_title ?? ""}
+                  placeholder="e.g. FHDRA"
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-zinc-700">
-                  Hearing date
+                  Hearing date/time
                 </label>
                 <input
                   name="hearing_datetime"
@@ -300,11 +294,11 @@ export default async function CasePage({
 
             <div>
               <label className="text-xs font-semibold text-zinc-700">
-                Children involved
+                Children (optional)
               </label>
               <textarea
                 name="children_involved"
-                defaultValue={caseRow.children_involved ?? ""}
+                defaultValue={(caseRow as any).children_involved ?? ""}
                 placeholder="Name (DOB) — one per line"
                 className="mt-1 min-h-[90px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
               />
@@ -328,9 +322,7 @@ export default async function CasePage({
           <form action={addEvent} className="mt-4 grid gap-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Date
-                </label>
+                <label className="text-xs font-semibold text-zinc-700">Date</label>
                 <input
                   name="event_date"
                   type="date"
@@ -383,7 +375,7 @@ export default async function CasePage({
           </form>
         </div>
 
-        {/* Dated events */}
+        {/* Events lists (unchanged) */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold">Dated events</h2>
@@ -441,7 +433,6 @@ export default async function CasePage({
           )}
         </div>
 
-        {/* Undated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold">Undated events</h2>
@@ -499,7 +490,7 @@ export default async function CasePage({
           )}
         </div>
 
-        {/* Export moved to bottom */}
+        {/* Export button near bottom */}
         <div className="mt-10 flex justify-end">
           <Link
             href={`/dashboard/chronology/${caseId}/export`}
@@ -511,12 +502,9 @@ export default async function CasePage({
 
         {/* Danger zone */}
         <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-6 sm:p-8">
-          <div className="text-sm font-semibold text-red-900">
-            Delete this case
-          </div>
+          <div className="text-sm font-semibold text-red-900">Delete this case</div>
           <div className="mt-1 text-sm text-red-800">
-            This permanently deletes the case and all events. This cannot be
-            undone.
+            This permanently deletes the case and all events. This cannot be undone.
           </div>
 
           <form action={deleteCase} className="mt-4 grid gap-3 sm:max-w-sm">
