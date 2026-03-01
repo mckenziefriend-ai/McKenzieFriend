@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import CourtAutocomplete from "../components/CourtAutocomplete";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,24 @@ function formatDateUK(dateISO: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+// For datetime-local input
+function toDatetimeLocal(iso?: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+// From datetime-local -> ISO (UTC). Good enough for now.
+function fromDatetimeLocal(v: string) {
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
 }
 
 export async function generateMetadata({
@@ -58,7 +77,9 @@ export default async function CasePage({
 
   const { data: caseRow } = await supabase
     .from("cases")
-    .select("id,title,created_at")
+    .select(
+      "id,title,created_at,court_name,court_slug,case_number,applicant,respondent,hearing_type,hearing_datetime,children_involved"
+    )
     .eq("id", caseId)
     .single();
   if (!caseRow) redirect("/dashboard/chronology");
@@ -83,6 +104,44 @@ export default async function CasePage({
     .filter((r) => r.date_unknown || !r.event_date)
     .slice()
     .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
+
+  async function saveCourtHeading(formData: FormData) {
+    "use server";
+
+    const court_name = String(formData.get("court_name") ?? "").trim();
+    const court_slug = String(formData.get("court_slug") ?? "").trim();
+    const case_number = String(formData.get("case_number") ?? "").trim();
+    const applicant = String(formData.get("applicant") ?? "").trim();
+    const respondent = String(formData.get("respondent") ?? "").trim();
+    const hearing_type = String(formData.get("hearing_type") ?? "").trim();
+    const hearing_dt_raw = String(formData.get("hearing_datetime") ?? "").trim();
+    const children_involved = String(formData.get("children_involved") ?? "").trim();
+
+    const hearing_datetime =
+      hearing_dt_raw.length > 0 ? fromDatetimeLocal(hearing_dt_raw) : null;
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
+
+    await supabase
+      .from("cases")
+      .update({
+        court_name: court_name || null,
+        court_slug: court_slug || null,
+        case_number: case_number || null,
+        applicant: applicant || null,
+        respondent: respondent || null,
+        hearing_type: hearing_type || null,
+        hearing_datetime,
+        children_involved: children_involved || null,
+      })
+      .eq("id", caseId);
+
+    redirect(`/dashboard/chronology/${caseId}`);
+  }
 
   async function addEvent(formData: FormData) {
     "use server";
@@ -140,7 +199,6 @@ export default async function CasePage({
     } = await supabase.auth.getUser();
     if (!user) redirect("/login");
 
-    // RLS ensures only owner can delete. FK cascade removes events.
     await supabase.from("cases").delete().eq("id", caseId);
 
     redirect("/dashboard/chronology");
@@ -164,19 +222,103 @@ export default async function CasePage({
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href={`/dashboard/chronology/${caseId}/export`}
-              className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-            >
-              Export
-            </Link>
-
-            <Link
               href="/dashboard/chronology"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
             >
               Back
             </Link>
           </div>
+        </div>
+
+        {/* Court heading (saved to case) */}
+        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 className="text-lg font-semibold">Court heading</h2>
+
+          <form action={saveCourtHeading} className="mt-5 grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <CourtAutocomplete
+                defaultName={caseRow.court_name ?? ""}
+                defaultSlug={caseRow.court_slug ?? ""}
+              />
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Case number
+                </label>
+                <input
+                  name="case_number"
+                  defaultValue={caseRow.case_number ?? ""}
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Applicant
+                </label>
+                <input
+                  name="applicant"
+                  defaultValue={caseRow.applicant ?? ""}
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Respondent
+                </label>
+                <input
+                  name="respondent"
+                  defaultValue={caseRow.respondent ?? ""}
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Hearing type
+                </label>
+                <input
+                  name="hearing_type"
+                  defaultValue={caseRow.hearing_type ?? ""}
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Hearing date
+                </label>
+                <input
+                  name="hearing_datetime"
+                  type="datetime-local"
+                  defaultValue={toDatetimeLocal(caseRow.hearing_datetime)}
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-zinc-700">
+                Children involved
+              </label>
+              <textarea
+                name="children_involved"
+                defaultValue={caseRow.children_involved ?? ""}
+                placeholder="Name (DOB) — one per line"
+                className="mt-1 min-h-[90px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
+              >
+                Save heading
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Add event */}
@@ -357,8 +499,18 @@ export default async function CasePage({
           )}
         </div>
 
+        {/* Export moved to bottom */}
+        <div className="mt-10 flex justify-end">
+          <Link
+            href={`/dashboard/chronology/${caseId}/export`}
+            className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
+          >
+            Export / Print
+          </Link>
+        </div>
+
         {/* Danger zone */}
-        <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 p-6 sm:p-8">
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-6 sm:p-8">
           <div className="text-sm font-semibold text-red-900">
             Delete this case
           </div>
