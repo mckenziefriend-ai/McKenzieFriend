@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import CourtAutocomplete from "@/app/dashboard/components/CourtAutocomplete";
+import ExportHeaderFields from "@/app/dashboard/components/ExportHeaderFields";
 
 export const dynamic = "force-dynamic";
 
@@ -23,23 +24,7 @@ function formatDateUK(dateISO: string) {
   });
 }
 
-function toDatetimeLocal(iso?: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
-}
-
-function fromDatetimeLocal(v: string) {
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
-}
-
-export default async function CasePage({
+export default async function CaseChronologyPage({
   params,
 }: {
   params: Promise<{ caseid: string }>;
@@ -64,16 +49,16 @@ export default async function CasePage({
   const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
   if (!unlocked) redirect("/dashboard");
 
-  const { data: caseRow, error: caseErr } = await supabase
+  const { data: caseRow } = await supabase
     .from("cases")
     .select(
-      "id,title,created_at,court_name,court_slug,case_number,hearing_title,hearing_datetime,proceedings_heading,proceedings_lines,applicant,respondent,children_involved"
+      "id,title,created_at,court_name,court_slug,case_number,hearing_title,hearing_datetime,proceedings_heading,proceedings_lines"
     )
     .eq("id", caseId)
     .single();
 
-  // If this errors, don't silently bounce — bounce to list (keeps behaviour clean)
-  if (caseErr || !caseRow) redirect("/dashboard/chronology");
+  // ✅ list page is /dashboard/cases now
+  if (!caseRow) redirect("/dashboard/cases");
 
   const { data: events } = await supabase
     .from("case_events")
@@ -95,46 +80,6 @@ export default async function CasePage({
     .filter((r) => r.date_unknown || !r.event_date)
     .slice()
     .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
-
-  async function saveCourtHeading(formData: FormData) {
-    "use server";
-
-    const court_name = String(formData.get("court_name") ?? "").trim();
-    const court_slug = String(formData.get("court_slug") ?? "").trim();
-    const case_number = String(formData.get("case_number") ?? "").trim();
-
-    const applicant = String(formData.get("applicant") ?? "").trim();
-    const respondent = String(formData.get("respondent") ?? "").trim();
-
-    const hearing_title = String(formData.get("hearing_title") ?? "").trim();
-    const hearing_dt_raw = String(formData.get("hearing_datetime") ?? "").trim();
-    const children_involved = String(formData.get("children_involved") ?? "").trim();
-
-    const hearing_datetime =
-      hearing_dt_raw.length > 0 ? fromDatetimeLocal(hearing_dt_raw) : null;
-
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    await supabase
-      .from("cases")
-      .update({
-        court_name: court_name || null,
-        court_slug: court_slug || null,
-        case_number: case_number || null,
-        applicant: applicant || null,
-        respondent: respondent || null,
-        hearing_title: hearing_title || null,
-        hearing_datetime,
-        children_involved: children_involved || null,
-      })
-      .eq("id", caseId);
-
-    redirect(`/dashboard/chronology/${caseId}`);
-  }
 
   async function addEvent(formData: FormData) {
     "use server";
@@ -160,14 +105,12 @@ export default async function CasePage({
       evidence: evidence ? evidence : null,
     });
 
-    redirect(`/dashboard/chronology/${caseId}`);
+    // ✅ come back to this page
+    redirect(`/dashboard/cases/${caseId}/chronology`);
   }
 
-  async function deleteEvent(formData: FormData) {
+  async function saveHeader(formData: FormData) {
     "use server";
-
-    const eventId = String(formData.get("event_id") ?? "");
-    if (!eventId) return;
 
     const supabase = await createClient();
     const {
@@ -175,32 +118,28 @@ export default async function CasePage({
     } = await supabase.auth.getUser();
     if (!user) redirect("/login");
 
-    await supabase.from("case_events").delete().eq("id", eventId);
+    const payload = {
+      court_name: String(formData.get("court_name") ?? "").trim() || null,
+      court_slug: String(formData.get("court_slug") ?? "").trim() || null,
+      case_number: String(formData.get("case_number") ?? "").trim() || null,
+      hearing_title: String(formData.get("hearing_title") ?? "").trim() || null,
+      hearing_datetime:
+        String(formData.get("hearing_datetime") ?? "").trim() || null,
+      proceedings_heading:
+        String(formData.get("proceedings_heading") ?? "").trim() || null,
+      proceedings_lines:
+        String(formData.get("proceedings_lines") ?? "").trim() || null,
+    };
 
-    redirect(`/dashboard/chronology/${caseId}`);
-  }
+    await supabase.from("cases").update(payload).eq("id", caseId);
 
-  async function deleteCase(formData: FormData) {
-    "use server";
-
-    const confirm = String(formData.get("confirm") ?? "").trim();
-    if (confirm !== "DELETE") return;
-
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    await supabase.from("cases").delete().eq("id", caseId);
-
-    redirect("/dashboard/chronology");
+    redirect(`/dashboard/cases/${caseId}/chronology`);
   }
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-semibold text-zinc-600">
               CHRONOLOGY GENERATOR
@@ -215,7 +154,13 @@ export default async function CasePage({
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/dashboard/chronology"
+              href={`/dashboard/cases/${caseId}/export`}
+              className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
+            >
+              Export
+            </Link>
+            <Link
+              href="/dashboard/cases"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
             >
               Back
@@ -223,86 +168,23 @@ export default async function CasePage({
           </div>
         </div>
 
-        {/* Court heading */}
+        {/* Court heading / header fields */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-lg font-semibold">Court heading</h2>
+          <div className="text-sm font-semibold text-zinc-900">Court heading</div>
 
-          <form action={saveCourtHeading} className="mt-5 grid gap-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <CourtAutocomplete
-                defaultName={caseRow.court_name ?? ""}
-                defaultSlug={caseRow.court_slug ?? ""}
-              />
-
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Case number
-                </label>
-                <input
-                  name="case_number"
-                  defaultValue={caseRow.case_number ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Applicant
-                </label>
-                <input
-                  name="applicant"
-                  defaultValue={(caseRow as any).applicant ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Respondent
-                </label>
-                <input
-                  name="respondent"
-                  defaultValue={(caseRow as any).respondent ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Hearing title
-                </label>
-                <input
-                  name="hearing_title"
-                  defaultValue={caseRow.hearing_title ?? ""}
-                  placeholder="e.g. FHDRA"
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Hearing date/time
-                </label>
-                <input
-                  name="hearing_datetime"
-                  type="datetime-local"
-                  defaultValue={toDatetimeLocal(caseRow.hearing_datetime)}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-zinc-700">
-                Children (optional)
-              </label>
-              <textarea
-                name="children_involved"
-                defaultValue={(caseRow as any).children_involved ?? ""}
-                placeholder="Name (DOB) — one per line"
-                className="mt-1 min-h-[90px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-              />
-            </div>
+          <form action={saveHeader} className="mt-6 grid gap-4">
+            <ExportHeaderFields
+              initial={{
+                court_name: caseRow.court_name ?? "",
+                court_slug: caseRow.court_slug ?? "",
+                case_number: caseRow.case_number ?? "",
+                hearing_title: caseRow.hearing_title ?? "",
+                hearing_datetime: caseRow.hearing_datetime ?? "",
+                proceedings_heading: caseRow.proceedings_heading ?? "",
+                proceedings_lines: caseRow.proceedings_lines ?? "",
+              }}
+              CourtPicker={CourtAutocomplete}
+            />
 
             <div className="flex justify-end">
               <button
@@ -317,12 +199,14 @@ export default async function CasePage({
 
         {/* Add event */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-lg font-semibold">Add an event</h2>
+          <div className="text-lg font-semibold text-zinc-900">Add an event</div>
 
-          <form action={addEvent} className="mt-4 grid gap-4">
+          <form action={addEvent} className="mt-6 grid gap-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold text-zinc-700">Date</label>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Date
+                </label>
                 <input
                   name="event_date"
                   type="date"
@@ -349,7 +233,8 @@ export default async function CasePage({
               <textarea
                 name="summary"
                 placeholder="One or two sentences. Stick to facts."
-                className="mt-1 min-h-[96px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                className="mt-1 min-h-[120px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                required
               />
             </div>
 
@@ -375,154 +260,82 @@ export default async function CasePage({
           </form>
         </div>
 
-        {/* Events lists (unchanged) */}
+        {/* Dated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Dated events</h2>
-            <span className="text-xs text-zinc-500">{dated.length} total</span>
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-semibold text-zinc-900">Dated events</div>
+            <div className="text-xs text-zinc-500">{dated.length} total</div>
           </div>
 
-          {dated.length > 0 ? (
-            <div className="mt-4 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
-              {dated.map((ev) => (
-                <div key={ev.id} className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-zinc-600">
-                        {formatDateUK(ev.event_date!)}
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-zinc-900">
-                        {ev.summary}
-                      </div>
-                      {ev.evidence ? (
-                        <div className="mt-2 text-xs text-zinc-600">
-                          <span className="font-semibold text-zinc-700">
-                            Evidence:
-                          </span>{" "}
-                          {ev.evidence}
-                        </div>
-                      ) : null}
+          <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
+            {dated.length > 0 ? (
+              dated.map((ev) => (
+                <div key={ev.id} className="flex items-start justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-zinc-600">
+                      {ev.event_date ? formatDateUK(ev.event_date) : ""}
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/dashboard/chronology/${caseId}/events/${ev.id}`}
-                        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                      >
-                        Edit
-                      </Link>
-
-                      <form action={deleteEvent}>
-                        <input type="hidden" name="event_id" value={ev.id} />
-                        <button
-                          type="submit"
-                          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                        >
-                          Delete
-                        </button>
-                      </form>
+                    <div className="mt-1 text-sm font-semibold text-zinc-900">
+                      {ev.summary}
                     </div>
+                    {ev.evidence ? (
+                      <div className="mt-2 text-xs text-zinc-600">
+                        <span className="font-semibold text-zinc-700">Evidence:</span>{" "}
+                        {ev.evidence}
+                      </div>
+                    ) : null}
                   </div>
+
+                  <Link
+                    href={`/dashboard/cases/${caseId}/events/${ev.id}`}
+                    className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    Edit
+                  </Link>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-              No dated events yet.
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="p-4 text-sm text-zinc-700">No dated events yet.</div>
+            )}
+          </div>
         </div>
 
+        {/* Undated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Undated events</h2>
-            <span className="text-xs text-zinc-500">{undated.length} total</span>
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-semibold text-zinc-900">Undated events</div>
+            <div className="text-xs text-zinc-500">{undated.length} total</div>
           </div>
 
-          {undated.length > 0 ? (
-            <div className="mt-4 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
-              {undated.map((ev) => (
-                <div key={ev.id} className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-zinc-600">
-                        Date unknown
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-zinc-900">
-                        {ev.summary}
-                      </div>
-                      {ev.evidence ? (
-                        <div className="mt-2 text-xs text-zinc-600">
-                          <span className="font-semibold text-zinc-700">
-                            Evidence:
-                          </span>{" "}
-                          {ev.evidence}
-                        </div>
-                      ) : null}
+          <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
+            {undated.length > 0 ? (
+              undated.map((ev) => (
+                <div key={ev.id} className="flex items-start justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-zinc-600">Date unknown</div>
+                    <div className="mt-1 text-sm font-semibold text-zinc-900">
+                      {ev.summary}
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/dashboard/chronology/${caseId}/events/${ev.id}`}
-                        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                      >
-                        Edit
-                      </Link>
-
-                      <form action={deleteEvent}>
-                        <input type="hidden" name="event_id" value={ev.id} />
-                        <button
-                          type="submit"
-                          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                        >
-                          Delete
-                        </button>
-                      </form>
-                    </div>
+                    {ev.evidence ? (
+                      <div className="mt-2 text-xs text-zinc-600">
+                        <span className="font-semibold text-zinc-700">Evidence:</span>{" "}
+                        {ev.evidence}
+                      </div>
+                    ) : null}
                   </div>
+
+                  <Link
+                    href={`/dashboard/cases/${caseId}/events/${ev.id}`}
+                    className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    Edit
+                  </Link>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-              No undated events.
-            </div>
-          )}
-        </div>
-
-        {/* Export button near bottom */}
-        <div className="mt-10 flex justify-end">
-          <Link
-            href={`/dashboard/chronology/${caseId}/export`}
-            className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-          >
-            Export / Print
-          </Link>
-        </div>
-
-        {/* Danger zone */}
-        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-6 sm:p-8">
-          <div className="text-sm font-semibold text-red-900">Delete this case</div>
-          <div className="mt-1 text-sm text-red-800">
-            This permanently deletes the case and all events. This cannot be undone.
+              ))
+            ) : (
+              <div className="p-4 text-sm text-zinc-700">No undated events yet.</div>
+            )}
           </div>
-
-          <form action={deleteCase} className="mt-4 grid gap-3 sm:max-w-sm">
-            <label className="text-xs font-semibold text-red-900">
-              Type <span className="font-bold">DELETE</span> to confirm
-            </label>
-            <input
-              name="confirm"
-              className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-red-300"
-              placeholder="DELETE"
-            />
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
-            >
-              Permanently delete case
-            </button>
-          </form>
         </div>
       </main>
     </div>
