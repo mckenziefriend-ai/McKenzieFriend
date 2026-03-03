@@ -41,49 +41,6 @@ function upperOrEmpty(s?: string | null) {
   return v ? v.toUpperCase() : "";
 }
 
-function DebugPanel({
-  title,
-  data,
-  backHref,
-}: {
-  title: string;
-  data: any;
-  backHref: string;
-}) {
-  return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="text-sm font-semibold text-zinc-900">{title}</div>
-          <div className="mt-2 text-xs text-zinc-600">
-            This page is showing you why export redirected.
-          </div>
-
-          <pre className="mt-4 overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-[11px] text-zinc-800">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href={backHref}
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-            >
-              Back
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
 export default async function ExportChronologyPage({
   params,
 }: {
@@ -93,90 +50,35 @@ export default async function ExportChronologyPage({
 
   const supabase = await createClient();
 
-  // 1) Auth
   const {
     data: { user },
-    error: userErr,
   } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  if (!user) {
-    // Keep normal behaviour for auth (no need to debug here)
-    redirect("/login");
-  }
-
-  // 2) Private beta
-  const { data: profile, error: profileErr } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
     .select("is_private_beta")
     .eq("id", user.id)
     .single();
+  if (!profile?.is_private_beta) redirect("/");
 
-  if (!profile?.is_private_beta) {
-    return DebugPanel({
-      title: "Export blocked: profile not private beta",
-      backHref: `/dashboard/chronology/${caseId}`,
-      data: {
-        userId: user.id,
-        email: user.email,
-        profile,
-        profileErr,
-      },
-    });
-  }
-
-  // 3) Unlock cookie
   const cookieStore = await cookies();
-  const cookieVal = cookieStore.get("chrono_unlocked")?.value;
-  const unlocked = cookieVal === "1";
+  const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
+  if (!unlocked) redirect("/dashboard");
 
-  if (!unlocked) {
-    return DebugPanel({
-      title: "Export blocked: chronology not unlocked (cookie missing)",
-      backHref: `/dashboard/chronology/${caseId}`,
-      data: {
-        chrono_unlocked: cookieVal ?? null,
-        note:
-          "If this is null, your unlock route didn't set the cookie on this domain/path.",
-      },
-    });
-  }
-
-  // 4) Case row (match your actual schema)
-  const { data: caseRow, error: caseErr } = await supabase
+  const { data: caseRow } = await supabase
     .from("cases")
     .select(
-      "id,title,created_at,court_name,court_slug,case_number,hearing_title,hearing_datetime,proceedings_heading,proceedings_lines"
+      "id,title,created_at,court_name,case_number,hearing_title,hearing_datetime,proceedings_heading,proceedings_lines"
     )
     .eq("id", caseId)
     .single();
+  if (!caseRow) redirect("/dashboard/cases");
 
-  if (caseErr || !caseRow) {
-    return DebugPanel({
-      title: "Export blocked: case not accessible (RLS or select error)",
-      backHref: "/dashboard/chronology",
-      data: {
-        caseId,
-        caseErr,
-        caseRow,
-        hint:
-          "If caseErr mentions a missing column, your DB schema doesn't match the select(). If it mentions permission, RLS blocked it.",
-      },
-    });
-  }
-
-  // Events
-  const { data: events, error: eventsErr } = await supabase
+  const { data: events } = await supabase
     .from("case_events")
     .select("id,event_date,date_unknown,summary,evidence,created_at")
     .eq("case_id", caseId);
-
-  if (eventsErr) {
-    return DebugPanel({
-      title: "Export blocked: could not load events",
-      backHref: `/dashboard/chronology/${caseId}`,
-      data: { caseId, eventsErr },
-    });
-  }
 
   const rows = (events as EventRow[] | null) ?? [];
 
@@ -199,11 +101,11 @@ export default async function ExportChronologyPage({
     caseRow.hearing_datetime ? formatHearingUK(caseRow.hearing_datetime) : "",
   ].filter(Boolean);
 
-  const proceedingsHeading = String(
-    caseRow.proceedings_heading ?? "CHRONOLOGY"
-  ).trim();
-
-  const proceedingsLines = (caseRow.proceedings_lines as string[] | null) ?? [];
+  const proceedingsLines =
+    String(caseRow.proceedings_lines ?? "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
@@ -217,11 +119,31 @@ export default async function ExportChronologyPage({
           table { page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
+
+          .print-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-size: 10px;
+            color: #71717a;
+          }
+          .print-footer .page::after {
+            content: "Page " counter(page) " of " counter(pages);
+          }
         }
         .print-only { display: none; }
       `}</style>
 
+      <div className="print-footer print-only">
+        <div className="flex items-center justify-between">
+          <div>Chronology</div>
+          <div className="page" />
+        </div>
+      </div>
+
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
+        {/* Screen controls + disclaimers (NOT printed) */}
         <div className="print-hidden flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-sm font-semibold text-zinc-900">
@@ -230,12 +152,26 @@ export default async function ExportChronologyPage({
             <div className="mt-1 text-xs text-zinc-600">
               Use Print to save as PDF.
             </div>
+
+            <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700">
+              <div className="font-semibold text-zinc-900">
+                Before you export
+              </div>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>Check spelling, dates, and names carefully.</li>
+                <li>Keep language factual and specific.</li>
+                <li>
+                  This tool helps draft documents and is not a substitute for
+                  legal advice.
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
             <PrintButton />
             <Link
-              href={`/dashboard/chronology/${caseId}`}
+              href={`/dashboard/cases/${caseId}/chronology`}
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
             >
               Back
@@ -243,47 +179,52 @@ export default async function ExportChronologyPage({
           </div>
         </div>
 
+        {/* Printed caption */}
         <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm print:shadow-none sm:p-8">
           <div className="text-xs font-semibold text-zinc-700">
-            {upperOrEmpty(caseRow.court_name ? `IN THE ${caseRow.court_name}` : "")}
+            {upperOrEmpty(
+              caseRow.court_name ? `IN THE ${caseRow.court_name}` : ""
+            )}
           </div>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div>
-              <div className="text-[11px] font-semibold text-zinc-600">
-                Case number
-              </div>
-              <div className="mt-0.5 text-sm font-semibold text-zinc-900">
-                {caseRow.case_number ?? ""}
-              </div>
+          {caseRow.case_number ? (
+            <div className="mt-2 text-xs text-zinc-700">
+              <span className="font-semibold text-zinc-900">Case number:</span>{" "}
+              {caseRow.case_number}
             </div>
-          </div>
+          ) : null}
+
+          {caseRow.proceedings_heading ? (
+            <div className="mt-4 text-xs font-semibold text-zinc-900">
+              {upperOrEmpty(caseRow.proceedings_heading)}
+            </div>
+          ) : null}
 
           {proceedingsLines.length > 0 ? (
-            <div className="mt-4 text-xs text-zinc-700">
-              {proceedingsLines.map((l, i) => (
-                <div key={`${l}-${i}`} className="leading-5">
-                  {upperOrEmpty(l)}
-                </div>
+            <div className="mt-2 space-y-1 text-xs text-zinc-800">
+              {proceedingsLines.map((ln, i) => (
+                <div key={`${ln}-${i}`}>{ln}</div>
               ))}
             </div>
           ) : null}
 
           {hearingLineParts.length > 0 ? (
             <div className="mt-4 text-xs text-zinc-700">
-              <span className="font-semibold text-zinc-900">Hearing:</span>{" "}
+              <span className="font-semibold text-zinc-900">For:</span>{" "}
               {hearingLineParts.join(" • ")}
             </div>
           ) : null}
         </div>
 
+        {/* Document title */}
         <div className="mt-6 text-center">
           <div className="font-bold tracking-tight text-zinc-900">
-            {upperOrEmpty(proceedingsHeading)}
+            CHRONOLOGY
           </div>
           <div className="mt-1 text-sm text-zinc-700">{caseRow.title}</div>
         </div>
 
+        {/* Dated */}
         <div className="mt-8">
           <h2 className="text-sm font-semibold text-zinc-900">Dated events</h2>
 
@@ -333,6 +274,7 @@ export default async function ExportChronologyPage({
           </div>
         </div>
 
+        {/* Undated */}
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-zinc-900">Undated events</h2>
 
