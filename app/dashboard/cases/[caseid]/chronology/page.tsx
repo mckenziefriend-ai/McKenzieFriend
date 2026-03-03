@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import CourtAutocomplete from "@app/dashboard/components/CourtAutocomplete";
+import CourtAutocomplete from "@/app/dashboard/components/CourtAutocomplete";
 
 export const dynamic = "force-dynamic";
 
