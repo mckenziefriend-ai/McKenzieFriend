@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import PrintButton from "../../components/PrintButton";
+import PrintButton from "@/app/dashboard/components/PrintButton";
 
 export const dynamic = "force-dynamic";
 
