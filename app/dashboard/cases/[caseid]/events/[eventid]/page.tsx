@@ -1,4 +1,3 @@
-
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -34,7 +33,7 @@ export default async function EditEventPage({
     .select("id,title")
     .eq("id", caseId)
     .single();
-  if (!caseRow) redirect("/dashboard/chronology");
+  if (!caseRow) redirect("/dashboard/cases");
 
   const { data: ev } = await supabase
     .from("case_events")
@@ -43,7 +42,7 @@ export default async function EditEventPage({
     .eq("case_id", caseId)
     .single();
 
-  if (!ev) redirect(`/dashboard/chronology/${caseId}`);
+  if (!ev) redirect(`/dashboard/cases/${caseId}/chronology`);
 
   async function saveEvent(formData: FormData) {
     "use server";
@@ -72,7 +71,7 @@ export default async function EditEventPage({
       .eq("id", eventId)
       .eq("case_id", caseId);
 
-    redirect(`/dashboard/chronology/${caseId}`);
+    redirect(`/dashboard/cases/${caseId}/chronology`);
   }
 
   return (
@@ -87,7 +86,7 @@ export default async function EditEventPage({
           </div>
 
           <Link
-            href={`/dashboard/chronology/${caseId}`}
+            href={`/dashboard/cases/${caseId}/chronology`}
             className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
           >
             Back
@@ -146,7 +145,7 @@ export default async function EditEventPage({
 
             <div className="flex justify-end gap-3">
               <Link
-                href={`/dashboard/chronology/${caseId}`}
+                href={`/dashboard/cases/${caseId}/chronology`}
                 className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold hover:bg-zinc-50"
               >
                 Cancel
