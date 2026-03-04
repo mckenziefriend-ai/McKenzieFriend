@@ -87,7 +87,7 @@ export default async function CaseHomePage({
 
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="text-sm font-semibold text-zinc-900">
-              Documents
+              Documents (coming soon)
             </div>
             <div className="mt-1 text-sm text-zinc-600">
               Upload and organise case documents.
@@ -96,7 +96,7 @@ export default async function CaseHomePage({
 
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="text-sm font-semibold text-zinc-900">
-              Checklists
+              Checklists (coming soon)
             </div>
             <div className="mt-1 text-sm text-zinc-600">
               Preparation steps and templates.
