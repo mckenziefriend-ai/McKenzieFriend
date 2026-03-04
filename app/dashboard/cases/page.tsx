@@ -11,6 +11,19 @@ type CaseRow = {
   created_at: string | null;
 };
 
+function formatUKDateTime(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function CasesPage({
   searchParams,
 }: {
@@ -64,12 +77,37 @@ export default async function CasesPage({
       .select("id")
       .single();
 
-    if (error || !data?.id) {
-      redirect("/dashboard/cases");
-    }
+    if (error || !data?.id) redirect("/dashboard/cases");
 
-    // ✅ go to the case chronology page
     redirect(`/dashboard/cases/${data.id}/chronology`);
+  }
+
+  async function deleteCase(formData: FormData) {
+    "use server";
+
+    const caseId = String(formData.get("case_id") ?? "").trim();
+    if (!caseId) redirect("/dashboard/cases");
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
+
+    // Optional: ensure it belongs to the user (RLS should enforce anyway)
+    const { data: owned } = await supabase
+      .from("cases")
+      .select("id")
+      .eq("id", caseId)
+      .single();
+
+    if (!owned) redirect("/dashboard/cases");
+
+    // This will cascade delete case_events because of FK ON DELETE CASCADE
+    await supabase.from("cases").delete().eq("id", caseId);
+
+    redirect("/dashboard/cases");
   }
 
   return (
@@ -107,7 +145,10 @@ export default async function CasesPage({
             Create a new case
           </div>
 
-          <form action={createCase} className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <form
+            action={createCase}
+            className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
+          >
             <input
               name="title"
               placeholder="Case title (e.g. Child arrangements)"
@@ -136,23 +177,50 @@ export default async function CasesPage({
           <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
             {rows.length > 0 ? (
               rows.map((c) => (
-                <Link
+                <div
                   key={c.id}
-                  // ✅ correct route
-                  href={`/dashboard/cases/${c.id}/chronology`}
-                  className="flex items-center justify-between gap-4 p-4 hover:bg-zinc-50"
+                  className="flex items-center justify-between gap-4 p-4"
                 >
-                  <div>
-                    <div className="font-semibold text-zinc-900">{c.title}</div>
-                    <div className="mt-1 text-xs text-zinc-500">
-                      Created{" "}
-                      {c.created_at
-                        ? new Date(c.created_at).toLocaleString("en-GB")
-                        : ""}
+                  <Link
+                    href={`/dashboard/cases/${c.id}/chronology`}
+                    className="min-w-0 flex-1 rounded-xl px-2 py-1 hover:bg-zinc-50"
+                  >
+                    <div className="truncate font-semibold text-zinc-900">
+                      {c.title}
                     </div>
+                    <div className="mt-1 text-xs text-zinc-500">
+                      Created {formatUKDateTime(c.created_at)}
+                    </div>
+                  </Link>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Link
+                      href={`/dashboard/cases/${c.id}/chronology`}
+                      className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
+                    >
+                      Open
+                    </Link>
+
+                    <form
+                      action={deleteCase}
+                      onSubmit={(e) => {
+                        // client-side confirm only (safe + simple)
+                        // eslint-disable-next-line no-alert
+                        if (!confirm("Delete this case and all its events?")) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      <input type="hidden" name="case_id" value={c.id} />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+                      >
+                        Delete
+                      </button>
+                    </form>
                   </div>
-                  <div className="text-zinc-400">→</div>
-                </Link>
+                </div>
               ))
             ) : (
               <div className="p-4 text-sm text-zinc-700">
