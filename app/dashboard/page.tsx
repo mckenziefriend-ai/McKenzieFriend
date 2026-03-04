@@ -80,8 +80,8 @@ export default async function DashboardPage() {
               <div className="mt-8 grid gap-5 md:grid-cols-3">
                 {/* ✅ Chronology now lives under /dashboard/cases */}
                 <Tile
-                  title="Chronology"
-                  desc="Create a case and build the chronology."
+                  title="Your cases"
+                  desc="View your cases"
                   href="/dashboard/cases"
                 />
                 <Tile
