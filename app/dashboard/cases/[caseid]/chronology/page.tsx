@@ -159,6 +159,15 @@ export default async function CaseChronologyPage({
             >
               Export
             </Link>
+
+            {/* ✅ Added Statements button beside Export / Back */}
+            <Link
+              href={`/dashboard/cases/${caseId}/statements`}
+              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
+            >
+              Statements
+            </Link>
+
             <Link
               href="/dashboard/cases"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
@@ -170,7 +179,9 @@ export default async function CaseChronologyPage({
 
         {/* Court heading / header fields */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="text-sm font-semibold text-zinc-900">Court heading</div>
+          <div className="text-sm font-semibold text-zinc-900">
+            Court heading
+          </div>
 
           <form action={saveHeader} className="mt-6 grid gap-4">
             <ExportHeaderFields
@@ -263,14 +274,19 @@ export default async function CaseChronologyPage({
         {/* Dated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-zinc-900">Dated events</div>
+            <div className="text-lg font-semibold text-zinc-900">
+              Dated events
+            </div>
             <div className="text-xs text-zinc-500">{dated.length} total</div>
           </div>
 
           <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
             {dated.length > 0 ? (
               dated.map((ev) => (
-                <div key={ev.id} className="flex items-start justify-between gap-4 p-4">
+                <div
+                  key={ev.id}
+                  className="flex items-start justify-between gap-4 p-4"
+                >
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-zinc-600">
                       {ev.event_date ? formatDateUK(ev.event_date) : ""}
@@ -280,7 +296,9 @@ export default async function CaseChronologyPage({
                     </div>
                     {ev.evidence ? (
                       <div className="mt-2 text-xs text-zinc-600">
-                        <span className="font-semibold text-zinc-700">Evidence:</span>{" "}
+                        <span className="font-semibold text-zinc-700">
+                          Evidence:
+                        </span>{" "}
                         {ev.evidence}
                       </div>
                     ) : null}
@@ -295,7 +313,9 @@ export default async function CaseChronologyPage({
                 </div>
               ))
             ) : (
-              <div className="p-4 text-sm text-zinc-700">No dated events yet.</div>
+              <div className="p-4 text-sm text-zinc-700">
+                No dated events yet.
+              </div>
             )}
           </div>
         </div>
@@ -303,22 +323,31 @@ export default async function CaseChronologyPage({
         {/* Undated events */}
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-zinc-900">Undated events</div>
+            <div className="text-lg font-semibold text-zinc-900">
+              Undated events
+            </div>
             <div className="text-xs text-zinc-500">{undated.length} total</div>
           </div>
 
           <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
             {undated.length > 0 ? (
               undated.map((ev) => (
-                <div key={ev.id} className="flex items-start justify-between gap-4 p-4">
+                <div
+                  key={ev.id}
+                  className="flex items-start justify-between gap-4 p-4"
+                >
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-zinc-600">Date unknown</div>
+                    <div className="text-xs font-semibold text-zinc-600">
+                      Date unknown
+                    </div>
                     <div className="mt-1 text-sm font-semibold text-zinc-900">
                       {ev.summary}
                     </div>
                     {ev.evidence ? (
                       <div className="mt-2 text-xs text-zinc-600">
-                        <span className="font-semibold text-zinc-700">Evidence:</span>{" "}
+                        <span className="font-semibold text-zinc-700">
+                          Evidence:
+                        </span>{" "}
                         {ev.evidence}
                       </div>
                     ) : null}
@@ -333,7 +362,9 @@ export default async function CaseChronologyPage({
                 </div>
               ))
             ) : (
-              <div className="p-4 text-sm text-zinc-700">No undated events yet.</div>
+              <div className="p-4 text-sm text-zinc-700">
+                No undated events yet.
+              </div>
             )}
           </div>
         </div>
