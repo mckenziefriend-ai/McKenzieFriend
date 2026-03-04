@@ -1,112 +1,115 @@
-"use client";
+import type { ComponentType } from "react";
 
-import { useState } from "react";
+type CourtPickerProps = {
+  nameField?: string;
+  slugField?: string;
+  defaultName?: string;
+  defaultSlug?: string;
+  placeholder?: string;
+};
 
-export default function ExportHeaderFields() {
-  const [court, setCourt] = useState("");
-  const [caseNumber, setCaseNumber] = useState("");
-  const [applicant, setApplicant] = useState("");
-  const [respondent, setRespondent] = useState("");
-  const [children, setChildren] = useState("");
-  const [hearingDate, setHearingDate] = useState("");
-  const [hearingType, setHearingType] = useState("");
+type Props = {
+  initial: {
+    court_name: string;
+    court_slug: string;
+    case_number: string;
+    hearing_title: string;
+    hearing_datetime: string;
+    proceedings_heading: string;
+    proceedings_lines: string;
+  };
+  CourtPicker: ComponentType<CourtPickerProps>;
+};
 
-  const blank = "____________________________";
-
+export default function ExportHeaderFields({ initial, CourtPicker }: Props) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8 print:shadow-none">
-
-      {/* INPUTS — screen only */}
-      <div className="print-hidden">
-
-        <div className="text-sm font-semibold">Court heading</div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <Input label="Court name" value={court} set={setCourt} />
-          <Input label="Case number" value={caseNumber} set={setCaseNumber} />
-          <Input label="Applicant" value={applicant} set={setApplicant} />
-          <Input label="Respondent" value={respondent} set={setRespondent} />
-          <Input label="Hearing type" value={hearingType} set={setHearingType} />
-          <Input label="Hearing date" value={hearingDate} set={setHearingDate} />
+    <div className="grid gap-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="text-xs font-semibold text-zinc-700">
+            Court name
+          </label>
+          <div className="mt-1">
+            <CourtPicker
+              nameField="court_name"
+              slugField="court_slug"
+              defaultName={initial.court_name}
+              defaultSlug={initial.court_slug}
+              placeholder="Start typing e.g. East London"
+            />
+          </div>
         </div>
 
-        <div className="mt-3">
-          <label className="text-xs font-semibold">Children involved</label>
-          <textarea
-            value={children}
-            onChange={(e) => setChildren(e.target.value)}
-            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-            placeholder="Name (DOB) — one per line"
+        <div>
+          <label className="text-xs font-semibold text-zinc-700">
+            Case number
+          </label>
+          <input
+            name="case_number"
+            defaultValue={initial.case_number}
+            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
           />
         </div>
       </div>
 
-      {/* PRINT BLOCK */}
-      <div className="print-only hidden print:block text-sm leading-relaxed">
-
-        <div className="font-semibold uppercase">
-          IN THE {court || blank}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="text-xs font-semibold text-zinc-700">
+            Hearing title
+          </label>
+          <input
+            name="hearing_title"
+            defaultValue={initial.hearing_title}
+            placeholder="e.g. First Hearing Dispute Resolution Appointment"
+            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+          />
         </div>
 
-        <div className="mt-2">
-          Case Number: {caseNumber || blank}
+        <div>
+          <label className="text-xs font-semibold text-zinc-700">
+            Hearing date/time
+          </label>
+          <input
+            name="hearing_datetime"
+            type="datetime-local"
+            defaultValue={initial.hearing_datetime}
+            className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+          />
+          <div className="mt-1 text-[11px] text-zinc-500">
+            If you only have a date, you can leave the time as 00:00.
+          </div>
         </div>
-
-        <div className="mt-4">
-          IN THE MATTER OF THE CHILDREN ACT 1989
-          <br/>
-          AND IN THE MATTER OF THE FAMILY LAW ACT 1996
-        </div>
-
-        <div className="mt-4">
-          AND IN MATTERS CONCERNING:
-          <br/>
-          {children || blank}
-        </div>
-
-        <div className="mt-6 text-center font-semibold">
-          BETWEEN
-        </div>
-
-        <div className="mt-2 text-center">
-          {applicant || blank}
-          <br/>
-          Applicant
-        </div>
-
-        <div className="mt-2 text-center">
-          -and-
-        </div>
-
-        <div className="mt-2 text-center">
-          {respondent || blank}
-          <br/>
-          Respondent
-        </div>
-
-        <div className="mt-6 text-center font-bold">
-          CHRONOLOGY
-        </div>
-
-        <div className="mt-2 text-center">
-          {hearingType && "For the " + hearingType}
-          {hearingDate && " on " + hearingDate}
-        </div>
-
       </div>
-    </div>
-  );
-}
 
-function Input({ label, value, set }: any) {
-  return (
-    <div>
-      <label className="text-xs font-semibold">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => set(e.target.value)}
-        className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-      />
+      <div>
+        <label className="text-xs font-semibold text-zinc-700">
+          Proceedings heading (optional)
+        </label>
+        <input
+          name="proceedings_heading"
+          defaultValue={initial.proceedings_heading}
+          placeholder="e.g. IN THE MATTER OF AN APPLICATION UNDER..."
+          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+        />
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-zinc-700">
+          Proceedings lines (optional)
+        </label>
+        <textarea
+          name="proceedings_lines"
+          defaultValue={initial.proceedings_lines}
+          placeholder={`One per line, e.g.\nAND IN MATTERS CONCERNING (Name) (DOB)\nAND IN MATTERS CONCERNING (Name) (DOB)`}
+          className="mt-1 min-h-[120px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+        />
+        <div className="mt-1 text-[11px] text-zinc-500">
+          This prints under the case number. Leave blank if not needed.
+        </div>
+      </div>
+
+      {/* Hidden slug field in case CourtPicker doesn't render it */}
+      <input type="hidden" name="court_slug" defaultValue={initial.court_slug} />
     </div>
   );
 }
