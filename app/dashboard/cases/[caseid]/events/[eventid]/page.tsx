@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import DeleteEventButton from "@/app/dashboard/cases/DeleteEventButton";
 
 export default async function EditEventPage({
   params,
@@ -74,6 +75,31 @@ export default async function EditEventPage({
     redirect(`/dashboard/cases/${caseId}/chronology`);
   }
 
+  async function deleteEvent(formData: FormData) {
+    "use server";
+
+    const caseIdFromForm = String(formData.get("case_id") ?? "").trim();
+    const eventIdFromForm = String(formData.get("event_id") ?? "").trim();
+    if (!caseIdFromForm || !eventIdFromForm) {
+      redirect(`/dashboard/cases/${caseId}/chronology`);
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
+
+    // RLS enforces ownership via case_events -> cases.user_id
+    await supabase
+      .from("case_events")
+      .delete()
+      .eq("id", eventIdFromForm)
+      .eq("case_id", caseIdFromForm);
+
+    redirect(`/dashboard/cases/${caseIdFromForm}/chronology`);
+  }
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
@@ -129,6 +155,7 @@ export default async function EditEventPage({
                 name="summary"
                 defaultValue={ev.summary ?? ""}
                 className="mt-1 min-h-[120px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                required
               />
             </div>
 
@@ -143,22 +170,34 @@ export default async function EditEventPage({
               />
             </div>
 
-            <div className="flex justify-end gap-3">
-              <Link
-                href={`/dashboard/cases/${caseId}/chronology`}
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-              >
-                Cancel
-              </Link>
+            <div className="flex flex-wrap justify-between gap-3 pt-2">
+              <DeleteEventButton
+                caseId={caseId}
+                eventId={eventId}
+                action={deleteEvent}
+              />
 
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-              >
-                Save changes
-              </button>
+              <div className="flex gap-3">
+                <Link
+                  href={`/dashboard/cases/${caseId}/chronology`}
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  Cancel
+                </Link>
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
+                >
+                  Save changes
+                </button>
+              </div>
             </div>
           </form>
+
+          <div className="mt-4 text-xs text-zinc-500">
+            Deleting an event removes it from the chronology immediately.
+          </div>
         </div>
       </main>
     </div>
