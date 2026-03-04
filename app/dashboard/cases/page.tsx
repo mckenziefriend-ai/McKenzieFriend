@@ -80,7 +80,8 @@ export default async function CasesPage({
 
     if (error || !data?.id) redirect("/dashboard/cases");
 
-    redirect(`/dashboard/cases/${data.id}/chronology`);
+    // After case creation, redirect to case hub (not chronology)
+    redirect(`/dashboard/cases/${data.id}`);
   }
 
   async function deleteCase(formData: FormData) {
@@ -181,7 +182,7 @@ export default async function CasesPage({
                   className="flex items-center justify-between gap-4 p-4"
                 >
                   <Link
-                    href={`/dashboard/cases/${c.id}/chronology`}
+                    href={`/dashboard/cases/${c.id}`}
                     className="min-w-0 flex-1 rounded-xl px-2 py-1 hover:bg-zinc-50"
                   >
                     <div className="truncate font-semibold text-zinc-900">
@@ -194,7 +195,7 @@ export default async function CasesPage({
 
                   <div className="flex shrink-0 items-center gap-2">
                     <Link
-                      href={`/dashboard/cases/${c.id}/chronology`}
+                      href={`/dashboard/cases/${c.id}`}
                       className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
                     >
                       Open
