@@ -9,6 +9,13 @@ export async function POST(req: Request) {
   try {
     const { notes } = await req.json();
 
+    if (!notes || typeof notes !== "string") {
+      return NextResponse.json(
+        { error: "Notes are required" },
+        { status: 400 }
+      );
+    }
+
     const prompt = `
 You are assisting someone writing a UK witness statement.
 
@@ -18,6 +25,8 @@ Rules:
 - Write in first person.
 - Use numbered paragraphs.
 - Neutral factual tone.
+- Do not add legal advice.
+- If information is missing, leave it out rather than guessing.
 
 User notes:
 ${notes}
@@ -43,7 +52,10 @@ ${notes}
 
     return NextResponse.json({ draft });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "AI failed" }, { status: 500 });
+    console.error("AI statement generation failed:", error);
+    return NextResponse.json(
+      { error: "AI generation failed" },
+      { status: 500 }
+    );
   }
 }
