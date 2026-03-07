@@ -131,6 +131,106 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <section id="wellbeing" className="border-t border-zinc-200 bg-slate-50/40">
+  <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <div className="max-w-4xl">
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+        Wellbeing During Court Proceedings
+      </h2>
+
+      <div className="mt-10 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+        <Card className="border-slate-200 border-l-4 border-l-sky-600">
+          <p className="text-xl font-semibold leading-relaxed text-zinc-950">
+            Court proceedings can be stressful and emotionally demanding.
+          </p>
+
+          <p className="mt-5 text-base leading-8 text-zinc-700">
+            For litigants in person, managing documents, deadlines, and unfamiliar procedures can place
+            significant pressure on mental wellbeing.
+          </p>
+
+          <p className="mt-8 text-base leading-8 text-zinc-700">
+            If you are feeling overwhelmed, it is important to seek support. Preparation and support can help
+            reduce unnecessary stress and allow you to approach proceedings more clearly and calmly.
+          </p>
+        </Card>
+
+        <Card className="border-slate-200 border-l-4 border-l-sky-600">
+          <h3 className="text-lg font-semibold text-slate-900">Confidential support</h3>
+          <p className="mt-2 text-sm text-zinc-700">
+            The following organisations provide confidential help:
+          </p>
+
+          <ul className="mt-6 space-y-4 text-sm text-zinc-700">
+            <li>
+              <a
+                href="https://www.samaritans.org/how-we-can-help/contact-samaritan/"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-800"
+              >
+                Samaritans
+              </a>{" "}
+              <span className="text-zinc-500">—</span> 116 123 (24/7)
+            </li>
+
+            <li>
+              <a
+                href="https://www.mind.org.uk/information-support/"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-800"
+              >
+                Mind
+              </a>{" "}
+              <span className="text-zinc-500">—</span> guidance and support for mental wellbeing
+            </li>
+
+            <li>
+              <a
+                href="https://www.nhs.uk/nhs-services/mental-health-services/where-to-get-urgent-help-for-mental-health/"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-800"
+              >
+                NHS
+              </a>{" "}
+              <span className="text-zinc-500">—</span> mental health advice and services
+            </li>
+          </ul>
+
+          <Inset tone="brand">
+            <p className="leading-7">
+              Preparation and support can help reduce unnecessary stress and make proceedings feel more
+              manageable.
+            </p>
+          </Inset>
+        </Card>
+      </div>
+    </div>
+  </div>
+</section>
+
+                <section id="boundaries" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Limitations</h2>
+
+            <Card className="mt-10">
+              <Inset>
+                McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
+                <br />
+                <br />
+                The AI is a preparation tool that can help organise information, improve clarity, and suggest structure.
+                It may be incomplete or incorrect and must be checked.
+                <br />
+                <br />
+                You are responsible for what you file, what you say, and the decisions you make. If you need legal
+                advice, consult a qualified professional.
+              </Inset>
+            </Card>
+          </div>
+        </section>
         
         <section id="paths" className="border-t border-zinc-200">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -320,106 +420,6 @@ export default function Home() {
                 Privacy &amp; data
               </button>
             </div>
-          </div>
-        </section>
-
-<section id="wellbeing" className="border-t border-zinc-200 bg-slate-50/40">
-  <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-    <div className="max-w-4xl">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-        Wellbeing During Court Proceedings
-      </h2>
-
-      <div className="mt-10 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
-        <Card className="border-slate-200 border-l-4 border-l-sky-600">
-          <p className="text-xl font-semibold leading-relaxed text-zinc-950">
-            Court proceedings can be stressful and emotionally demanding.
-          </p>
-
-          <p className="mt-5 text-base leading-8 text-zinc-700">
-            For litigants in person, managing documents, deadlines, and unfamiliar procedures can place
-            significant pressure on mental wellbeing.
-          </p>
-
-          <p className="mt-8 text-base leading-8 text-zinc-700">
-            If you are feeling overwhelmed, it is important to seek support. Preparation and support can help
-            reduce unnecessary stress and allow you to approach proceedings more clearly and calmly.
-          </p>
-        </Card>
-
-        <Card className="border-slate-200 border-l-4 border-l-sky-600">
-          <h3 className="text-lg font-semibold text-slate-900">Confidential support</h3>
-          <p className="mt-2 text-sm text-zinc-700">
-            The following organisations provide confidential help:
-          </p>
-
-          <ul className="mt-6 space-y-4 text-sm text-zinc-700">
-            <li>
-              <a
-                href="https://www.samaritans.org/how-we-can-help/contact-samaritan/"
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-800"
-              >
-                Samaritans
-              </a>{" "}
-              <span className="text-zinc-500">—</span> 116 123 (24/7)
-            </li>
-
-            <li>
-              <a
-                href="https://www.mind.org.uk/information-support/"
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-800"
-              >
-                Mind
-              </a>{" "}
-              <span className="text-zinc-500">—</span> guidance and support for mental wellbeing
-            </li>
-
-            <li>
-              <a
-                href="https://www.nhs.uk/nhs-services/mental-health-services/where-to-get-urgent-help-for-mental-health/"
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-800"
-              >
-                NHS
-              </a>{" "}
-              <span className="text-zinc-500">—</span> mental health advice and services
-            </li>
-          </ul>
-
-          <Inset tone="brand">
-            <p className="leading-7">
-              Preparation and support can help reduce unnecessary stress and make proceedings feel more
-              manageable.
-            </p>
-          </Inset>
-        </Card>
-      </div>
-    </div>
-  </div>
-</section>
-
-        <section id="boundaries" className="border-t border-zinc-200">
-          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Limitations</h2>
-
-            <Card className="mt-10">
-              <Inset>
-                McKenzieFriend.ai is not a solicitor’s practice and does not provide regulated legal advice.
-                <br />
-                <br />
-                The AI is a preparation tool that can help organise information, improve clarity, and suggest structure.
-                It may be incomplete or incorrect and must be checked.
-                <br />
-                <br />
-                You are responsible for what you file, what you say, and the decisions you make. If you need legal
-                advice, consult a qualified professional.
-              </Inset>
-            </Card>
           </div>
         </section>
 
