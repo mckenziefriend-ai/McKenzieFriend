@@ -95,9 +95,7 @@ export default function Home() {
         <section id="why" className="border-t border-zinc-200">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
             <div className="max-w-4xl">
-              </div>
-
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                 Why McKenzieFriend.ai Exists
               </h2>
 
@@ -133,7 +131,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-
+        
         <section id="paths" className="border-t border-zinc-200">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Two AI workflows</h2>
@@ -328,9 +326,7 @@ export default function Home() {
         <section id="wellbeing" className="border-t border-zinc-200">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
             <div className="max-w-4xl">
-              </div>
-
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                 Wellbeing During Court Proceedings
               </h2>
 
