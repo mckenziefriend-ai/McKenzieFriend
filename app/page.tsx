@@ -6,9 +6,11 @@ import SignedOutPopup from "./components/SignedOutPopup";
 
 type SectionId =
   | "top"
+  | "why"
   | "paths"
   | "features"
   | "how"
+  | "wellbeing"
   | "boundaries"
   | "privacy"
   | "who"
@@ -86,6 +88,51 @@ export default function Home() {
               <div className="mt-8 text-xs text-white/60">
                 After signup you’ll access your dashboard to manage timelines, drafts, checklists, and document packs.
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="why" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <div className="max-w-4xl">
+              <div className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">
+                Section 1
+              </div>
+
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+                <span className="mr-2">🟦</span>
+                Why McKenzieFriend.ai Exists
+              </h2>
+
+              <Card className="mt-10">
+                <p className="text-xl font-semibold leading-relaxed text-zinc-950">
+                  McKenzieFriend.ai provides AI-assisted preparation tools for people representing themselves in court.
+                </p>
+
+                <div className="mt-8 space-y-6 text-base leading-8 text-zinc-700">
+                  <p>
+                    While independent McKenzie Friends can offer valuable assistance, the role has no formal regulation
+                    and standards can vary.
+                  </p>
+
+                  <p>
+                    This platform focuses on <span className="font-semibold text-zinc-950">clear preparation</span>,{" "}
+                    <span className="font-semibold text-zinc-950">organisation</span>, and{" "}
+                    <span className="font-semibold text-zinc-950">responsible support</span>, helping litigants
+                    structure their case, organise documents, and prepare court bundles without crossing professional
+                    boundaries.
+                  </p>
+                </div>
+
+                <Inset>
+                  <p className="text-base leading-8 text-zinc-800">
+                    The aim is simple:{" "}
+                    <span className="font-semibold">
+                      better preparation, clearer structure, and more confident participation in court.
+                    </span>
+                  </p>
+                </Inset>
+              </Card>
             </div>
           </div>
         </section>
@@ -281,6 +328,63 @@ export default function Home() {
           </div>
         </section>
 
+        <section id="wellbeing" className="border-t border-zinc-200">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+            <div className="max-w-4xl">
+              <div className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">
+                Section 2
+              </div>
+
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+                <span className="mr-2">🟦</span>
+                Wellbeing During Court Proceedings
+              </h2>
+
+              <div className="mt-10 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+                <Card>
+                  <p className="text-xl font-semibold leading-relaxed text-zinc-950">
+                    Court proceedings can be stressful and emotionally demanding.
+                  </p>
+
+                  <p className="mt-5 text-base leading-8 text-zinc-700">
+                    For litigants in person, managing documents, deadlines, and unfamiliar procedures can place
+                    significant pressure on mental wellbeing.
+                  </p>
+
+                  <p className="mt-8 text-base leading-8 text-zinc-700">
+                    If you are feeling overwhelmed, it is important to seek support. Preparation and support can help
+                    reduce unnecessary stress and allow you to approach proceedings more clearly and calmly.
+                  </p>
+                </Card>
+
+                <Card>
+                  <h3 className="text-lg font-semibold">Confidential support</h3>
+                  <p className="mt-2 text-sm text-zinc-700">
+                    The following organisations provide confidential help:
+                  </p>
+
+                  <ul className="mt-6 space-y-4 text-sm text-zinc-700">
+                    <li>
+                      <span className="font-semibold text-zinc-950">Samaritans</span> — 116 123 (24/7)
+                    </li>
+                    <li>
+                      <span className="font-semibold text-zinc-950">Mind</span> — guidance and support for mental
+                      wellbeing
+                    </li>
+                    <li>
+                      <span className="font-semibold text-zinc-950">NHS</span> — mental health advice and services
+                    </li>
+                  </ul>
+
+                  <Inset>
+                    Preparation and support can help reduce unnecessary stress and make proceedings feel more manageable.
+                  </Inset>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="boundaries" className="border-t border-zinc-200">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Limitations</h2>
@@ -326,7 +430,7 @@ export default function Home() {
                 <div className="mt-6">
                   <a
                     href="/contact"
-                    className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50 inline-flex"
+                    className="inline-flex rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
                   >
                     Ask about data handling
                   </a>
