@@ -29,26 +29,51 @@ export default function StatementEditorClient({
   deleteStatement: () => void | Promise<void>;
 }) {
   const [body, setBody] = useState(st.body ?? "");
+  const [draftOpen, setDraftOpen] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError] = useState("");
 
-  async function generateDraft() {
-    const notes = prompt("Paste notes or describe the events you want included.");
+  async function generateDraftFromNotes() {
+    if (!notes.trim()) {
+      setAiError("Please add some notes first.");
+      return;
+    }
 
-    if (!notes) return;
+    setIsGenerating(true);
+    setAiError("");
 
-    const res = await fetch("/api/ai/statement", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        notes,
-      }),
-    });
+    try {
+      const res = await fetch("/api/ai/statement", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          notes: notes.trim(),
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.draft) {
+      if (!res.ok) {
+        setAiError(data.error || "AI generation failed.");
+        return;
+      }
+
+      if (!data.draft || typeof data.draft !== "string") {
+        setAiError("No draft was returned.");
+        return;
+      }
+
       setBody(data.draft);
+      setDraftOpen(false);
+      setNotes("");
+    } catch (error) {
+      console.error(error);
+      setAiError("Something went wrong while generating the draft.");
+    } finally {
+      setIsGenerating(false);
     }
   }
 
@@ -125,14 +150,17 @@ export default function StatementEditorClient({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-zinc-700">
-                Body
-              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-xs font-semibold text-zinc-700">
+                  Body
+                </label>
 
-              <div className="flex gap-3 mb-4">
                 <button
                   type="button"
-                  onClick={generateDraft}
+                  onClick={() => {
+                    setDraftOpen(true);
+                    setAiError("");
+                  }}
                   className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
                 >
                   Generate draft
@@ -144,7 +172,7 @@ export default function StatementEditorClient({
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Type your statement here..."
-                className="mt-1 min-h-[420px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
+                className="mt-3 min-h-[420px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
               />
 
               <div className="mt-2 text-xs text-zinc-500">
@@ -171,6 +199,81 @@ export default function StatementEditorClient({
             </div>
           </form>
         </div>
+
+        {draftOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold text-zinc-900">
+                    Generate draft
+                  </div>
+                  <div className="mt-1 text-sm text-zinc-600">
+                    Paste notes or describe the events you want included.
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftOpen(false);
+                    setAiError("");
+                  }}
+                  className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-5">
+                <label className="text-xs font-semibold text-zinc-700">
+                  Notes for AI
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Example: We separated in March 2023. On 14 May 2023 he did not return the child after contact. I messaged him at around 7:30pm and he ignored me until the next morning."
+                  className="mt-1 min-h-[220px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
+                />
+              </div>
+
+              {aiError ? (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+                  {aiError}
+                </div>
+              ) : null}
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-xs text-zinc-500">
+                  AI assists with drafting. Check accuracy before saving.
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftOpen(false);
+                      setAiError("");
+                    }}
+                    className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={generateDraftFromNotes}
+                    disabled={isGenerating}
+                    className="rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isGenerating ? "Generating..." : "Generate draft"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
     </div>
   );
