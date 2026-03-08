@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 type Statement = {
@@ -13,11 +13,27 @@ type Statement = {
   updated_at: string | null;
 };
 
+type CaseEvent = {
+  id: string;
+  event_date: string | null;
+  date_unknown: boolean | null;
+  summary: string;
+};
+
+function formatDateUK(dateISO: string) {
+  return new Date(dateISO).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export default function StatementEditorClient({
   caseId,
   statementid,
   caseTitle,
   st,
+  events,
   saveStatement,
   deleteStatement,
 }: {
@@ -25,6 +41,7 @@ export default function StatementEditorClient({
   statementid: string;
   caseTitle: string;
   st: Statement;
+  events: CaseEvent[];
   saveStatement: (formData: FormData) => void | Promise<void>;
   deleteStatement: () => void | Promise<void>;
 }) {
@@ -33,10 +50,22 @@ export default function StatementEditorClient({
   const [notes, setNotes] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+
+  const selectedEvents = useMemo(
+    () => events.filter((e) => selectedEventIds.includes(e.id)),
+    [events, selectedEventIds]
+  );
+
+  function toggleEvent(id: string) {
+    setSelectedEventIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   async function generateDraftFromNotes() {
-    if (!notes.trim()) {
-      setAiError("Please add some notes first.");
+    if (!notes.trim() && selectedEvents.length === 0) {
+      setAiError("Add notes or select chronology events first.");
       return;
     }
 
@@ -51,6 +80,7 @@ export default function StatementEditorClient({
         },
         body: JSON.stringify({
           notes: notes.trim(),
+          selectedEvents,
         }),
       });
 
@@ -69,6 +99,7 @@ export default function StatementEditorClient({
       setBody(data.draft);
       setDraftOpen(false);
       setNotes("");
+      setSelectedEventIds([]);
     } catch (error) {
       console.error(error);
       setAiError("Something went wrong while generating the draft.");
@@ -202,7 +233,7 @@ export default function StatementEditorClient({
 
         {draftOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-            <div className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
+            <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-zinc-900">
@@ -220,7 +251,6 @@ export default function StatementEditorClient({
                     setAiError("");
                   }}
                   className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
-                  aria-label="Close"
                 >
                   ✕
                 </button>
@@ -233,8 +263,46 @@ export default function StatementEditorClient({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="mt-1 min-h-[220px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
+                  placeholder="Example: We separated in March 2023. On 14 May 2023 he did not return the child after contact. I messaged him at around 7:30pm and he ignored me until the next morning."
+                  className="mt-1 min-h-[180px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
                 />
+              </div>
+
+              <div className="mt-5">
+                <div className="text-xs font-semibold text-zinc-700">
+                  Use chronology events as context (optional)
+                </div>
+                <div className="mt-2 max-h-[220px] overflow-auto rounded-xl border border-zinc-200">
+                  {events.length > 0 ? (
+                    events.map((ev) => (
+                      <label
+                        key={ev.id}
+                        className="flex cursor-pointer items-start gap-3 border-b border-zinc-200 p-3 last:border-b-0 hover:bg-zinc-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEventIds.includes(ev.id)}
+                          onChange={() => toggleEvent(ev.id)}
+                          className="mt-1 h-4 w-4 rounded border-zinc-300"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-zinc-600">
+                            {ev.date_unknown || !ev.event_date
+                              ? "Date unknown"
+                              : formatDateUK(ev.event_date)}
+                          </div>
+                          <div className="mt-1 text-sm text-zinc-900">
+                            {ev.summary}
+                          </div>
+                        </div>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="p-3 text-sm text-zinc-600">
+                      No chronology events available.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {aiError ? (
@@ -245,7 +313,8 @@ export default function StatementEditorClient({
 
               <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-zinc-500">
-                  AI assists with drafting. Check accuracy before saving.
+                  AI assists with drafting. It will only use your notes and any
+                  chronology events you select.
                 </div>
 
                 <div className="flex gap-3">
