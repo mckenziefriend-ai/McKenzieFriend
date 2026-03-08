@@ -12,9 +12,8 @@ type Statement = {
   body: string | null;
   updated_at: string | null;
   witness_name: string | null;
-  witness_role: string | null;
+  party_role: string | null;
   application_type: string | null;
-  applicant_or_respondent: string | null;
 };
 
 type CaseEvent = {
@@ -108,41 +107,25 @@ export default function StatementEditorClient({
   function insertStructuredIntro() {
     const lines: string[] = [];
 
-    if (st.witness_name || st.witness_role || st.application_type) {
-      const introParts = [];
-
-      if (st.witness_name) {
-        introParts.push(`I am ${st.witness_name}`);
-      }
-
-      if (st.witness_role) {
-        introParts.push(
-          `I am the ${st.witness_role.toLowerCase()} in these proceedings`
-        );
-      }
-
-      let intro = introParts.join(". ");
-      if (intro && !intro.endsWith(".")) intro += ".";
-      if (intro) lines.push(intro);
-
-      if (st.applicant_or_respondent) {
-        lines.push(
-          `This statement is made on behalf of the ${st.applicant_or_respondent.toLowerCase()}.`
-        );
-      }
-
-      if (st.application_type) {
-        lines.push(
-          `I make this statement in support of my application for ${st.application_type}.`
-        );
-      }
-
+    if (st.witness_name && st.party_role) {
       lines.push(
-        "The facts set out in this statement are within my own knowledge unless I indicate otherwise."
+        `I am ${st.witness_name}. I am the ${st.party_role.toLowerCase()} in these proceedings.`
+      );
+    } else if (st.witness_name) {
+      lines.push(`I am ${st.witness_name}.`);
+    } else if (st.party_role) {
+      lines.push(`I am the ${st.party_role.toLowerCase()} in these proceedings.`);
+    }
+
+    if (st.application_type) {
+      lines.push(
+        `I make this statement in support of my application for ${st.application_type}.`
       );
     }
 
-    if (lines.length === 0) return;
+    lines.push(
+      "The facts set out in this statement are within my own knowledge unless I indicate otherwise."
+    );
 
     setBody((prev) => {
       const trimmed = prev.trim();
@@ -378,48 +361,30 @@ export default function StatementEditorClient({
 
               <div>
                 <label className="text-xs font-semibold text-zinc-700">
-                  Witness role
+                  Party
                 </label>
                 <select
-                  name="witness_role"
-                  defaultValue={st.witness_role ?? ""}
+                  name="party_role"
+                  defaultValue={st.party_role ?? ""}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                 >
                   <option value="">Select</option>
                   <option value="Applicant">Applicant</option>
                   <option value="Respondent">Respondent</option>
-                  <option value="Witness">Witness</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Application type
-                </label>
-                <input
-                  name="application_type"
-                  defaultValue={st.application_type ?? ""}
-                  placeholder="e.g. a non-molestation order"
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Applicant / Respondent
-                </label>
-                <select
-                  name="applicant_or_respondent"
-                  defaultValue={st.applicant_or_respondent ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                >
-                  <option value="">Select</option>
-                  <option value="Applicant">Applicant</option>
-                  <option value="Respondent">Respondent</option>
-                </select>
-              </div>
+            <div>
+              <label className="text-xs font-semibold text-zinc-700">
+                Application type
+              </label>
+              <input
+                name="application_type"
+                defaultValue={st.application_type ?? ""}
+                placeholder="e.g. a non-molestation order"
+                className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+              />
             </div>
 
             <div>
