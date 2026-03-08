@@ -335,28 +335,17 @@ export default function StatementEditorClient({
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-zinc-700">
-                Statement by (optional)
-              </label>
-              <input
-                name="statement_by"
-                defaultValue={st.statement_by ?? ""}
-                placeholder="e.g. Applicant / Respondent / Full name"
-                className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-              />
-            </div>
-
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold text-zinc-700">
-                  Witness name
-                </label>
-                <input
-                  name="witness_name"
-                  defaultValue={st.witness_name ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                />
+               <label className="text-xs font-semibold text-zinc-700">
+  Statement by
+</label>
+<input
+  name="witness_name"
+  defaultValue={st.witness_name ?? ""}
+  placeholder="e.g. Ms Jones"
+  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+/>
               </div>
 
               <div>
