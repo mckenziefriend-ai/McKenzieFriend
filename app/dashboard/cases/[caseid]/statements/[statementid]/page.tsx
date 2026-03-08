@@ -44,6 +44,12 @@ export default async function StatementEditorPage({
     .eq("case_id", caseId)
     .single();
 
+  const { data: events } = await supabase
+    .from("case_events")
+    .select("id,event_date,date_unknown,summary")
+    .eq("case_id", caseId)
+    .order("event_date", { ascending: true });
+
   if (!st) redirect(`/dashboard/cases/${caseId}/statements`);
 
   async function saveStatement(formData: FormData) {
@@ -100,6 +106,12 @@ export default async function StatementEditorPage({
       statementid={statementid}
       caseTitle={caseRow.title}
       st={st}
+      events={(events ?? []) as Array<{
+        id: string;
+        event_date: string | null;
+        date_unknown: boolean | null;
+        summary: string;
+      }>}
       saveStatement={saveStatement}
       deleteStatement={deleteStatement}
     />
