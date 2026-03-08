@@ -39,14 +39,16 @@ export default async function StatementEditorPage({
 
   const { data: st } = await supabase
     .from("case_statements")
-    .select("id,case_id,title,statement_by,statement_date,body,updated_at")
+    .select(
+      "id,case_id,title,statement_by,statement_date,body,updated_at,witness_name,witness_role,application_type,applicant_or_respondent"
+    )
     .eq("id", statementid)
     .eq("case_id", caseId)
     .single();
 
   const { data: events } = await supabase
     .from("case_events")
-    .select("id,event_date,date_unknown,summary")
+    .select("id,event_date,date_unknown,summary,evidence")
     .eq("case_id", caseId)
     .order("event_date", { ascending: true });
 
@@ -58,6 +60,12 @@ export default async function StatementEditorPage({
     const title = String(formData.get("title") ?? "").trim();
     const statementBy = String(formData.get("statement_by") ?? "").trim();
     const statementDateRaw = String(formData.get("statement_date") ?? "").trim();
+    const witnessName = String(formData.get("witness_name") ?? "").trim();
+    const witnessRole = String(formData.get("witness_role") ?? "").trim();
+    const applicationType = String(formData.get("application_type") ?? "").trim();
+    const applicantOrRespondent = String(
+      formData.get("applicant_or_respondent") ?? ""
+    ).trim();
     const body = String(formData.get("body") ?? "").trimEnd();
 
     if (!title) return;
@@ -74,6 +82,12 @@ export default async function StatementEditorPage({
         title,
         statement_by: statementBy ? statementBy : null,
         statement_date: statementDateRaw ? statementDateRaw : null,
+        witness_name: witnessName ? witnessName : null,
+        witness_role: witnessRole ? witnessRole : null,
+        application_type: applicationType ? applicationType : null,
+        applicant_or_respondent: applicantOrRespondent
+          ? applicantOrRespondent
+          : null,
         body,
       })
       .eq("id", statementid)
@@ -106,12 +120,15 @@ export default async function StatementEditorPage({
       statementid={statementid}
       caseTitle={caseRow.title}
       st={st}
-      events={(events ?? []) as Array<{
-        id: string;
-        event_date: string | null;
-        date_unknown: boolean | null;
-        summary: string;
-      }>}
+      events={
+        (events ?? []) as Array<{
+          id: string;
+          event_date: string | null;
+          date_unknown: boolean | null;
+          summary: string;
+          evidence: string | null;
+        }>
+      }
       saveStatement={saveStatement}
       deleteStatement={deleteStatement}
     />
