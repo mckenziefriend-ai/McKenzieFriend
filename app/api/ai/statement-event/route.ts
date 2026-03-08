@@ -24,9 +24,8 @@ export async function POST(req: Request) {
     const {
       event,
       witnessName,
-      witnessRole,
+      partyRole,
       applicationType,
-      applicantOrRespondent,
     } = await req.json();
 
     if (!event || !event.summary) {
@@ -56,9 +55,8 @@ Rules:
 
 Witness context:
 Name: ${witnessName || "Not provided"}
-Role: ${witnessRole || "Not provided"}
+Party: ${partyRole || "Not provided"}
 Application type: ${applicationType || "Not provided"}
-Side in proceedings: ${applicantOrRespondent || "Not provided"}
 
 Event:
 Date: ${ev.date_unknown || !ev.event_date ? "Unknown date" : ev.event_date}
