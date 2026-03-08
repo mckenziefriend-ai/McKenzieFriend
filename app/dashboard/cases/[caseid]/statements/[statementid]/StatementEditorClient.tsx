@@ -233,6 +233,7 @@ export default function StatementEditorClient({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                  className="mt-1 min-h-[220px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
                 />
               </div>
 
