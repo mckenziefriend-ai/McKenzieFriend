@@ -233,8 +233,6 @@ export default function StatementEditorClient({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Example: We separated in March 2023. On 14 May 2023 he did not return the child after contact. I messaged him at around 7:30pm and he ignored me until the next morning."
-                  className="mt-1 min-h-[220px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
                 />
               </div>
 
