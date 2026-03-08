@@ -40,7 +40,7 @@ export default async function StatementEditorPage({
   const { data: st } = await supabase
     .from("case_statements")
     .select(
-      "id,case_id,title,statement_by,statement_date,body,updated_at,witness_name,witness_role,application_type,applicant_or_respondent"
+      "id,case_id,title,statement_by,statement_date,body,updated_at,witness_name,party_role,application_type"
     )
     .eq("id", statementid)
     .eq("case_id", caseId)
@@ -61,11 +61,8 @@ export default async function StatementEditorPage({
     const statementBy = String(formData.get("statement_by") ?? "").trim();
     const statementDateRaw = String(formData.get("statement_date") ?? "").trim();
     const witnessName = String(formData.get("witness_name") ?? "").trim();
-    const witnessRole = String(formData.get("witness_role") ?? "").trim();
+    const partyRole = String(formData.get("party_role") ?? "").trim();
     const applicationType = String(formData.get("application_type") ?? "").trim();
-    const applicantOrRespondent = String(
-      formData.get("applicant_or_respondent") ?? ""
-    ).trim();
     const body = String(formData.get("body") ?? "").trimEnd();
 
     if (!title) return;
@@ -83,11 +80,8 @@ export default async function StatementEditorPage({
         statement_by: statementBy ? statementBy : null,
         statement_date: statementDateRaw ? statementDateRaw : null,
         witness_name: witnessName ? witnessName : null,
-        witness_role: witnessRole ? witnessRole : null,
+        party_role: partyRole ? partyRole : null,
         application_type: applicationType ? applicationType : null,
-        applicant_or_respondent: applicantOrRespondent
-          ? applicantOrRespondent
-          : null,
         body,
       })
       .eq("id", statementid)
