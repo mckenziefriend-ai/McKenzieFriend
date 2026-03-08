@@ -23,36 +23,64 @@ export async function POST(req: Request) {
       );
     }
 
-    const prompt = `
-You are assisting someone writing a UK witness statement.
+const prompt = `
+Task:
+Draft a UK Family Court witness statement from the notes provided.
 
-Rules:
-- Do not invent facts.
-- Only use the information provided.
-- Write in first person.
-- Use numbered paragraphs.
-- Neutral factual tone.
-- Do not add legal advice.
-- If information is missing, leave it out rather than guessing.
+Output requirements:
+- Write in first person only ("I").
+- Use numbered paragraphs only.
+- Keep a neutral, factual, non-argumentative tone.
+- Use only facts contained in the notes.
+- Do not invent, assume, infer, or fill gaps.
+- Do not add legal advice, legal analysis, or case law.
+- Do not exaggerate or use emotive language.
+- Where dates or details are uncertain, say so only if the notes indicate uncertainty.
+- Present events in chronological order where possible.
+- Keep each paragraph short and focused on one point.
+- Preserve the distinction between:
+  - what I directly saw, heard, did, or received; and
+  - what I was told by someone else.
+- Do not include anything that is not supported by the notes.
+- If the notes are too limited to support a formal witness statement, produce the fullest possible draft from the notes only.
 
-User notes:
+Formatting requirements:
+- Start directly with paragraph 1.
+- No heading unless the notes provide one.
+- No placeholders such as "[insert date]".
+- No bullet points.
+- No commentary before or after the statement.
+
+Source notes:
 ${notes}
 `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-5-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You help draft UK witness statements clearly without inventing facts.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
+const response = await openai.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [
+    {
+      role: "system",
+      content: `
+You draft clear, restrained UK Family Court witness statements from user-provided notes.
+
+You must:
+- use only the facts given;
+- never invent missing facts;
+- never guess dates, names, sequences, or motives;
+- write in first person;
+- use numbered paragraphs;
+- keep the tone calm, neutral, and factual;
+- avoid submissions, arguments, accusations, and legal advice;
+- distinguish direct knowledge from second-hand information where the notes allow;
+- omit anything unsupported by the notes.
+      `,
+    },
+    {
+      role: "user",
+      content: prompt,
+    },
+  ],
+});
 
     const draft = response.choices[0]?.message?.content ?? "";
 
