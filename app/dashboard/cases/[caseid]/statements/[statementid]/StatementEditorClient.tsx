@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
 type Statement = {
@@ -53,6 +53,24 @@ export default function StatementEditorClient({
   const [aiError, setAiError] = useState("");
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
 
+  const [selectedText, setSelectedText] = useState("");
+  const [rewriteOpen, setRewriteOpen] = useState(false);
+  const [rewriteMode, setRewriteMode] = useState("court");
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [rewriteError, setRewriteError] = useState("");
+
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewResult, setReviewResult] = useState<{
+    issues: Array<{
+      type: string;
+      quote: string;
+      message: string;
+      suggestion: string;
+    }>;
+    summary?: string;
+  } | null>(null);
+
   const starters = [
     "I am the Applicant in these proceedings.",
     "I am the Respondent in these proceedings.",
@@ -81,6 +99,16 @@ export default function StatementEditorClient({
       return trimmed ? `${trimmed}\n\n${text}` : text;
     });
     setStarterOpen(false);
+  }
+
+  function captureSelectedText(
+    e: React.SyntheticEvent<HTMLTextAreaElement, Event>
+  ) {
+    const target = e.currentTarget;
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? 0;
+    const text = target.value.slice(start, end).trim();
+    setSelectedText(text);
   }
 
   async function generateDraftFromNotes() {
@@ -125,6 +153,92 @@ export default function StatementEditorClient({
       setAiError("Something went wrong while generating the draft.");
     } finally {
       setIsGenerating(false);
+    }
+  }
+
+  async function runRewrite() {
+    if (!selectedText.trim()) {
+      setRewriteError("Select some text first.");
+      return;
+    }
+
+    setIsRewriting(true);
+    setRewriteError("");
+
+    try {
+      const res = await fetch("/api/ai/statement-tools", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode: "rewrite",
+          selectedText,
+          rewriteMode,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setRewriteError(data.error || "Rewrite failed.");
+        return;
+      }
+
+      if (!data.rewritten) {
+        setRewriteError("No rewritten text was returned.");
+        return;
+      }
+
+      setBody((prev) => prev.replace(selectedText, data.rewritten));
+      setRewriteOpen(false);
+      setSelectedText(data.rewritten);
+    } catch (error) {
+      console.error(error);
+      setRewriteError("Something went wrong while rewriting.");
+    } finally {
+      setIsRewriting(false);
+    }
+  }
+
+  async function runStatementReview() {
+    if (!body.trim()) {
+      setReviewError("There is no statement text to review.");
+      return;
+    }
+
+    setIsReviewing(true);
+    setReviewError("");
+    setReviewResult(null);
+
+    try {
+      const res = await fetch("/api/ai/statement-tools", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode: "review",
+          statementText: body,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setReviewError(data.error || "Review failed.");
+        return;
+      }
+
+      setReviewResult({
+        issues: Array.isArray(data.issues) ? data.issues : [],
+        summary: data.summary || "",
+      });
+    } catch (error) {
+      console.error(error);
+      setReviewError("Something went wrong while reviewing the statement.");
+    } finally {
+      setIsReviewing(false);
     }
   }
 
@@ -206,7 +320,7 @@ export default function StatementEditorClient({
                   Body
                 </label>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => setStarterOpen(true)}
@@ -225,6 +339,29 @@ export default function StatementEditorClient({
                   >
                     Generate draft
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedText) {
+                        setRewriteError("Select some text in the statement first.");
+                        return;
+                      }
+                      setRewriteError("");
+                      setRewriteOpen(true);
+                    }}
+                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    Rewrite selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={runStatementReview}
+                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    {isReviewing ? "Checking..." : "Check statement"}
+                  </button>
                 </div>
               </div>
 
@@ -232,6 +369,9 @@ export default function StatementEditorClient({
                 name="body"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
+                onSelect={captureSelectedText}
+                onKeyUp={captureSelectedText}
+                onMouseUp={captureSelectedText}
                 placeholder="Type your statement here..."
                 className="mt-3 min-h-[420px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
               />
@@ -260,6 +400,57 @@ export default function StatementEditorClient({
             </div>
           </form>
         </div>
+
+        {reviewError ? (
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+            {reviewError}
+          </div>
+        ) : null}
+
+        {reviewResult ? (
+          <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="text-lg font-semibold text-zinc-900">
+              Statement review
+            </div>
+
+            {reviewResult.summary ? (
+              <div className="mt-2 text-sm text-zinc-700">
+                {reviewResult.summary}
+              </div>
+            ) : null}
+
+            <div className="mt-5 space-y-3">
+              {reviewResult.issues.length > 0 ? (
+                reviewResult.issues.map((issue, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-zinc-200 p-4"
+                  >
+                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      {issue.type}
+                    </div>
+                    <div className="mt-2 text-sm font-semibold text-zinc-900">
+                      {issue.quote || "Issue"}
+                    </div>
+                    <div className="mt-1 text-sm text-zinc-700">
+                      {issue.message}
+                    </div>
+                    <div className="mt-2 text-sm text-zinc-600">
+                      <span className="font-semibold text-zinc-800">
+                        Suggestion:
+                      </span>{" "}
+                      {issue.suggestion}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-zinc-200 p-4 text-sm text-zinc-700">
+                  No major drafting issues were identified.
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {draftOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
@@ -405,6 +596,99 @@ export default function StatementEditorClient({
                     {starter}
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {rewriteOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold text-zinc-900">
+                    Rewrite selected text
+                  </div>
+                  <div className="mt-1 text-sm text-zinc-600">
+                    AI will only rewrite the text you selected.
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRewriteOpen(false);
+                    setRewriteError("");
+                  }}
+                  className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-5">
+                <div className="text-xs font-semibold text-zinc-700">
+                  Selected text
+                </div>
+                <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800">
+                  {selectedText || "No text selected."}
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="text-xs font-semibold text-zinc-700">
+                  Rewrite mode
+                </div>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {[
+                    ["court", "Rewrite in court style"],
+                    ["factual", "Make more factual"],
+                    ["shorten", "Shorten"],
+                    ["clarify", "Clarify"],
+                  ].map(([value, label]) => (
+                    <label
+                      key={value}
+                      className="flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 p-3 text-sm hover:bg-zinc-50"
+                    >
+                      <input
+                        type="radio"
+                        name="rewrite_mode"
+                        value={value}
+                        checked={rewriteMode === value}
+                        onChange={() => setRewriteMode(value)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {rewriteError ? (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+                  {rewriteError}
+                </div>
+              ) : null}
+
+              <div className="mt-5 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRewriteOpen(false);
+                    setRewriteError("");
+                  }}
+                  className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={runRewrite}
+                  disabled={isRewriting}
+                  className="rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isRewriting ? "Rewriting..." : "Rewrite"}
+                </button>
               </div>
             </div>
           </div>
