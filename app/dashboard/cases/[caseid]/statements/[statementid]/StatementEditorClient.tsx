@@ -47,10 +47,22 @@ export default function StatementEditorClient({
 }) {
   const [body, setBody] = useState(st.body ?? "");
   const [draftOpen, setDraftOpen] = useState(false);
+  const [starterOpen, setStarterOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+
+  const starters = [
+    "I am the Applicant in these proceedings.",
+    "I am the Respondent in these proceedings.",
+    "I make this statement in support of my application.",
+    "I make this statement in response to the application.",
+    "The facts in this statement are within my own knowledge unless stated otherwise.",
+    "I have prepared this statement following the order dated ",
+    "The parties separated in ",
+    "I believe the facts stated in this witness statement are true.",
+  ];
 
   const selectedEvents = useMemo(
     () => events.filter((e) => selectedEventIds.includes(e.id)),
@@ -61,6 +73,14 @@ export default function StatementEditorClient({
     setSelectedEventIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  }
+
+  function insertStarter(text: string) {
+    setBody((prev) => {
+      const trimmed = prev.trimEnd();
+      return trimmed ? `${trimmed}\n\n${text}` : text;
+    });
+    setStarterOpen(false);
   }
 
   async function generateDraftFromNotes() {
@@ -186,16 +206,26 @@ export default function StatementEditorClient({
                   Body
                 </label>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDraftOpen(true);
-                    setAiError("");
-                  }}
-                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-                >
-                  Generate draft
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStarterOpen(true)}
+                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    Starter
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftOpen(true);
+                      setAiError("");
+                    }}
+                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                  >
+                    Generate draft
+                  </button>
+                </div>
               </div>
 
               <textarea
@@ -337,6 +367,44 @@ export default function StatementEditorClient({
                     {isGenerating ? "Generating..." : "Generate draft"}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {starterOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold text-zinc-900">
+                    Sentence starters
+                  </div>
+                  <div className="mt-1 text-sm text-zinc-600">
+                    Insert a common witness statement line.
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setStarterOpen(false)}
+                  className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-2">
+                {starters.map((starter) => (
+                  <button
+                    key={starter}
+                    type="button"
+                    onClick={() => insertStarter(starter)}
+                    className="block w-full rounded-xl border border-zinc-200 px-4 py-3 text-left text-sm text-zinc-900 hover:bg-zinc-50"
+                  >
+                    {starter}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
