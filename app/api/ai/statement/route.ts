@@ -50,7 +50,7 @@ Task:
 Draft a UK Family Court witness statement from the notes provided.
 
 Output requirements:
-- Write in first person only ("I").
+- Write in first person.
 - Use numbered paragraphs only.
 - Keep a neutral, factual, non-argumentative tone.
 - Use only facts contained in the notes.
@@ -91,7 +91,7 @@ You must:
 - never guess dates, names, sequences, or motives;
 - write in first person;
 - use numbered paragraphs;
-- keep the tone calm, neutral, and factual;
+- keep the tone calm, neutral, formal, legalistic and factual;
 - avoid submissions, arguments, accusations, and legal advice;
 - distinguish direct knowledge from second-hand information where the notes allow;
 - omit anything unsupported by the notes.
