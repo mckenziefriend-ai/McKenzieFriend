@@ -7,11 +7,18 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "Missing OPENAI_API_KEY on the server." },
+        { status: 500 }
+      );
+    }
+
     const { notes } = await req.json();
 
     if (!notes || typeof notes !== "string") {
       return NextResponse.json(
-        { error: "Notes are required" },
+        { error: "Notes are required." },
         { status: 400 }
       );
     }
@@ -50,12 +57,24 @@ ${notes}
 
     const draft = response.choices[0]?.message?.content ?? "";
 
-    return NextResponse.json({ draft });
-  } catch (error) {
+    return NextResponse.json({
+      draft,
+      requestId: response._request_id ?? null,
+    });
+  } catch (error: any) {
     console.error("AI statement generation failed:", error);
+
     return NextResponse.json(
-      { error: "AI generation failed" },
-      { status: 500 }
+      {
+        error:
+          error?.message ||
+          error?.error?.message ||
+          "AI generation failed.",
+        status: error?.status ?? null,
+        type: error?.type ?? null,
+        code: error?.code ?? null,
+      },
+      { status: error?.status || 500 }
     );
   }
 }
