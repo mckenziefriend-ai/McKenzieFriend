@@ -5,6 +5,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+type SelectedEvent = {
+  id: string;
+  event_date: string | null;
+  date_unknown: boolean | null;
+  summary: string;
+};
+
 export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -14,16 +21,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const { notes } = await req.json();
+    const { notes, selectedEvents } = await req.json();
 
-    if (!notes || typeof notes !== "string") {
+    if (
+      (!notes || typeof notes !== "string") &&
+      (!Array.isArray(selectedEvents) || selectedEvents.length === 0)
+    ) {
       return NextResponse.json(
-        { error: "Notes are required." },
+        { error: "Notes or selected chronology events are required." },
         { status: 400 }
       );
     }
 
-const prompt = `
+    const eventsText = Array.isArray(selectedEvents)
+      ? (selectedEvents as SelectedEvent[])
+          .map((ev, i) => {
+            const dateLabel =
+              ev.date_unknown || !ev.event_date
+                ? "Date unknown"
+                : ev.event_date;
+            return `${i + 1}. ${dateLabel} — ${ev.summary}`;
+          })
+          .join("\n")
+      : "";
+
+   const prompt = `
 Task:
 Draft a UK Family Court witness statement from the notes provided.
 
