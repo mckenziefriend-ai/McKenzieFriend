@@ -58,7 +58,6 @@ export default async function StatementEditorPage({
     "use server";
 
     const title = String(formData.get("title") ?? "").trim();
-    const statementBy = String(formData.get("statement_by") ?? "").trim();
     const statementDateRaw = String(formData.get("statement_date") ?? "").trim();
     const witnessName = String(formData.get("witness_name") ?? "").trim();
     const partyRole = String(formData.get("party_role") ?? "").trim();
@@ -77,7 +76,6 @@ export default async function StatementEditorPage({
       .from("case_statements")
       .update({
         title,
-        statement_by: statementBy ? statementBy : null,
         statement_date: statementDateRaw ? statementDateRaw : null,
         witness_name: witnessName ? witnessName : null,
         party_role: partyRole ? partyRole : null,
