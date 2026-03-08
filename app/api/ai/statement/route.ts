@@ -41,7 +41,6 @@ ${notes}
 
     const response = await openai.chat.completions.create({
       model: "gpt-5-mini",
-      temperature: 0.2,
       messages: [
         {
           role: "system",
