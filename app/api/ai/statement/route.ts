@@ -34,49 +34,54 @@ export async function POST(req: Request) {
     }
 
     const eventsText = Array.isArray(selectedEvents)
-      ? (selectedEvents as SelectedEvent[])
-          .map((ev, i) => {
-            const dateLabel =
-              ev.date_unknown || !ev.event_date
-                ? "Date unknown"
-                : ev.event_date;
-            return `${i + 1}. ${dateLabel} — ${ev.summary}`;
-          })
-          .join("\n")
-      : "";
+  ? selectedEvents
+      .map((ev: SelectedEvent, i: number) => {
+        const dateLabel =
+          ev.date_unknown || !ev.event_date ? "Date unknown" : ev.event_date;
+        return `${i + 1}. ${dateLabel} — ${ev.summary}`;
+      })
+      .join("\n")
+  : "";
 
-   const prompt = `
+const prompt = `
 Task:
-Draft a UK Family Court witness statement from the notes provided.
+Draft a UK Family Court witness statement from the source material provided.
 
 Output requirements:
 - Write in first person.
 - Use numbered paragraphs only.
 - Keep a neutral, factual, non-argumentative tone.
-- Use only facts contained in the notes.
+- Use only facts contained in the source material.
 - Do not invent, assume, infer, or fill gaps.
 - Do not add legal advice, legal analysis, or case law.
 - Do not exaggerate or use emotive language.
-- Where dates or details are uncertain, say so only if the notes indicate uncertainty.
+- Where dates or details are uncertain, say so only if the source material indicates uncertainty.
 - Present events in chronological order where possible.
 - Keep each paragraph short and focused on one point.
 - Preserve the distinction between:
   - what I directly saw, heard, did, or received; and
   - what I was told by someone else.
-- Do not include anything that is not supported by the notes.
-- If the notes are too limited to support a formal witness statement, produce the fullest possible draft from the notes only.
+- Do not include anything that is not supported by the source material.
+- If the source material is too limited to support a formal witness statement, produce the fullest possible draft from the source material only.
 
 Formatting requirements:
 - Start directly with paragraph 1.
-- No heading unless the notes provide one.
+- No heading unless the source material provides one.
 - No placeholders such as "[insert date]".
 - No bullet points.
 - No commentary before or after the statement.
 
-Source notes:
-${notes}
-`;
+My notes:
+${notes || "None provided"}
 
+Selected chronology events:
+${eventsText || "None selected"}
+
+Important:
+- The selected chronology events are optional supporting source material chosen by the user.
+- Use them where relevant.
+- Do not force every selected event into the draft if it does not fit naturally.
+`;
 const response = await openai.chat.completions.create({
   model: "gpt-5-mini",
   messages: [
