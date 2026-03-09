@@ -63,6 +63,8 @@ Output requirements:
   - what I was told by someone else.
 - Do not include anything that is not supported by the source material.
 - If the source material is too limited to support a formal witness statement, produce the fullest possible draft from the source material only.
+- Use one numbered paragraph per incident where possible.
+- Do not split a single incident into multiple paragraphs unless necessary.
 
 Formatting requirements:
 - Start directly with paragraph 1.
