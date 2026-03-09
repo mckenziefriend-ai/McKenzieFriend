@@ -63,8 +63,9 @@ Output requirements:
   - what I was told by someone else.
 - Do not include anything that is not supported by the source material.
 - If the source material is too limited to support a formal witness statement, produce the fullest possible draft from the source material only.
-- Use one numbered paragraph per incident where possible.
-- Do not split a single incident into multiple paragraphs unless necessary.
+- If the notes contain broad allegations without examples, do not present them as factual findings.
+
+Instead describe them as allegations unless specific incidents are provided.
 
 Formatting requirements:
 - Start directly with paragraph 1.
@@ -72,6 +73,9 @@ Formatting requirements:
 - No placeholders such as "[insert date]".
 - No bullet points.
 - No commentary before or after the statement.
+- Use one numbered paragraph per incident where possible.
+- Do not split a single incident into multiple paragraphs unless necessary.
+- Write dates in UK format, not ISO format.
 
 My notes:
 ${notes || "None provided"}
