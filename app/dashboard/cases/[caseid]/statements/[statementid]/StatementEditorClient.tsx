@@ -50,7 +50,10 @@ export default function StatementEditorClient({
 }) {
   const [body, setBody] = useState(st.body ?? "");
   const [draftOpen, setDraftOpen] = useState(false);
-  const [starterOpen, setStarterOpen] = useState(false);
+  const [insertOpen, setInsertOpen] = useState(false);
+  const [insertMode, setInsertMode] = useState<"starter" | "intro" | "event">(
+    "starter"
+  );
   const [notes, setNotes] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
@@ -101,7 +104,7 @@ export default function StatementEditorClient({
       const trimmed = prev.trimEnd();
       return trimmed ? `${trimmed}\n\n${text}` : text;
     });
-    setStarterOpen(false);
+    setInsertOpen(false);
   }
 
   function insertStructuredIntro() {
@@ -132,6 +135,22 @@ export default function StatementEditorClient({
       const introBlock = lines.join("\n\n");
       return trimmed ? `${introBlock}\n\n${trimmed}` : introBlock;
     });
+    setInsertOpen(false);
+  }
+
+  function insertEventSummary(ev: CaseEvent) {
+    const dateLabel =
+      ev.date_unknown || !ev.event_date
+        ? "Date unknown"
+        : formatDateUK(ev.event_date);
+
+    const text = `${dateLabel}: ${ev.summary}`;
+
+    setBody((prev) => {
+      const trimmed = prev.trimEnd();
+      return trimmed ? `${trimmed}\n\n${text}` : text;
+    });
+    setInsertOpen(false);
   }
 
   function captureSelectedText(
@@ -276,14 +295,14 @@ export default function StatementEditorClient({
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(12,26,42,0.1),_transparent_38%),linear-gradient(to_bottom,_#f8fafc,_#ffffff)] text-zinc-950">
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-semibold text-zinc-600">
-              STATEMENT EDITOR
+            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Statement editor
             </div>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
               {caseTitle}
             </h1>
             <p className="mt-2 text-sm text-zinc-700">
@@ -294,7 +313,7 @@ export default function StatementEditorClient({
           <div className="flex flex-wrap gap-3">
             <Link
               href={`/dashboard/cases/${caseId}/statements/${statementid}/export`}
-              className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
+              className="inline-flex items-center justify-center rounded-xl bg-[#0C1A2A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1725]"
             >
               Export
             </Link>
@@ -307,9 +326,14 @@ export default function StatementEditorClient({
           </div>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <form action={saveStatement} className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+        <form action={saveStatement} className="mt-8 grid gap-6">
+          {/* Statement details */}
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="text-sm font-semibold text-zinc-900">
+              Statement details
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-xs font-semibold text-zinc-700">
                   Title
@@ -317,7 +341,7 @@ export default function StatementEditorClient({
                 <input
                   name="title"
                   defaultValue={st.title ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0C1A2A]"
                   required
                 />
               </div>
@@ -330,21 +354,21 @@ export default function StatementEditorClient({
                   name="statement_date"
                   type="date"
                   defaultValue={st.statement_date ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0C1A2A]"
                 />
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
-               <label className="text-xs font-semibold text-zinc-700">
-  Statement by
-</label>
-<input
-  name="witness_name"
-  defaultValue={st.witness_name ?? ""}
-  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-/>
+                <label className="text-xs font-semibold text-zinc-700">
+                  Statement by
+                </label>
+                <input
+                  name="witness_name"
+                  defaultValue={st.witness_name ?? ""}
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0C1A2A]"
+                />
               </div>
 
               <div>
@@ -354,7 +378,7 @@ export default function StatementEditorClient({
                 <select
                   name="party_role"
                   defaultValue={st.party_role ?? ""}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0C1A2A]"
                 >
                   <option value="">Select</option>
                   <option value="Applicant">Applicant</option>
@@ -363,7 +387,7 @@ export default function StatementEditorClient({
               </div>
             </div>
 
-            <div>
+            <div className="mt-3">
               <label className="text-xs font-semibold text-zinc-700">
                 Application type
               </label>
@@ -371,87 +395,157 @@ export default function StatementEditorClient({
                 name="application_type"
                 defaultValue={st.application_type ?? ""}
                 placeholder="e.g. a non-molestation order"
-                className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0C1A2A]"
               />
             </div>
+          </section>
 
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <label className="text-xs font-semibold text-zinc-700">
-                  Body
-                </label>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStarterOpen(true)}
-                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-                  >
-                    Starter
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={insertStructuredIntro}
-                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-                  >
-                    Insert intro
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraftOpen(true);
-                      setAiError("");
-                    }}
-                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-                  >
-                    Generate draft
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!selectedText) {
-                        setRewriteError("Select some text in the statement first.");
-                        return;
-                      }
-                      setRewriteError("");
-                      setRewriteOpen(true);
-                    }}
-                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-                  >
-                    Rewrite selected
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={runStatementReview}
-                    className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-                  >
-                    {isReviewing ? "Checking..." : "Check statement"}
-                  </button>
+          {/* Draft editor */}
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-zinc-900">Draft</div>
+                <div className="mt-1 text-xs text-zinc-500">
+                  Write freely and use AI tools when helpful.
                 </div>
               </div>
 
-              <textarea
-                name="body"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                onSelect={captureSelectedText}
-                onKeyUp={captureSelectedText}
-                onMouseUp={captureSelectedText}
-                placeholder="Type your statement here..."
-                className="mt-3 min-h-[420px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
-              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInsertMode("starter");
+                    setInsertOpen(true);
+                  }}
+                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  Insert
+                </button>
 
-              <div className="mt-2 text-xs text-zinc-500">
-                Tip: keep paragraphs short. You can paste full text and edit
-                directly.
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftOpen(true);
+                    setAiError("");
+                  }}
+                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  Draft
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!selectedText) {
+                      setRewriteError("Select some text in the statement first.");
+                      return;
+                    }
+                    setRewriteError("");
+                    setRewriteOpen(true);
+                  }}
+                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  Rewrite
+                </button>
+
+                <button
+                  type="button"
+                  onClick={runStatementReview}
+                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
+                >
+                  {isReviewing ? "Reviewing..." : "Review"}
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <textarea
+              name="body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onSelect={captureSelectedText}
+              onKeyUp={captureSelectedText}
+              onMouseUp={captureSelectedText}
+              placeholder="Type your statement here..."
+              className="mt-4 min-h-[420px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-[#0C1A2A]"
+            />
+
+            <div className="mt-2 text-xs text-zinc-500">
+              Tip: keep paragraphs short. You can paste full text and edit
+              directly.
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-xl bg-[#0C1A2A] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1725]"
+              >
+                Save
+              </button>
+            </div>
+          </section>
+
+          {/* Review results */}
+          {reviewError ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+              {reviewError}
+            </div>
+          ) : null}
+
+          {reviewResult ? (
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+              <div className="text-lg font-semibold text-zinc-900">
+                Statement review
+              </div>
+
+              {reviewResult.summary ? (
+                <div className="mt-2 text-sm text-zinc-700">
+                  {reviewResult.summary}
+                </div>
+              ) : null}
+
+              <div className="mt-5 space-y-3">
+                {reviewResult.issues.length > 0 ? (
+                  reviewResult.issues.map((issue, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-zinc-200 p-4"
+                    >
+                      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        {issue.type}
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-zinc-900">
+                        {issue.quote || "Issue"}
+                      </div>
+                      <div className="mt-1 text-sm text-zinc-700">
+                        {issue.message}
+                      </div>
+                      <div className="mt-2 text-sm text-zinc-600">
+                        <span className="font-semibold text-zinc-800">
+                          Suggestion:
+                        </span>{" "}
+                        {issue.suggestion}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-zinc-200 p-4 text-sm text-zinc-700">
+                    No major drafting issues were identified.
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Danger zone */}
+          <section className="rounded-2xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="text-sm font-semibold text-rose-700">
+              Danger zone
+            </div>
+            <div className="mt-2 text-sm text-zinc-600">
+              Delete this statement permanently.
+            </div>
+
+            <div className="mt-5">
               <button
                 formAction={deleteStatement}
                 type="submit"
@@ -459,70 +553,12 @@ export default function StatementEditorClient({
               >
                 Delete statement
               </button>
-
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-              >
-                Save
-              </button>
             </div>
-          </form>
-        </div>
-
-        {reviewError ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
-            {reviewError}
-          </div>
-        ) : null}
-
-        {reviewResult ? (
-          <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-            <div className="text-lg font-semibold text-zinc-900">
-              Statement review
-            </div>
-
-            {reviewResult.summary ? (
-              <div className="mt-2 text-sm text-zinc-700">
-                {reviewResult.summary}
-              </div>
-            ) : null}
-
-            <div className="mt-5 space-y-3">
-              {reviewResult.issues.length > 0 ? (
-                reviewResult.issues.map((issue, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-xl border border-zinc-200 p-4"
-                  >
-                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      {issue.type}
-                    </div>
-                    <div className="mt-2 text-sm font-semibold text-zinc-900">
-                      {issue.quote || "Issue"}
-                    </div>
-                    <div className="mt-1 text-sm text-zinc-700">
-                      {issue.message}
-                    </div>
-                    <div className="mt-2 text-sm text-zinc-600">
-                      <span className="font-semibold text-zinc-800">
-                        Suggestion:
-                      </span>{" "}
-                      {issue.suggestion}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-zinc-200 p-4 text-sm text-zinc-700">
-                  No major drafting issues were identified.
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
+          </section>
+        </form>
 
         {draftOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0C1A2A]/40 px-4 backdrop-blur-sm">
             <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -553,13 +589,16 @@ export default function StatementEditorClient({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="mt-1 min-h-[180px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-zinc-400"
+                  className="mt-1 min-h-[180px] w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm leading-6 outline-none focus:border-[#0C1A2A]"
                 />
               </div>
 
               <div className="mt-5">
                 <div className="text-xs font-semibold text-zinc-700">
-                  Use chronology events as context (optional)
+                  Use chronology events (optional)
+                </div>
+                <div className="mt-1 text-xs text-zinc-500">
+                  {selectedEventIds.length} selected
                 </div>
                 <div className="mt-2 max-h-[220px] overflow-auto rounded-xl border border-zinc-200">
                   {events.length > 0 ? (
@@ -622,7 +661,7 @@ export default function StatementEditorClient({
                     type="button"
                     onClick={generateDraftFromNotes}
                     disabled={isGenerating}
-                    className="rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl bg-[#0C1A2A] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1725] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isGenerating ? "Generating..." : "Generate draft"}
                   </button>
@@ -632,46 +671,132 @@ export default function StatementEditorClient({
           </div>
         ) : null}
 
-        {starterOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-            <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
+        {insertOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0C1A2A]/40 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-zinc-900">
-                    Sentence starters
+                    Insert into draft
                   </div>
                   <div className="mt-1 text-sm text-zinc-600">
-                    Insert a common witness statement line.
+                    Add a sentence starter, intro, or event.
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setStarterOpen(false)}
+                  onClick={() => setInsertOpen(false)}
                   className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-50"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="mt-5 space-y-2">
-                {starters.map((starter) => (
-                  <button
-                    key={starter}
-                    type="button"
-                    onClick={() => insertStarter(starter)}
-                    className="block w-full rounded-xl border border-zinc-200 px-4 py-3 text-left text-sm text-zinc-900 hover:bg-zinc-50"
-                  >
-                    {starter}
-                  </button>
-                ))}
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInsertMode("starter")}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
+                    insertMode === "starter"
+                      ? "border-[#0C1A2A] bg-[#0C1A2A] text-white"
+                      : "border-zinc-300 hover:bg-zinc-50"
+                  }`}
+                >
+                  Sentence starter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInsertMode("intro")}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
+                    insertMode === "intro"
+                      ? "border-[#0C1A2A] bg-[#0C1A2A] text-white"
+                      : "border-zinc-300 hover:bg-zinc-50"
+                  }`}
+                >
+                  Intro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInsertMode("event")}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
+                    insertMode === "event"
+                      ? "border-[#0C1A2A] bg-[#0C1A2A] text-white"
+                      : "border-zinc-300 hover:bg-zinc-50"
+                  }`}
+                >
+                  Event
+                </button>
               </div>
+
+              {insertMode === "starter" ? (
+                <div className="mt-5 space-y-2">
+                  {starters.map((starter) => (
+                    <button
+                      key={starter}
+                      type="button"
+                      onClick={() => insertStarter(starter)}
+                      className="block w-full rounded-xl border border-zinc-200 px-4 py-3 text-left text-sm text-zinc-900 hover:bg-zinc-50"
+                    >
+                      {starter}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {insertMode === "intro" ? (
+                <div className="mt-5 rounded-xl border border-zinc-200 p-4">
+                  <div className="text-sm text-zinc-700">
+                    Insert a structured introduction based on the current
+                    statement details.
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={insertStructuredIntro}
+                      className="rounded-xl bg-[#0C1A2A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1725]"
+                    >
+                      Insert intro
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {insertMode === "event" ? (
+                <div className="mt-5">
+                  <div className="max-h-[320px] overflow-auto rounded-xl border border-zinc-200">
+                    {events.length > 0 ? (
+                      events.map((ev) => (
+                        <button
+                          key={ev.id}
+                          type="button"
+                          onClick={() => insertEventSummary(ev)}
+                          className="block w-full border-b border-zinc-200 p-4 text-left last:border-b-0 hover:bg-zinc-50"
+                        >
+                          <div className="text-xs font-semibold text-zinc-600">
+                            {ev.date_unknown || !ev.event_date
+                              ? "Date unknown"
+                              : formatDateUK(ev.event_date)}
+                          </div>
+                          <div className="mt-1 text-sm text-zinc-900">
+                            {ev.summary}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-zinc-600">
+                        No chronology events available.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
 
         {rewriteOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0C1A2A]/40 px-4 backdrop-blur-sm">
             <div className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -754,7 +879,7 @@ export default function StatementEditorClient({
                   type="button"
                   onClick={runRewrite}
                   disabled={isRewriting}
-                  className="rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-xl bg-[#0C1A2A] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1725] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isRewriting ? "Rewriting..." : "Rewrite"}
                 </button>
