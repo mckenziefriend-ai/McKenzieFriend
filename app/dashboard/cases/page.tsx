@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import DeleteCaseButton from "./DeleteCaseButton";
 
@@ -24,11 +25,7 @@ function formatUKDateTime(iso: string | null) {
   });
 }
 
-export default async function CasesPage({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function CasesPage() {
   const supabase = await createClient();
 
   const {
@@ -36,6 +33,8 @@ export default async function CasesPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const cookieStore = await cookies();
+  const defaultCaseId = cookieStore.get("mf_default_case_id")?.value;
 
   const { data: cases } = await supabase
     .from("cases")
@@ -65,8 +64,37 @@ export default async function CasesPage({
 
     if (error || !data?.id) redirect("/dashboard/cases");
 
-    // After case creation, redirect to case hub (not chronology)
     redirect(`/dashboard/cases/${data.id}`);
+  }
+
+  async function setDefaultCase(formData: FormData) {
+    "use server";
+
+    const caseId = String(formData.get("case_id") ?? "").trim();
+    if (!caseId) redirect("/dashboard/cases");
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
+
+    const { data: owned } = await supabase
+      .from("cases")
+      .select("id")
+      .eq("id", caseId)
+      .single();
+
+    if (!owned?.id) redirect("/dashboard/cases");
+
+    const cookieStore = await cookies();
+    cookieStore.set("mf_default_case_id", caseId, {
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+
+    redirect(`/dashboard/cases/${caseId}`);
   }
 
   async function deleteCase(formData: FormData) {
@@ -96,101 +124,92 @@ export default async function CasesPage({
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold text-zinc-600">
-              CHRONOLOGY GENERATOR
-            </div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              Cases
-            </h1>
-            <p className="mt-2 text-sm text-zinc-700">
-              Create a case, then add events in date order.
+    <div className="min-h-screen bg-[#F6F8FA] text-[#0B1A2B]">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href="/dashboard" className="text-sm font-semibold tracking-tight">McKenzie Friend AI</Link>
+          <Link href="/dashboard" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Dashboard</Link>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+        <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86]">New case</div>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight">Cases</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Each case has its own AI assistant, tools, documents, calendar, bundle and exports.
             </p>
-          </div>
 
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-          >
-            Back to dashboard
-          </Link>
-        </div>
+            <form action={createCase} className="mt-6 space-y-3">
+              <input
+                name="title"
+                placeholder="Case title, e.g. Saira v Shazad"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
+                required
+              />
+              <button type="submit" className="w-full rounded-2xl bg-[#0B1A2B] px-5 py-3 text-sm font-semibold text-white hover:bg-[#10243A]">
+                Create case
+              </button>
+            </form>
 
+            <div className="mt-5 rounded-2xl border border-[#88D2DC]/40 bg-[#88D2DC]/10 p-4 text-sm text-slate-700">
+              Use ⋯ on a case to make it open by default after login.
+            </div>
+          </aside>
 
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="text-sm font-semibold text-zinc-900">
-            Create a new case
-          </div>
-
-          <form
-            action={createCase}
-            className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
-          >
-            <input
-              name="title"
-              placeholder="Case title (e.g. Child arrangements)"
-              className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-              required
-            />
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-            >
-              Create
-            </button>
-          </form>
-
-          <div className="mt-3 text-xs text-zinc-500">
-            Signed in as {user.email}
-          </div>
-        </div>
-
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <div className="text-sm font-semibold text-zinc-900">Your cases</div>
-            <div className="text-xs text-zinc-500">{rows.length} total</div>
-          </div>
-
-          <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
-            {rows.length > 0 ? (
-              rows.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between gap-4 p-4"
-                >
-                  <Link
-                    href={`/dashboard/cases/${c.id}`}
-                    className="min-w-0 flex-1 rounded-xl px-2 py-1 hover:bg-zinc-50"
-                  >
-                    <div className="truncate font-semibold text-zinc-900">
-                      {c.title}
-                    </div>
-                    <div className="mt-1 text-xs text-zinc-500">
-                      Created {formatUKDateTime(c.created_at)}
-                    </div>
-                  </Link>
-
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Link
-                      href={`/dashboard/cases/${c.id}`}
-                      className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
-                    >
-                      Open
-                    </Link>
-
-                    <DeleteCaseButton caseId={c.id} action={deleteCase} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-4 text-sm text-zinc-700">
-                No cases yet. Create your first one above.
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Your cases</h2>
+                <p className="mt-1 text-sm text-slate-600">Open your case hub or set a default case.</p>
               </div>
-            )}
-          </div>
+              <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{rows.length} total</div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {rows.length > 0 ? (
+                rows.map((c) => {
+                  const isDefault = defaultCaseId === c.id;
+                  return (
+                    <div key={c.id} className="rounded-3xl border border-slate-200 p-4 transition hover:border-[#88D2DC] hover:bg-[#88D2DC]/5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <Link href={`/dashboard/cases/${c.id}`} className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="truncate text-base font-semibold">{c.title}</div>
+                            {isDefault ? <span className="rounded-full bg-[#88D2DC]/25 px-2.5 py-1 text-xs font-bold text-[#0B1A2B]">Default</span> : null}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">Created {formatUKDateTime(c.created_at)}</div>
+                        </Link>
+
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Link href={`/dashboard/cases/${c.id}`} className="rounded-xl bg-[#0B1A2B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#10243A]">Open</Link>
+
+                          <details className="relative">
+                            <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-slate-200 text-lg font-bold hover:bg-slate-50">⋯</summary>
+                            <div className="absolute right-0 z-10 mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
+                              <form action={setDefaultCase}>
+                                <input type="hidden" name="case_id" value={c.id} />
+                                <button className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold hover:bg-slate-50">
+                                  Open by default
+                                </button>
+                              </form>
+                            </div>
+                          </details>
+
+                          <DeleteCaseButton caseId={c.id} action={deleteCase} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-600">
+                  No cases yet. Create your first case on the left.
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </main>
     </div>

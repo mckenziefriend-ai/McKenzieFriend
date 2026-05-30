@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
 
 export const dynamic = "force-dynamic";
 
@@ -18,81 +19,94 @@ export default async function CaseHomePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-
   const { data: caseRow } = await supabase
     .from("cases")
-    .select("id,title,created_at")
+    .select("id,title,created_at,case_number,court_name,hearing_datetime")
     .eq("id", caseId)
     .single();
 
   if (!caseRow) redirect("/dashboard/cases");
 
+  const [{ count: eventsCount }, { count: statementsCount }] = await Promise.all([
+    supabase.from("case_events").select("id", { count: "exact", head: true }).eq("case_id", caseId),
+    supabase.from("case_statements").select("id", { count: "exact", head: true }).eq("case_id", caseId),
+  ]);
+
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold text-zinc-600">CASE</div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              {caseRow.title}
-            </h1>
-            <p className="mt-2 text-sm text-zinc-700">
-              Choose a tool for this case.
-            </p>
+    <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Hub">
+      <div className="space-y-5">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B] sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86] dark:text-[#88D2DC]">Case hub</div>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight">Your case command centre</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Start with the assistant, add events to your chronology, draft statements, organise documents, track deadlines and build a court bundle.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#88D2DC]/20 px-4 py-3 text-sm font-semibold text-[#0B1A2B] dark:text-[#88D2DC]">
+              AI + tools work together
+            </div>
           </div>
+        </section>
 
-          <Link
-            href="/dashboard/cases"
-            className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-          >
-            Back
-          </Link>
-        </div>
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <HubCard title="Chronology" value={`${eventsCount ?? 0} events`} href={`/dashboard/cases/${caseId}/chronology`} text="Build the timeline." />
+          <HubCard title="Statements" value={`${statementsCount ?? 0} drafts`} href={`/dashboard/cases/${caseId}/statements`} text="Draft witness or position statements." />
+          <HubCard title="Documents" value="Storage" href={`/dashboard/cases/${caseId}/documents`} text="Upload and organise the case file." />
+          <HubCard title="Bundle" value="Builder" href={`/dashboard/cases/${caseId}/bundle`} text="Prepare a hearing bundle." />
+        </section>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          <Link
-            href={`/dashboard/cases/${caseId}/chronology`}
-            className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm hover:bg-zinc-50"
-          >
-            <div className="text-sm font-semibold text-zinc-900">
-              Chronology
-            </div>
-            <div className="mt-1 text-sm text-zinc-600">
-              Add events and export a chronology PDF.
-            </div>
-          </Link>
-
-          <Link
-            href={`/dashboard/cases/${caseId}/statements`}
-            className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm hover:bg-zinc-50"
-          >
-            <div className="text-sm font-semibold text-zinc-900">
-              Statements
-            </div>
-            <div className="mt-1 text-sm text-zinc-600">
-              Draft and export witness statements.
-            </div>
-          </Link>
-
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
-            <div className="text-sm font-semibold text-zinc-900">
-              Documents (coming soon)
-            </div>
-            <div className="mt-1 text-sm text-zinc-600">
-              Upload and organise case documents.
+        <section className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B]">
+            <h3 className="text-lg font-semibold">Suggested next steps</h3>
+            <div className="mt-4 space-y-3">
+              <NextStep title="Ask the AI what to do next" href={`/dashboard/cases/${caseId}/chat`} />
+              <NextStep title="Add the key events to your chronology" href={`/dashboard/cases/${caseId}/chronology`} />
+              <NextStep title="Create or review your statement" href={`/dashboard/cases/${caseId}/statements`} />
+              <NextStep title="Start organising documents and evidence" href={`/dashboard/cases/${caseId}/documents`} />
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
-            <div className="text-sm font-semibold text-zinc-900">
-              Checklists (coming soon)
-            </div>
-            <div className="mt-1 text-sm text-zinc-600">
-              Preparation steps and templates.
-            </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B]">
+            <h3 className="text-lg font-semibold">Case snapshot</h3>
+            <dl className="mt-4 space-y-3 text-sm">
+              <Row label="Court" value={caseRow.court_name || "Not added yet"} />
+              <Row label="Case number" value={caseRow.case_number || "Not added yet"} />
+              <Row label="Next hearing" value={caseRow.hearing_datetime || "Not added yet"} />
+              <Row label="Export status" value="Chronology and statement exports available" />
+            </dl>
           </div>
-        </div>
-      </main>
+        </section>
+      </div>
+    </CaseWorkspaceShell>
+  );
+}
+
+function HubCard({ title, value, text, href }: { title: string; value: string; text: string; href: string }) {
+  return (
+    <Link href={href} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-[#88D2DC] hover:bg-[#88D2DC]/10 dark:border-[#1F344D] dark:bg-[#0B1A2B] dark:hover:bg-[#10243A]">
+      <div className="text-sm font-semibold text-slate-500 dark:text-slate-300">{title}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-tight">{value}</div>
+      <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{text}</div>
+    </Link>
+  );
+}
+
+function NextStep({ title, href }: { title: string; href: string }) {
+  return (
+    <Link href={href} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4 text-sm font-semibold hover:bg-slate-50 dark:border-[#1F344D] dark:hover:bg-[#10243A]">
+      <span>{title}</span>
+      <span>→</span>
+    </Link>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3 last:border-0 dark:border-[#1F344D]">
+      <dt className="text-slate-500 dark:text-slate-300">{label}</dt>
+      <dd className="text-right font-semibold">{value}</dd>
     </div>
   );
 }

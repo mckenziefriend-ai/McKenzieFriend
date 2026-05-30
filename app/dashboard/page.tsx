@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -11,127 +14,103 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  const email = user.email ?? "Unknown";
+  const cookieStore = await cookies();
+  const defaultCaseId = cookieStore.get("mf_default_case_id")?.value;
+
+  if (defaultCaseId) {
+    const { data: defaultCase } = await supabase
+      .from("cases")
+      .select("id")
+      .eq("id", defaultCaseId)
+      .single();
+
+    if (defaultCase?.id) redirect(`/dashboard/cases/${defaultCase.id}`);
+  }
+
+  const { data: cases } = await supabase
+    .from("cases")
+    .select("id,title,created_at")
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  const rows = (cases as Array<{ id: string; title: string; created_at: string | null }> | null) ?? [];
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        {/* Navy surface */}
-        <div className="relative overflow-hidden rounded-3xl border border-zinc-200 shadow-sm">
-          {/* Background gradient */}
-          <div className="relative bg-gradient-to-b from-[#0B1A2B] via-[#111827] to-[#0B1220]">
-            {/* Subtle grid */}
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.18]"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(0deg, rgba(255,255,255,0.045), rgba(255,255,255,0.045) 1px, transparent 1px, transparent 64px), repeating-linear-gradient(90deg, rgba(255,255,255,0.035), rgba(255,255,255,0.035) 1px, transparent 1px, transparent 64px)",
-              }}
-            />
-            {/* Glow */}
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0.02) 38%, rgba(255,255,255,0) 60%)",
-              }}
-            />
+    <div className="min-h-screen bg-[#F6F8FA] text-[#0B1A2B]">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href="/" className="text-sm font-semibold tracking-tight">McKenzie Friend AI</Link>
+          <form action="/auth/signout" method="post">
+            <button className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Sign out</button>
+          </form>
+        </div>
+      </header>
 
-            <div className="relative px-6 py-10 sm:px-10">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                    Dashboard
-                  </h1>
-                  <p className="mt-2 text-sm text-white/75">
-                    Signed in as{" "}
-                    <span className="font-medium text-white">{email}</span>
-                  </p>
-                </div>
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+        <section className="rounded-3xl bg-[#0B1A2B] p-6 text-white shadow-sm sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#88D2DC]">Case dashboard</div>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">Choose your case workspace</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
+                Create or open a case. Once you set a default case, signing in takes you straight to that case hub.
+              </p>
+            </div>
+            <Link href="/dashboard/cases" className="rounded-2xl bg-[#88D2DC] px-5 py-3 text-center text-sm font-bold text-[#07111F] hover:bg-[#A3E4EC]">
+              Open cases
+            </Link>
+          </div>
+        </section>
 
-                <div className="flex flex-wrap gap-3">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15"
-                  >
-                    Home
+        <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Recent cases</h2>
+                <p className="mt-1 text-sm text-slate-600">Open a case or create a new one to start working.</p>
+              </div>
+              <Link href="/dashboard/cases" className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">View all</Link>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {rows.length > 0 ? (
+                rows.map((caseRow) => (
+                  <Link key={caseRow.id} href={`/dashboard/cases/${caseRow.id}`} className="block rounded-2xl border border-slate-200 p-4 hover:border-[#88D2DC] hover:bg-[#88D2DC]/10">
+                    <div className="font-semibold">{caseRow.title}</div>
+                    <div className="mt-1 text-xs text-slate-500">Open case hub →</div>
                   </Link>
-
-                  <form action="/auth/signout" method="post">
-                    <button
-                      type="submit"
-                      className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-white/15 hover:bg-[#0A1726]"
-                    >
-                      Sign out
-                    </button>
-                  </form>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-600">
+                  No cases yet. Create your first case from the cases page.
                 </div>
-              </div>
-
-              <div className="mt-8 grid gap-5 md:grid-cols-3">
-                {/* ✅ Chronology now lives under /dashboard/cases */}
-                <Tile
-                  title="Your cases"
-                  desc="View your cases"
-                  href="/dashboard/cases"
-                />
-                <Tile
-                  title="Documents"
-                  desc="Upload and organise case documents."
-                  href="#"
-                />
-                <Tile
-                  title="Checklists"
-                  desc="Preparation steps and templates."
-                  href="#"
-                />
-              </div>
-
-              <div className="mt-8 rounded-2xl border border-white/15 bg-white/10 p-5 text-sm text-white/80">
-                All tools are available to registered users. Start by opening
-                <span className="font-semibold text-white"> Your cases</span>, then create or continue a case.
-              </div>
+              )}
             </div>
           </div>
-        </div>
 
-        <footer className="mt-12 border-t border-zinc-200 pt-6 text-xs text-zinc-600">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
-            <span className="text-zinc-500">England &amp; Wales</span>
-          </div>
-        </footer>
+          <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86]">How it works</div>
+            <div className="mt-4 space-y-4 text-sm text-slate-700">
+              <Step n="1" title="Open a case" text="The case becomes your main hub." />
+              <Step n="2" title="Use the AI assistant" text="Ask questions, draft, check and organise." />
+              <Step n="3" title="Build the file" text="Chronology, statements, documents, evidence, calendar and bundle." />
+              <Step n="4" title="Export" text="Prepare documents or a full bundle when ready." />
+            </div>
+          </aside>
+        </section>
       </main>
     </div>
   );
 }
 
-function cn(...classes: Array<string | false | undefined | null>) {
-  return classes.filter(Boolean).join(" ");
-}
-
-function Tile({
-  title,
-  desc,
-  href,
-}: {
-  title: string;
-  desc: string;
-  href: string;
-}) {
+function Step({ n, title, text }: { n: string; title: string; text: string }) {
   return (
-    <Link
-      href={href}
-      className="group relative block overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-6 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/15"
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
-      <div className="relative">
-        <div className="flex items-start justify-between gap-4">
-          <h3 className="text-base font-semibold">{title}</h3>
-          <span className="text-white/60 group-hover:text-white/80">→</span>
-        </div>
-        <p className="mt-2 text-sm text-white/75">{desc}</p>
+    <div className="flex gap-3">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#88D2DC]/30 text-xs font-bold text-[#0B1A2B]">{n}</div>
+      <div>
+        <div className="font-semibold text-[#0B1A2B]">{title}</div>
+        <div className="mt-0.5 text-slate-600">{text}</div>
       </div>
-    </Link>
+    </div>
   );
 }
