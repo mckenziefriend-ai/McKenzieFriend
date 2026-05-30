@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import StatementEditorClient from "./StatementEditorClient";
 
@@ -19,16 +18,6 @@ export default async function StatementEditorPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_private_beta")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.is_private_beta) redirect("/");
-
-  const cookieStore = await cookies();
-  const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
-  if (!unlocked) redirect("/dashboard");
 
   const { data: caseRow } = await supabase
     .from("cases")

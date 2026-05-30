@@ -13,15 +13,6 @@ export default async function DashboardPage() {
 
   const email = user.email ?? "Unknown";
 
-  // profile gate (private beta)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_private_beta")
-    .eq("id", user.id)
-    .single();
-
-  const isPrivateBeta = !!profile?.is_private_beta;
-
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
@@ -96,40 +87,10 @@ export default async function DashboardPage() {
                 />
               </div>
 
-              {!isPrivateBeta ? (
-                <div className="mt-8 rounded-2xl border border-white/15 bg-white/10 p-5 text-sm text-white/80">
-                  Private beta is currently restricted.
-                </div>
-              ) : (
-                <form
-                  action="/dashboard/chronology/unlock"
-                  method="post"
-                  className="mt-8 rounded-2xl border border-white/15 bg-white/10 p-5"
-                >
-                  <div className="text-sm font-semibold text-white">
-                    Private tools
-                  </div>
-                  <div className="mt-1 text-xs text-white/70">
-                    Enter password to unlock chronology tools.
-                  </div>
-
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <input
-                      name="password"
-                      type="password"
-                      required
-                      placeholder="Password"
-                      className="w-full rounded-xl border border-white/15 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/25"
-                    />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-white/15 hover:bg-[#0A1726]"
-                    >
-                      Unlock
-                    </button>
-                  </div>
-                </form>
-              )}
+              <div className="mt-8 rounded-2xl border border-white/15 bg-white/10 p-5 text-sm text-white/80">
+                All tools are available to registered users. Start by opening
+                <span className="font-semibold text-white"> Your cases</span>, then create or continue a case.
+              </div>
             </div>
           </div>
         </div>

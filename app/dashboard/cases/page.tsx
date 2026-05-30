@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import DeleteCaseButton from "./DeleteCaseButton";
 
@@ -30,9 +29,6 @@ export default async function CasesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const sp = (await searchParams) ?? {};
-  const unlock = Array.isArray(sp.unlock) ? sp.unlock[0] : sp.unlock;
-
   const supabase = await createClient();
 
   const {
@@ -40,17 +36,6 @@ export default async function CasesPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_private_beta")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.is_private_beta) redirect("/");
-
-  const cookieStore = await cookies();
-  const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
-  if (!unlocked) redirect("/dashboard");
 
   const { data: cases } = await supabase
     .from("cases")
@@ -134,11 +119,6 @@ export default async function CasesPage({
           </Link>
         </div>
 
-        {unlock === "wrong" ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-            Incorrect password.
-          </div>
-        ) : null}
 
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="text-sm font-semibold text-zinc-900">
@@ -164,7 +144,7 @@ export default async function CasesPage({
           </form>
 
           <div className="mt-3 text-xs text-zinc-500">
-            Private beta • signed in as {user.email}
+            Signed in as {user.email}
           </div>
         </div>
 

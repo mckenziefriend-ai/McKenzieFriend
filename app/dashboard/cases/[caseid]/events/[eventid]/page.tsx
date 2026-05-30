@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import DeleteEventButton from "@/app/dashboard/cases/DeleteEventButton";
 
@@ -18,16 +17,6 @@ export default async function EditEventPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_private_beta")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.is_private_beta) redirect("/");
-
-  const cookieStore = await cookies();
-  const unlocked = cookieStore.get("chrono_unlocked")?.value === "1";
-  if (!unlocked) redirect("/dashboard");
 
   const { data: caseRow } = await supabase
     .from("cases")
