@@ -27,10 +27,13 @@ export default async function CaseHomePage({
 
   if (!caseRow) redirect("/dashboard/cases");
 
-  const [{ count: eventsCount }, { count: statementsCount }] = await Promise.all([
+  const [{ count: eventsCount }, { count: statementsCount }, documentsResult] = await Promise.all([
     supabase.from("case_events").select("id", { count: "exact", head: true }).eq("case_id", caseId),
     supabase.from("case_statements").select("id", { count: "exact", head: true }).eq("case_id", caseId),
+    supabase.from("case_documents").select("id", { count: "exact", head: true }).eq("case_id", caseId),
   ]);
+
+  const documentsCount = documentsResult.error ? 0 : documentsResult.count ?? 0;
 
   return (
     <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Hub">
@@ -38,7 +41,7 @@ export default async function CaseHomePage({
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <HubCard title="Chronology" value={`${eventsCount ?? 0} events`} href={`/dashboard/cases/${caseId}/chronology`} text="Build the timeline." />
           <HubCard title="Statements" value={`${statementsCount ?? 0} drafts`} href={`/dashboard/cases/${caseId}/statements`} text="Draft witness or position statements." />
-          <HubCard title="Documents" value="Storage" href={`/dashboard/cases/${caseId}/documents`} text="Upload and organise the case file." />
+          <HubCard title="Documents" value={`${documentsCount} files`} href={`/dashboard/cases/${caseId}/documents`} text="Upload and organise the case file." />
           <HubCard title="Bundle" value="Builder" href={`/dashboard/cases/${caseId}/bundle`} text="Prepare a hearing bundle." />
         </section>
 
@@ -62,15 +65,6 @@ function HubCard({ title, value, text, href }: { title: string; value: string; t
       <div className="text-sm font-semibold text-slate-500 ">{title}</div>
       <div className="mt-3 text-2xl font-semibold tracking-tight">{value}</div>
       <div className="mt-2 text-sm text-slate-600 ">{text}</div>
-    </Link>
-  );
-}
-
-function UnusedNextStep({ title, href }: { title: string; href: string }) {
-  return (
-    <Link href={href} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4 text-sm font-semibold hover:bg-slate-50">
-      <span>{title}</span>
-      <span>→</span>
     </Link>
   );
 }
