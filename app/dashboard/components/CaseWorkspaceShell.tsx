@@ -25,39 +25,54 @@ export function CaseWorkspaceShell({
 }) {
   return (
     <div className="min-h-screen bg-[#F7F9FB] text-[#0B1A2B]">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-[1500px] items-center justify-between gap-3 px-4 sm:px-6">
-          <Link href="/dashboard/cases" aria-label="Cases" className="inline-flex items-center">
-            <Image src="/logo.png" alt="McKenzie Friend AI" width={118} height={30} priority className="h-5 w-auto object-contain sm:h-6" />
+      <header className="sticky top-0 z-40 h-14 border-b border-slate-200 bg-white">
+        <div className="flex h-full items-center justify-between gap-4 px-4 md:px-6">
+          <Link href="/dashboard/cases" aria-label="Cases" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="McKenzie Friend AI"
+              width={96}
+              height={24}
+              priority
+              className="h-5 w-auto object-contain"
+            />
           </Link>
+          <div className="hidden min-w-0 flex-1 items-center justify-center md:flex">
+            <div className="max-w-xl truncate text-sm font-semibold text-slate-700" title={title}>
+              {title}
+            </div>
+          </div>
           <form action="/auth/signout" method="post">
-            <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">
+            <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
               Sign out
             </button>
           </form>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1500px] lg:grid-cols-[230px_minmax(0,1fr)]">
-        <aside className="hidden min-h-[calc(100vh-56px)] border-r border-slate-200 bg-white px-4 py-5 lg:block">
-          <Link href="/dashboard/cases" className="text-xs font-semibold text-slate-500 hover:text-[#0B1A2B]">
-            ← Cases
-          </Link>
-          <div className="mt-4 border-b border-slate-100 pb-4">
-            <div className="truncate text-sm font-semibold text-[#0B1A2B]" title={title}>{title}</div>
+      <div className="flex min-h-[calc(100vh-56px)]">
+        <aside className="hidden w-64 shrink-0 border-r border-[#132942] bg-[#0B1A2B] text-white md:flex md:flex-col">
+          <div className="border-b border-white/10 px-5 py-4">
+            <Link href="/dashboard/cases" className="text-xs font-semibold text-white/60 hover:text-white">
+              Cases
+            </Link>
+            <div className="mt-3 truncate text-sm font-semibold" title={title}>
+              {title}
+            </div>
           </div>
-          <nav className="mt-4 space-y-1">
+          <nav className="flex-1 space-y-1 px-3 py-4">
             {navItems.map((item) => {
               const isActive = item.label === active;
-              const href = `/dashboard/cases/${caseId}/${item.href}`;
               return (
                 <Link
                   key={item.label}
-                  href={href}
+                  href={`/dashboard/cases/${caseId}/${item.href}`}
                   prefetch
                   className={[
-                    "block rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-                    isActive ? "bg-[#0B1A2B] text-white" : "text-slate-600 hover:bg-slate-100 hover:text-[#0B1A2B]",
+                    "flex items-center border-l-2 px-3 py-2.5 text-sm font-medium transition",
+                    isActive
+                      ? "border-[#88D2DC] bg-white/10 text-white"
+                      : "border-transparent text-white/70 hover:bg-white/5 hover:text-white",
                   ].join(" ")}
                 >
                   {item.label}
@@ -67,41 +82,50 @@ export function CaseWorkspaceShell({
           </nav>
         </aside>
 
-        <main className="min-w-0">
-          <div className="border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+        <main className="min-w-0 flex-1">
+          <div className="border-b border-slate-200 bg-white px-4 py-3 md:hidden">
             <div className="flex items-center justify-between gap-3">
-              <Link href="/dashboard/cases" className="text-xs font-semibold text-slate-500">← Cases</Link>
-              <div className="min-w-0 truncate text-sm font-semibold">{title}</div>
+              <Link href="/dashboard/cases" className="text-xs font-semibold text-slate-500">Cases</Link>
+              <div className="min-w-0 truncate text-sm font-semibold" title={title}>{title}</div>
             </div>
-            <nav className="mt-3 flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {navItems.map((item) => {
-                const isActive = item.label === active;
-                return (
-                  <Link
-                    key={item.label}
-                    href={`/dashboard/cases/${caseId}/${item.href}`}
-                    prefetch
-                    className={[
-                      "whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold",
-                      isActive ? "bg-[#0B1A2B] text-white" : "bg-slate-100 text-slate-700",
-                    ].join(" ")}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
-          <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-6">{children}</div>
+          <div className="pb-20 md:pb-0">{children}</div>
         </main>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-slate-200 bg-white md:hidden">
+        {[
+          { label: "Chat", href: "chat" },
+          { label: "Timeline", href: "chronology" },
+          { label: "Docs", href: "documents" },
+          { label: "More", href: "statements" },
+        ].map((item) => {
+          const isActive =
+            item.label === "Timeline" ? active === "Chronology" :
+            item.label === "Docs" ? active === "Documents" :
+            item.label === "More" ? ["Statements", "Calendar", "Bundle"].includes(active) :
+            active === item.label;
+          return (
+            <Link
+              key={item.label}
+              href={`/dashboard/cases/${caseId}/${item.href}`}
+              className={[
+                "px-2 py-3 text-center text-xs font-semibold",
+                isActive ? "text-[#0B1A2B]" : "text-slate-500",
+              ].join(" ")}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
 
 export function AssistantPanel({ caseId }: { caseId: string }) {
   return (
-    <Link href={`/dashboard/cases/${caseId}/chat`} className="inline-flex rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">
+    <Link href={`/dashboard/cases/${caseId}/chat`} className="inline-flex rounded-lg bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">
       Chat
     </Link>
   );

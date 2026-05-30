@@ -201,131 +201,109 @@ export default async function DocumentsPage({
       title={caseRow.title}
       active="Documents"
     >
-      <div className="space-y-5">
+      <div className="mx-auto max-w-6xl px-4 py-5 md:px-8 md:py-7">
+        <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+          <span className="text-sm text-slate-500">{rows.length} files</span>
+        </div>
+
         {documentsError ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm sm:rounded-3xl sm:p-6">
-            Documents are not set up yet. Run the Phase 3 Supabase SQL file,
-            then return to this page.
-          </section>
+          <div className="mb-5 border-l-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Documents are not set up yet. Run the Phase 3 Supabase SQL file.
+          </div>
         ) : null}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Documents
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">Files and evidence for this case.</p>
-            </div>
-            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-              {rows.length} files
-            </div>
-          </div>
-
-          <form
-            action={uploadDocument}
-            className="mt-5 grid gap-3 rounded-2xl border border-slate-200 bg-[#F7F9FB] p-4"
-          >
-            <div className="grid gap-3 sm:grid-cols-[1fr_190px]">
-              <input
-                name="file"
-                type="file"
-                accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp"
-                required
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#0B1A2B] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
-              />
-              <select
-                name="category"
-                defaultValue="Evidence"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
-              >
-                {categories.map((category) => (
-                  <option key={category}>{category}</option>
-                ))}
-              </select>
-            </div>
-            <textarea
-              name="summary"
-              rows={3}
-              placeholder="Optional summary or note"
-              className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
+        <form action={uploadDocument} className="mb-6 grid gap-3 border-b border-slate-200 pb-6">
+          <div className="grid gap-3 md:grid-cols-[1fr_190px_auto] md:items-center">
+            <input
+              name="file"
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp"
+              required
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#0B1A2B] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white"
             />
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="rounded-xl bg-[#0B1A2B] px-5 py-3 text-sm font-semibold text-white hover:bg-[#10243A]"
-              >
-                Upload document
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl">
-          <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-            <h3 className="text-lg font-semibold">Files</h3>
+            <select
+              name="category"
+              defaultValue="Evidence"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
+            >
+              {categories.map((category) => (
+                <option key={category}>{category}</option>
+              ))}
+            </select>
+            <button type="submit" className="rounded-lg bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">
+              Upload
+            </button>
           </div>
+          <textarea
+            name="summary"
+            rows={2}
+            placeholder="Notes"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
+          />
+        </form>
 
+        <div className="overflow-x-auto border border-slate-200 bg-white">
+          <div className="grid min-w-[760px] grid-cols-[minmax(260px,1fr)_150px_110px_190px] border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div>Name</div>
+            <div>Type</div>
+            <div>Size</div>
+            <div className="text-right">Actions</div>
+          </div>
           {docsWithUrls.length > 0 ? (
-            <div className="divide-y divide-slate-100">
+            <div className="min-w-[760px] divide-y divide-slate-100">
               {docsWithUrls.map((doc) => (
-                <article key={doc.id} className="px-5 py-4 sm:px-6">
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_140px_130px_170px] lg:items-center">
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold">{doc.file_name}</div>
-                      <div className="mt-1 text-sm text-slate-600">{doc.summary || "No summary added."}</div>
-                    </div>
-                    <div className="text-sm text-slate-600">{doc.category || "Uncategorised"}</div>
-                    <div className="text-sm text-slate-500">{doc.file_size ? formatBytes(doc.file_size) : "—"}</div>
-                    <div className="flex flex-wrap gap-2 lg:justify-end">
-                      {doc.signedUrl ? (
-                        <a href={doc.signedUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50">
-                          View
-                        </a>
-                      ) : null}
-                      <Link href={`/dashboard/cases/${caseId}/chat`} className="rounded-xl bg-[#0B1A2B] px-3 py-2 text-sm font-semibold text-white hover:bg-[#10243A]">
-                        Ask
-                      </Link>
-                    </div>
-                  </div>
-
-                  <details className="mt-3 rounded-xl border border-slate-100 bg-[#F7F9FB] p-3">
-                    <summary className="cursor-pointer text-sm font-semibold">Edit</summary>
-                    <form action={updateDocumentSummary} className="mt-3 grid gap-3">
-                      <input type="hidden" name="document_id" value={doc.id} />
-                      <select name="category" defaultValue={doc.category || "Other"} className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm">
-                        {categories.map((category) => (
-                          <option key={category}>{category}</option>
-                        ))}
-                      </select>
-                      <textarea name="summary" rows={3} defaultValue={doc.summary || ""} className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm" />
-                      <div className="flex flex-wrap gap-2">
-                        <button type="submit" className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white">Save</button>
+                <div key={doc.id} className="grid grid-cols-[minmax(260px,1fr)_150px_110px_190px] items-start gap-4 px-4 py-4">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{doc.file_name}</div>
+                    {doc.summary ? <div className="mt-1 text-sm text-slate-600">{doc.summary}</div> : null}
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs font-semibold text-slate-500">Edit</summary>
+                      <div className="mt-3 grid gap-3">
+                        <form action={updateDocumentSummary} className="grid gap-3">
+                          <input type="hidden" name="document_id" value={doc.id} />
+                          <select name="category" defaultValue={doc.category || "Other"} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                            {categories.map((category) => (
+                              <option key={category}>{category}</option>
+                            ))}
+                          </select>
+                          <textarea name="summary" rows={2} defaultValue={doc.summary || ""} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+                          <button type="submit" className="w-fit rounded-lg bg-[#0B1A2B] px-4 py-2 text-sm font-semibold text-white">Save</button>
+                        </form>
+                        <form action={deleteDocument}>
+                          <input type="hidden" name="document_id" value={doc.id} />
+                          <input type="hidden" name="storage_path" value={doc.storage_path} />
+                          <button type="submit" className="text-sm font-semibold text-red-700 hover:underline">Delete</button>
+                        </form>
                       </div>
-                    </form>
-                    <form action={deleteDocument} className="mt-3">
-                      <input type="hidden" name="document_id" value={doc.id} />
-                      <input type="hidden" name="storage_path" value={doc.storage_path} />
-                      <button type="submit" className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50">Delete</button>
-                    </form>
-                  </details>
-                </article>
+                    </details>
+                  </div>
+                  <div className="text-sm text-slate-600">{doc.category || "Uncategorised"}</div>
+                  <div className="text-sm text-slate-500">{doc.file_size ? formatBytes(doc.file_size) : "—"}</div>
+                  <div className="flex justify-end gap-2">
+                    {doc.signedUrl ? (
+                      <a href={doc.signedUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50">
+                        View
+                      </a>
+                    ) : null}
+                    <Link href={`/dashboard/cases/${caseId}/chat`} className="rounded-lg bg-[#0B1A2B] px-3 py-2 text-sm font-semibold text-white hover:bg-[#10243A]">
+                      Chat
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center text-sm text-slate-600">No documents uploaded yet.</div>
+            <div className="px-4 py-10 text-sm text-slate-600">No documents uploaded yet.</div>
           )}
-        </section>
+        </div>
 
-        <section id="evidence" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Evidence</h3>
-              <p className="mt-1 text-sm text-slate-600">Link files to events, statements and bundles.</p>
-            </div>
-            <button disabled className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white opacity-60">Coming soon</button>
+        <div id="evidence" className="mt-8 border-t border-slate-200 pt-5">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold">Evidence</h2>
+            <button disabled className="rounded-lg bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white opacity-50">Coming soon</button>
           </div>
-        </section>
+        </div>
       </div>
     </CaseWorkspaceShell>
   );

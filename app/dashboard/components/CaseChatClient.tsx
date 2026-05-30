@@ -31,58 +31,57 @@ export default function CaseChatClient({ caseId }: { caseId: string }) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "The assistant could not respond.");
+      if (!res.ok) throw new Error(data?.error || "No response.");
 
       setMessages((current) => [
         ...current,
-        { role: "assistant", content: data.answer || "I could not generate a response." },
+        { role: "assistant", content: data.answer || "No response." },
       ]);
     } catch (err: any) {
-      setError(err?.message || "The assistant could not respond.");
+      setError(err?.message || "No response.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <section className="flex h-[calc(100vh-120px)] min-h-[560px] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm lg:h-[calc(100vh-104px)]">
-      <div className="border-b border-slate-100 px-4 py-3 sm:px-5">
-        <h1 className="text-base font-semibold tracking-tight sm:text-lg">Chat</h1>
+    <section className="flex h-[calc(100vh-56px)] flex-col bg-white">
+      <div className="border-b border-slate-200 px-5 py-3 md:px-8">
+        <h1 className="text-sm font-semibold tracking-tight text-[#0B1A2B]">Case assistant</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
         {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-center">
-            <div>
-              <div className="text-2xl font-semibold tracking-tight">Ask anything about this case.</div>
-              <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm">
-                <button type="button" onClick={() => setInput("Summarise this case")} className="rounded-full border border-slate-200 px-3 py-2 hover:bg-slate-50">Summarise this case</button>
-                <button type="button" onClick={() => setInput("Draft a statement")} className="rounded-full border border-slate-200 px-3 py-2 hover:bg-slate-50">Draft a statement</button>
-                <button type="button" onClick={() => setInput("What dates matter?")} className="rounded-full border border-slate-200 px-3 py-2 hover:bg-slate-50">What dates matter?</button>
+          <div className="flex h-full items-center justify-center">
+            <div className="w-full max-w-3xl">
+              <div className="border-b border-slate-200 pb-4 text-2xl font-semibold tracking-tight text-[#0B1A2B] md:text-3xl">
+                Case assistant
               </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="mx-auto max-w-3xl space-y-5">
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
                 className={[
-                  "max-w-[92%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[76%]",
-                  message.role === "user" ? "ml-auto bg-[#0B1A2B] text-white" : "bg-[#F6F8FA] text-slate-800",
+                  "whitespace-pre-wrap text-sm leading-7",
+                  message.role === "user"
+                    ? "ml-auto max-w-[82%] rounded-2xl bg-[#0B1A2B] px-4 py-3 text-white"
+                    : "max-w-[92%] border-l-2 border-[#88D2DC] pl-4 text-slate-800",
                 ].join(" ")}
               >
                 {message.content}
               </div>
             ))}
-            {loading ? <div className="max-w-[76%] rounded-2xl bg-[#F6F8FA] px-4 py-3 text-sm text-slate-600">Thinking…</div> : null}
-            {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+            {loading ? <div className="border-l-2 border-slate-200 pl-4 text-sm text-slate-500">Working…</div> : null}
+            {error ? <div className="border-l-2 border-red-300 pl-4 text-sm text-red-700">{error}</div> : null}
           </div>
         )}
       </div>
 
-      <form onSubmit={sendMessage} className="border-t border-slate-100 p-3 sm:p-4">
-        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-[#F7F9FB] p-2 sm:flex-row">
+      <form onSubmit={sendMessage} className="border-t border-slate-200 bg-white p-3 md:p-5">
+        <div className="mx-auto flex max-w-3xl gap-2 rounded-xl border border-slate-300 bg-white p-2 shadow-sm focus-within:border-[#88D2DC] focus-within:ring-4 focus-within:ring-[#88D2DC]/20">
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -92,7 +91,7 @@ export default function CaseChatClient({ caseId }: { caseId: string }) {
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="rounded-xl bg-[#0B1A2B] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-[#0B1A2B] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Send
           </button>
