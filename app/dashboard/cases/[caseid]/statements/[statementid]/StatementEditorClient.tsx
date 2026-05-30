@@ -34,7 +34,7 @@ function formatDateUK(dateISO: string) {
 export default function StatementEditorClient({
   caseId,
   statementid,
-  caseTitle,
+  caseTitle: _caseTitle,
   st,
   events,
   saveStatement,
@@ -295,38 +295,16 @@ export default function StatementEditorClient({
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(12,26,42,0.1),_transparent_38%),linear-gradient(to_bottom,_#f8fafc,_#ffffff)] text-zinc-950">
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Statement editor
-            </div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              {caseTitle}
-            </h1>
-            <p className="mt-2 text-sm text-zinc-700">
-              Edit freely. You can export a court-style print preview.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={`/dashboard/cases/${caseId}/statements/${statementid}/export`}
-              className="inline-flex items-center justify-center rounded-xl bg-[#0C1A2A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1725]"
-            >
-              Export
-            </Link>
-            <Link
-              href={`/dashboard/cases/${caseId}/statements`}
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-            >
-              Back
-            </Link>
-          </div>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-2xl font-semibold tracking-tight">Statement editor</h2>
+        <div className="flex flex-wrap gap-3">
+          <Link href={`/dashboard/cases/${caseId}/statements/${statementid}/export`} className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">Export</Link>
+          <Link href={`/dashboard/cases/${caseId}/statements`} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">Back</Link>
         </div>
+      </div>
 
-        <form action={saveStatement} className="mt-8 grid gap-6">
+      <form action={saveStatement} className="grid gap-6">
           {/* Statement details */}
           <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="text-sm font-semibold text-zinc-900">
@@ -887,7 +865,7 @@ export default function StatementEditorClient({
             </div>
           </div>
         ) : null}
-      </main>
+      </form>
     </div>
   );
 }

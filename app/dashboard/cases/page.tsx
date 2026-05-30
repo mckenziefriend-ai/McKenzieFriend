@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -127,7 +128,7 @@ export default async function CasesPage() {
     <div className="min-h-screen bg-[#F6F8FA] text-[#0B1A2B]">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/dashboard" className="text-sm font-semibold tracking-tight">McKenzie Friend AI</Link>
+          <Link href="/dashboard" aria-label="Dashboard" className="inline-flex items-center"><Image src="/logo.png" alt="McKenzie Friend AI" width={190} height={48} priority className="h-8 w-auto object-contain" /></Link>
           <Link href="/dashboard" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Dashboard</Link>
         </div>
       </header>
@@ -138,7 +139,7 @@ export default async function CasesPage() {
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86]">New case</div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight">Cases</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Each case has its own AI assistant, tools, documents, calendar, bundle and exports.
+              Open a case or set one to open by default.
             </p>
 
             <form action={createCase} className="mt-6 space-y-3">
@@ -153,16 +154,14 @@ export default async function CasesPage() {
               </button>
             </form>
 
-            <div className="mt-5 rounded-2xl border border-[#88D2DC]/40 bg-[#88D2DC]/10 p-4 text-sm text-slate-700">
-              Use ⋯ on a case to make it open by default after login.
-            </div>
+            
           </aside>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold tracking-tight">Your cases</h2>
-                <p className="mt-1 text-sm text-slate-600">Open your case hub or set a default case.</p>
+                <p className="mt-1 text-sm text-slate-600">Open a case hub.</p>
               </div>
               <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{rows.length} total</div>
             </div>

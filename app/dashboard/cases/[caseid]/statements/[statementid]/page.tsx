@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import StatementEditorClient from "./StatementEditorClient";
+import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
 
 export const dynamic = "force-dynamic";
 
@@ -96,22 +97,24 @@ export default async function StatementEditorPage({
   }
 
   return (
-    <StatementEditorClient
-      caseId={caseId}
-      statementid={statementid}
-      caseTitle={caseRow.title}
-      st={st}
-      events={
-        (events ?? []) as Array<{
-          id: string;
-          event_date: string | null;
-          date_unknown: boolean | null;
-          summary: string;
-          evidence: string | null;
-        }>
-      }
-      saveStatement={saveStatement}
-      deleteStatement={deleteStatement}
-    />
+    <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Statements">
+      <StatementEditorClient
+        caseId={caseId}
+        statementid={statementid}
+        caseTitle={caseRow.title}
+        st={st}
+        events={
+          (events ?? []) as Array<{
+            id: string;
+            event_date: string | null;
+            date_unknown: boolean | null;
+            summary: string;
+            evidence: string | null;
+          }>
+        }
+        saveStatement={saveStatement}
+        deleteStatement={deleteStatement}
+      />
+    </CaseWorkspaceShell>
   );
 }

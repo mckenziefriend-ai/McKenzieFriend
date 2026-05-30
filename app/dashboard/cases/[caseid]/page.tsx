@@ -35,18 +35,16 @@ export default async function CaseHomePage({
   return (
     <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Hub">
       <div className="space-y-5">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B] sm:p-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86] dark:text-[#88D2DC]">Case hub</div>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight">Your case command centre</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Start with the assistant, add events to your chronology, draft statements, organise documents, track deadlines and build a court bundle.
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86]">Case hub</div>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight">Case hub</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 ">
+                Everything for this case stays in one workspace.
               </p>
             </div>
-            <div className="rounded-2xl bg-[#88D2DC]/20 px-4 py-3 text-sm font-semibold text-[#0B1A2B] dark:text-[#88D2DC]">
-              AI + tools work together
-            </div>
+            
           </div>
         </section>
 
@@ -58,8 +56,8 @@ export default async function CaseHomePage({
         </section>
 
         <section className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B]">
-            <h3 className="text-lg font-semibold">Suggested next steps</h3>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ">
+            <h3 className="text-lg font-semibold">Next</h3>
             <div className="mt-4 space-y-3">
               <NextStep title="Ask the AI what to do next" href={`/dashboard/cases/${caseId}/chat`} />
               <NextStep title="Add the key events to your chronology" href={`/dashboard/cases/${caseId}/chronology`} />
@@ -68,8 +66,8 @@ export default async function CaseHomePage({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B]">
-            <h3 className="text-lg font-semibold">Case snapshot</h3>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ">
+            <h3 className="text-lg font-semibold">Details</h3>
             <dl className="mt-4 space-y-3 text-sm">
               <Row label="Court" value={caseRow.court_name || "Not added yet"} />
               <Row label="Case number" value={caseRow.case_number || "Not added yet"} />
@@ -85,17 +83,17 @@ export default async function CaseHomePage({
 
 function HubCard({ title, value, text, href }: { title: string; value: string; text: string; href: string }) {
   return (
-    <Link href={href} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-[#88D2DC] hover:bg-[#88D2DC]/10 dark:border-[#1F344D] dark:bg-[#0B1A2B] dark:hover:bg-[#10243A]">
-      <div className="text-sm font-semibold text-slate-500 dark:text-slate-300">{title}</div>
+    <Link href={href} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-[#88D2DC] hover:bg-[#88D2DC]/10  ">
+      <div className="text-sm font-semibold text-slate-500 ">{title}</div>
       <div className="mt-3 text-2xl font-semibold tracking-tight">{value}</div>
-      <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{text}</div>
+      <div className="mt-2 text-sm text-slate-600 ">{text}</div>
     </Link>
   );
 }
 
 function NextStep({ title, href }: { title: string; href: string }) {
   return (
-    <Link href={href} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4 text-sm font-semibold hover:bg-slate-50 dark:border-[#1F344D] dark:hover:bg-[#10243A]">
+    <Link href={href} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4 text-sm font-semibold hover:bg-slate-50 dark:border-[#1F344D] ">
       <span>{title}</span>
       <span>→</span>
     </Link>
@@ -105,7 +103,7 @@ function NextStep({ title, href }: { title: string; href: string }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-slate-100 pb-3 last:border-0 dark:border-[#1F344D]">
-      <dt className="text-slate-500 dark:text-slate-300">{label}</dt>
+      <dt className="text-slate-500 ">{label}</dt>
       <dd className="text-right font-semibold">{value}</dd>
     </div>
   );
