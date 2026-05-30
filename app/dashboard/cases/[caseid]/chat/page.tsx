@@ -14,39 +14,39 @@ export default async function ChatPage({ params }: { params: Promise<{ caseid: s
 
   return (
     <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Chat" assistant={false}>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B] sm:p-8">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B7C86] dark:text-[#88D2DC]">AI case assistant</div>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight">Chat with your case</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-            This is the full-screen chat workspace. The assistant should answer questions, draft wording, translate, check missing information and work with the tools in this case.
-          </p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <section className="flex min-h-[520px] flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
+          <div className="border-b border-slate-100 pb-4">
+            <h2 className="text-xl font-semibold tracking-tight">Chat</h2>
+          </div>
 
-          <div className="mt-8 space-y-4">
-            <div className="max-w-[85%] rounded-3xl bg-[#F6F8FA] p-4 text-sm text-slate-700 dark:bg-[#10243A] dark:text-slate-200">
-              Ask me anything about this case. I will be able to use your chronology, statements, documents, evidence, calendar and bundle.
-            </div>
-            <div className="ml-auto max-w-[85%] rounded-3xl bg-[#0B1A2B] p-4 text-sm text-white dark:bg-[#88D2DC] dark:text-[#07111F]">
-              What should I do next?
+          <div className="flex-1 space-y-4 py-5">
+            <div className="max-w-[88%] rounded-3xl bg-[#F6F8FA] p-4 text-sm leading-6 text-slate-700">
+              Ask me anything about this case. I can help with your chronology, statements, documents, evidence, calendar, bundle and translation.
             </div>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-[#F6F8FA] p-4 dark:border-[#1F344D] dark:bg-[#10243A]">
-            <div className="text-sm font-semibold">Chat input placeholder</div>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Next phase: connect this to a case-aware AI API with tool actions and confirmation buttons.
-            </p>
-          </div>
+          <form className="mt-auto flex gap-2 rounded-2xl border border-slate-200 bg-[#F7F9FB] p-2">
+            <input
+              disabled
+              placeholder="Chat will be connected in the next AI phase"
+              className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-slate-500 outline-none"
+            />
+            <button disabled className="rounded-xl bg-[#0B1A2B] px-4 py-2 text-sm font-semibold text-white opacity-70">
+              Send
+            </button>
+          </form>
         </section>
 
-        <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1F344D] dark:bg-[#0B1A2B]">
-          <h3 className="text-lg font-semibold">Assistant powers</h3>
-          <div className="mt-4 space-y-3 text-sm text-slate-700 dark:text-slate-300">
-            <div>• Answer case questions</div>
-            <div>• Draft and improve wording</div>
-            <div>• Create suggested tool actions</div>
-            <div>• Translate into any language</div>
-            <div>• Check bundle/export readiness</div>
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl">
+          <h3 className="text-base font-semibold">Connected tools</h3>
+          <div className="mt-4 grid gap-2 text-sm text-slate-700">
+            <div className="rounded-2xl bg-[#F7F9FB] p-3">Chronology</div>
+            <div className="rounded-2xl bg-[#F7F9FB] p-3">Statements</div>
+            <div className="rounded-2xl bg-[#F7F9FB] p-3">Documents</div>
+            <div className="rounded-2xl bg-[#F7F9FB] p-3">Evidence</div>
+            <div className="rounded-2xl bg-[#F7F9FB] p-3">Calendar</div>
+            <div className="rounded-2xl bg-[#F7F9FB] p-3">Bundle</div>
           </div>
         </aside>
       </div>

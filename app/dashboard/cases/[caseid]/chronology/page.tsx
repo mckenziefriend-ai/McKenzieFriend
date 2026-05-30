@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CourtAutocomplete from "@/app/dashboard/components/CourtAutocomplete";
 import ExportHeaderFields from "@/app/dashboard/components/ExportHeaderFields";
+import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
 
 export const dynamic = "force-dynamic";
 
@@ -126,49 +127,31 @@ export default async function CaseChronologyPage({
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
+    <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Chronology">
+      <div className="space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-xs font-semibold text-zinc-600">
-              CHRONOLOGY GENERATOR
-            </div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              {caseRow.title}
-            </h1>
-            <p className="mt-2 text-sm text-zinc-700">
-              Add events in date order. Keep wording factual and specific.
-            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">Chronology</h2>
           </div>
-
-          <div className="flex flex-wrap gap-3">
+          <div className="flex gap-2">
             <Link
               href={`/dashboard/cases/${caseId}/export`}
               className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
             >
               Export
             </Link>
-
-            {/* ✅ Added Statements button beside Export / Back */}
             <Link
               href={`/dashboard/cases/${caseId}/statements`}
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50"
             >
               Statements
-            </Link>
-
-            <Link
-              href="/dashboard/cases"
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-zinc-50"
-            >
-              Back
             </Link>
           </div>
         </div>
 
         {/* Court heading / header fields */}
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="text-sm font-semibold text-zinc-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+          <div className="text-sm font-semibold text-[#0B1A2B]">
             Court heading
           </div>
 
@@ -198,28 +181,28 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Add event */}
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="text-lg font-semibold text-zinc-900">Add an event</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+          <div className="text-lg font-semibold text-[#0B1A2B]">Add an event</div>
 
           <form action={addEvent} className="mt-6 grid gap-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold text-zinc-700">
+                <label className="text-xs font-semibold text-slate-700">
                   Date
                 </label>
                 <input
                   name="event_date"
                   type="date"
-                  className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                 />
               </div>
 
               <div className="flex items-end">
-                <label className="inline-flex items-center gap-2 text-sm text-zinc-700">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                   <input
                     name="date_unknown"
                     type="checkbox"
-                    className="h-4 w-4 rounded border-zinc-300"
+                    className="h-4 w-4 rounded border-slate-300"
                   />
                   Date unknown
                 </label>
@@ -227,25 +210,25 @@ export default async function CaseChronologyPage({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-zinc-700">
+              <label className="text-xs font-semibold text-slate-700">
                 What happened
               </label>
               <textarea
                 name="summary"
                 placeholder="One or two sentences. Stick to facts."
-                className="mt-1 min-h-[120px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                className="mt-1 min-h-[120px] w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-zinc-700">
+              <label className="text-xs font-semibold text-slate-700">
                 Evidence (optional)
               </label>
               <input
                 name="evidence"
                 placeholder="e.g. WhatsApp messages, police ref, email from school"
-                className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
               />
             </div>
 
@@ -261,15 +244,15 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Dated events */}
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-zinc-900">
+            <div className="text-lg font-semibold text-[#0B1A2B]">
               Dated events
             </div>
-            <div className="text-xs text-zinc-500">{dated.length} total</div>
+            <div className="text-xs text-slate-500">{dated.length} total</div>
           </div>
 
-          <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
+          <div className="mt-4 divide-y divide-slate-200 rounded-2xl border border-slate-200">
             {dated.length > 0 ? (
               dated.map((ev) => (
                 <div
@@ -277,15 +260,15 @@ export default async function CaseChronologyPage({
                   className="flex items-start justify-between gap-4 p-4"
                 >
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-zinc-600">
+                    <div className="text-xs font-semibold text-slate-600">
                       {ev.event_date ? formatDateUK(ev.event_date) : ""}
                     </div>
-                    <div className="mt-1 text-sm font-semibold text-zinc-900">
+                    <div className="mt-1 text-sm font-semibold text-[#0B1A2B]">
                       {ev.summary}
                     </div>
                     {ev.evidence ? (
-                      <div className="mt-2 text-xs text-zinc-600">
-                        <span className="font-semibold text-zinc-700">
+                      <div className="mt-2 text-xs text-slate-600">
+                        <span className="font-semibold text-slate-700">
                           Evidence:
                         </span>{" "}
                         {ev.evidence}
@@ -295,14 +278,14 @@ export default async function CaseChronologyPage({
 
                   <Link
                     href={`/dashboard/cases/${caseId}/events/${ev.id}`}
-                    className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
+                    className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50"
                   >
                     Edit
                   </Link>
                 </div>
               ))
             ) : (
-              <div className="p-4 text-sm text-zinc-700">
+              <div className="p-4 text-sm text-slate-700">
                 No dated events yet.
               </div>
             )}
@@ -310,15 +293,15 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Undated events */}
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-zinc-900">
+            <div className="text-lg font-semibold text-[#0B1A2B]">
               Undated events
             </div>
-            <div className="text-xs text-zinc-500">{undated.length} total</div>
+            <div className="text-xs text-slate-500">{undated.length} total</div>
           </div>
 
-          <div className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
+          <div className="mt-4 divide-y divide-slate-200 rounded-2xl border border-slate-200">
             {undated.length > 0 ? (
               undated.map((ev) => (
                 <div
@@ -326,15 +309,15 @@ export default async function CaseChronologyPage({
                   className="flex items-start justify-between gap-4 p-4"
                 >
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-zinc-600">
+                    <div className="text-xs font-semibold text-slate-600">
                       Date unknown
                     </div>
-                    <div className="mt-1 text-sm font-semibold text-zinc-900">
+                    <div className="mt-1 text-sm font-semibold text-[#0B1A2B]">
                       {ev.summary}
                     </div>
                     {ev.evidence ? (
-                      <div className="mt-2 text-xs text-zinc-600">
-                        <span className="font-semibold text-zinc-700">
+                      <div className="mt-2 text-xs text-slate-600">
+                        <span className="font-semibold text-slate-700">
                           Evidence:
                         </span>{" "}
                         {ev.evidence}
@@ -344,20 +327,20 @@ export default async function CaseChronologyPage({
 
                   <Link
                     href={`/dashboard/cases/${caseId}/events/${ev.id}`}
-                    className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-zinc-50"
+                    className="shrink-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50"
                   >
                     Edit
                   </Link>
                 </div>
               ))
             ) : (
-              <div className="p-4 text-sm text-zinc-700">
+              <div className="p-4 text-sm text-slate-700">
                 No undated events yet.
               </div>
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </CaseWorkspaceShell>
   );
 }
