@@ -865,7 +865,6 @@ export default function StatementEditorClient({
             </div>
           </div>
         ) : null}
-      </form>
     </div>
   );
 }
