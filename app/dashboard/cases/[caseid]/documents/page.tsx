@@ -215,10 +215,7 @@ export default async function DocumentsPage({
               <h2 className="text-2xl font-semibold tracking-tight">
                 Documents
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Upload documents for this case and add short summaries for the
-                AI to use.
-              </p>
+              <p className="mt-1 text-sm text-slate-600">Files and evidence for this case.</p>
             </div>
             <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               {rows.length} files
@@ -250,7 +247,7 @@ export default async function DocumentsPage({
             <textarea
               name="summary"
               rows={3}
-              placeholder="Optional summary or note for the AI"
+              placeholder="Optional summary or note"
               className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
             />
             <div className="flex justify-end">
@@ -264,114 +261,69 @@ export default async function DocumentsPage({
           </form>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
-          <h3 className="text-lg font-semibold">Case documents</h3>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl">
+          <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <h3 className="text-lg font-semibold">Files</h3>
+          </div>
 
-          <div className="mt-5 space-y-3">
-            {docsWithUrls.length > 0 ? (
-              docsWithUrls.map((doc) => (
-                <article
-                  key={doc.id}
-                  className="rounded-2xl border border-slate-200 p-4"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          {docsWithUrls.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {docsWithUrls.map((doc) => (
+                <article key={doc.id} className="px-5 py-4 sm:px-6">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_140px_130px_170px] lg:items-center">
                     <div className="min-w-0">
-                      <div className="truncate font-semibold">
-                        {doc.file_name}
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
-                        <span className="rounded-full bg-[#88D2DC]/20 px-2 py-1 font-semibold text-[#0B1A2B]">
-                          {doc.category || "Uncategorised"}
-                        </span>
-                        {doc.file_type ? <span>{doc.file_type}</span> : null}
-                        {doc.file_size ? (
-                          <span>{formatBytes(doc.file_size)}</span>
-                        ) : null}
-                        {doc.created_at ? (
-                          <span>
-                            {new Date(doc.created_at).toLocaleString("en-GB")}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-700">
-                        {doc.summary || "No summary added yet."}
-                      </p>
+                      <div className="truncate font-semibold">{doc.file_name}</div>
+                      <div className="mt-1 text-sm text-slate-600">{doc.summary || "No summary added."}</div>
                     </div>
-                    <div className="flex shrink-0 flex-wrap gap-2">
+                    <div className="text-sm text-slate-600">{doc.category || "Uncategorised"}</div>
+                    <div className="text-sm text-slate-500">{doc.file_size ? formatBytes(doc.file_size) : "—"}</div>
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
                       {doc.signedUrl ? (
-                        <a
-                          href={doc.signedUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
-                        >
+                        <a href={doc.signedUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50">
                           View
                         </a>
                       ) : null}
-                      <Link
-                        href={`/dashboard/cases/${caseId}/chat`}
-                        className="rounded-xl bg-[#0B1A2B] px-3 py-2 text-sm font-semibold text-white hover:bg-[#10243A]"
-                      >
-                        Ask AI
+                      <Link href={`/dashboard/cases/${caseId}/chat`} className="rounded-xl bg-[#0B1A2B] px-3 py-2 text-sm font-semibold text-white hover:bg-[#10243A]">
+                        Ask
                       </Link>
                     </div>
                   </div>
 
-                  <details className="mt-4 rounded-2xl border border-slate-100 bg-[#F7F9FB] p-3">
-                    <summary className="cursor-pointer text-sm font-semibold">
-                      Edit details
-                    </summary>
-                    <form
-                      action={updateDocumentSummary}
-                      className="mt-3 grid gap-3"
-                    >
+                  <details className="mt-3 rounded-xl border border-slate-100 bg-[#F7F9FB] p-3">
+                    <summary className="cursor-pointer text-sm font-semibold">Edit</summary>
+                    <form action={updateDocumentSummary} className="mt-3 grid gap-3">
                       <input type="hidden" name="document_id" value={doc.id} />
-                      <select
-                        name="category"
-                        defaultValue={doc.category || "Other"}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
-                      >
+                      <select name="category" defaultValue={doc.category || "Other"} className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm">
                         {categories.map((category) => (
                           <option key={category}>{category}</option>
                         ))}
                       </select>
-                      <textarea
-                        name="summary"
-                        rows={3}
-                        defaultValue={doc.summary || ""}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
-                      />
-                      <div>
-                        <button
-                          type="submit"
-                          className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white"
-                        >
-                          Save
-                        </button>
+                      <textarea name="summary" rows={3} defaultValue={doc.summary || ""} className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm" />
+                      <div className="flex flex-wrap gap-2">
+                        <button type="submit" className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white">Save</button>
                       </div>
                     </form>
                     <form action={deleteDocument} className="mt-3">
                       <input type="hidden" name="document_id" value={doc.id} />
-                      <input
-                        type="hidden"
-                        name="storage_path"
-                        value={doc.storage_path}
-                      />
-                      <button
-                        type="submit"
-                        className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
+                      <input type="hidden" name="storage_path" value={doc.storage_path} />
+                      <button type="submit" className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50">Delete</button>
                     </form>
                   </details>
                 </article>
-              ))
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-[#F7F9FB] p-8 text-center text-sm text-slate-600">
-                No documents uploaded yet.
-              </div>
-            )}
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-sm text-slate-600">No documents uploaded yet.</div>
+          )}
+        </section>
+
+        <section id="evidence" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Evidence</h3>
+              <p className="mt-1 text-sm text-slate-600">Link files to events, statements and bundles.</p>
+            </div>
+            <button disabled className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white opacity-60">Coming soon</button>
           </div>
         </section>
       </div>
