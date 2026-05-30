@@ -35,7 +35,7 @@ export default function ExportHeaderFields({ initial, CourtPicker }: Props) {
               slugField="court_slug"
               defaultName={initial.court_name}
               defaultSlug={initial.court_slug}
-              placeholder="Start typing e.g. East London"
+              placeholder="Start typing a court name"
             />
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function ExportHeaderFields({ initial, CourtPicker }: Props) {
           <input
             name="hearing_title"
             defaultValue={initial.hearing_title}
-            placeholder="e.g. First Hearing Dispute Resolution Appointment"
+            placeholder="Hearing title"
             className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
           />
         </div>
@@ -88,7 +88,7 @@ export default function ExportHeaderFields({ initial, CourtPicker }: Props) {
         <input
           name="proceedings_heading"
           defaultValue={initial.proceedings_heading}
-          placeholder="e.g. IN THE MATTER OF AN APPLICATION UNDER..."
+          placeholder="Proceedings heading"
           className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
         />
       </div>
@@ -100,7 +100,7 @@ export default function ExportHeaderFields({ initial, CourtPicker }: Props) {
         <textarea
           name="proceedings_lines"
           defaultValue={initial.proceedings_lines}
-          placeholder={`One per line, e.g.\nAND IN MATTERS CONCERNING (Name) (DOB)\nAND IN MATTERS CONCERNING (Name) (DOB)`}
+          placeholder="One per line"
           className="mt-1 min-h-[120px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
         />
         <div className="mt-1 text-[11px] text-zinc-500">

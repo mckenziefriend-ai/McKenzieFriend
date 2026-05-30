@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CourtAutocomplete from "@/app/dashboard/components/CourtAutocomplete";
 import ExportHeaderFields from "@/app/dashboard/components/ExportHeaderFields";
+import PrintButton from "@/app/dashboard/components/PrintButton";
 import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
 
 export const dynamic = "force-dynamic";
@@ -134,12 +135,7 @@ export default async function CaseChronologyPage({
             <h2 className="text-2xl font-semibold tracking-tight">Chronology</h2>
           </div>
           <div className="flex gap-2">
-            <Link
-              href={`/dashboard/cases/${caseId}/export`}
-              className="inline-flex items-center justify-center rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0A1726]"
-            >
-              Export
-            </Link>
+            <PrintButton />
             <Link
               href={`/dashboard/cases/${caseId}/statements`}
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50"
@@ -227,7 +223,7 @@ export default async function CaseChronologyPage({
               </label>
               <input
                 name="evidence"
-                placeholder="e.g. WhatsApp messages, police ref, email from school"
+                placeholder="Evidence reference or note"
                 className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
               />
             </div>

@@ -9,7 +9,7 @@ export default function CourtAutocomplete({
   slugField = "court_slug",
   defaultName = "",
   defaultSlug = "",
-  placeholder = "Start typing a court name (e.g. East London Family Court)…",
+  placeholder = "Start typing a court name…",
 }: {
   nameField?: string;
   slugField?: string;

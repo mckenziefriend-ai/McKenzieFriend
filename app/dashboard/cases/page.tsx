@@ -128,7 +128,7 @@ export default async function CasesPage() {
     <div className="min-h-screen bg-[#F6F8FA] text-[#0B1A2B]">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/dashboard" aria-label="Dashboard" className="inline-flex items-center"><Image src="/logo.png" alt="McKenzie Friend AI" width={190} height={48} priority className="h-8 w-auto object-contain" /></Link>
+          <Link href="/dashboard" aria-label="Dashboard" className="inline-flex items-center"><Image src="/logo.png" alt="McKenzie Friend AI" width={150} height={38} priority className="h-7 w-auto object-contain" /></Link>
           <Link href="/dashboard" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Dashboard</Link>
         </div>
       </header>
@@ -145,7 +145,7 @@ export default async function CasesPage() {
             <form action={createCase} className="mt-6 space-y-3">
               <input
                 name="title"
-                placeholder="Case title, e.g. Saira v Shazad"
+                placeholder="Case title"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
                 required
               />

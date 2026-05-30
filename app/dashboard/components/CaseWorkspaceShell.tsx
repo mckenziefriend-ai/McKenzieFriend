@@ -10,7 +10,6 @@ const tabs = [
   { label: "Evidence", href: "evidence" },
   { label: "Calendar", href: "calendar" },
   { label: "Bundle", href: "bundle" },
-  { label: "Export", href: "export" },
 ];
 
 export function CaseWorkspaceShell({
@@ -31,7 +30,7 @@ export function CaseWorkspaceShell({
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Link href="/dashboard" aria-label="Dashboard" className="inline-flex items-center">
-            <Image src="/logo.png" alt="McKenzie Friend AI" width={150} height={38} priority className="h-7 w-auto object-contain sm:h-8" />
+            <Image src="/logo.png" alt="McKenzie Friend AI" width={135} height={34} priority className="h-6 w-auto object-contain sm:h-7" />
           </Link>
           <form action="/auth/signout" method="post">
             <button className="rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50 sm:px-4 sm:text-sm">
@@ -84,7 +83,7 @@ export function CaseWorkspaceShell({
           </nav>
         </div>
 
-        <div className={assistant ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_310px]" : ""}>
+        <div className={assistant ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]" : ""}>
           <section className="min-w-0">{children}</section>
           {assistant ? <AssistantPanel caseId={caseId} /> : null}
         </div>
@@ -103,28 +102,9 @@ export function AssistantPanel({ caseId }: { caseId: string }) {
           <div className="text-xs text-slate-500">Connected to this case</div>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-6 text-slate-600">
-        Ask a question, draft wording, translate text, or work with the tools in this case.
-      </p>
       <Link href={`/dashboard/cases/${caseId}/chat`} className="mt-4 block rounded-2xl bg-[#0B1A2B] px-4 py-3 text-center text-sm font-semibold text-white hover:bg-[#10243A]">
         Open chat
       </Link>
     </aside>
-  );
-}
-
-export function ToolPlaceholder({ title, description, bullets }: { title: string; description: string; bullets: string[] }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-8">
-      <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {bullets.map((item) => (
-          <div key={item} className="rounded-2xl border border-slate-200 bg-[#F7F9FB] p-4 text-sm font-medium text-slate-700">
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

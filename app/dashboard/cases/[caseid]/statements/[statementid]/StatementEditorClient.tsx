@@ -299,7 +299,7 @@ export default function StatementEditorClient({
       <div className="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-2xl font-semibold tracking-tight">Statement editor</h2>
         <div className="flex flex-wrap gap-3">
-          <Link href={`/dashboard/cases/${caseId}/statements/${statementid}/export`} className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">Export</Link>
+          <button type="button" onClick={() => window.print()} className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">Print / Save PDF</button>
           <Link href={`/dashboard/cases/${caseId}/statements`} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">Back</Link>
         </div>
       </div>
@@ -372,7 +372,7 @@ export default function StatementEditorClient({
               <input
                 name="application_type"
                 defaultValue={st.application_type ?? ""}
-                placeholder="e.g. a non-molestation order"
+                placeholder="Order or outcome requested"
                 className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0C1A2A]"
               />
             </div>

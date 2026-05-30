@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-[#F6F8FA] text-[#0B1A2B]">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" aria-label="Home" className="inline-flex items-center"><Image src="/logo.png" alt="McKenzie Friend AI" width={190} height={48} priority className="h-8 w-auto object-contain" /></Link>
+          <Link href="/" aria-label="Home" className="inline-flex items-center"><Image src="/logo.png" alt="McKenzie Friend AI" width={150} height={38} priority className="h-7 w-auto object-contain" /></Link>
           <form action="/auth/signout" method="post">
             <button className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Sign out</button>
           </form>
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
               <Step n="1" title="Open a case" text="Each case has its own hub." />
               <Step n="2" title="Use the AI assistant" text="Ask, draft and check." />
               <Step n="3" title="Build the file" text="Chronology, statements and documents stay together." />
-              <Step n="4" title="Export" text="Prepare documents when ready." />
+              <Step n="4" title="Build a bundle" text="Put the final case pack together." />
             </div>
           </aside>
         </section>
