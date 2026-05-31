@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
+import MobileCaseMenu from "./MobileCaseMenu";
 
 const navItems = [
-  { label: "Chat", href: "chat" },
+  { label: "McKenzie Friend AI", href: "chat" },
   { label: "Chronology", href: "chronology" },
   { label: "Statements", href: "statements" },
   { label: "Documents", href: "documents" },
@@ -14,7 +15,7 @@ const navItems = [
 export function CaseWorkspaceShell({
   caseId,
   title,
-  active = "Chat",
+  active = "McKenzie Friend AI",
   children,
 }: {
   caseId: string;
@@ -85,40 +86,13 @@ export function CaseWorkspaceShell({
         <main className="min-w-0 flex-1">
           <div className="border-b border-slate-200 bg-white px-4 py-3 md:hidden">
             <div className="flex items-center justify-between gap-3">
-              <Link href="/dashboard/cases" className="text-xs font-semibold text-slate-500">Cases</Link>
+              <MobileCaseMenu caseId={caseId} title={title} active={active} />
               <div className="min-w-0 truncate text-sm font-semibold" title={title}>{title}</div>
             </div>
           </div>
-          <div className="pb-20 md:pb-0">{children}</div>
+          <div>{children}</div>
         </main>
       </div>
-
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-slate-200 bg-white md:hidden">
-        {[
-          { label: "Chat", href: "chat" },
-          { label: "Timeline", href: "chronology" },
-          { label: "Docs", href: "documents" },
-          { label: "More", href: "statements" },
-        ].map((item) => {
-          const isActive =
-            item.label === "Timeline" ? active === "Chronology" :
-            item.label === "Docs" ? active === "Documents" :
-            item.label === "More" ? ["Statements", "Calendar", "Bundle"].includes(active) :
-            active === item.label;
-          return (
-            <Link
-              key={item.label}
-              href={`/dashboard/cases/${caseId}/${item.href}`}
-              className={[
-                "px-2 py-3 text-center text-xs font-semibold",
-                isActive ? "text-[#0B1A2B]" : "text-slate-500",
-              ].join(" ")}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 }
@@ -126,7 +100,7 @@ export function CaseWorkspaceShell({
 export function AssistantPanel({ caseId }: { caseId: string }) {
   return (
     <Link href={`/dashboard/cases/${caseId}/chat`} className="inline-flex rounded-lg bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">
-      Chat
+      McKenzie Friend AI
     </Link>
   );
 }
