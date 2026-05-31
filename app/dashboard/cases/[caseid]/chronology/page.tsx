@@ -129,7 +129,7 @@ export default async function CaseChronologyPage({
 
   return (
     <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Chronology">
-      <div className="space-y-5">
+      <div className="mx-auto max-w-5xl space-y-5 px-4 py-5 md:px-8 md:py-7">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">Chronology</h2>
@@ -146,7 +146,7 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Court heading / header fields */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300">
           <div className="text-sm font-semibold text-[#0B1A2B]">
             Court heading
           </div>
@@ -177,7 +177,7 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Add event */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300">
           <div className="text-lg font-semibold text-[#0B1A2B]">Add an event</div>
 
           <form action={addEvent} className="mt-6 grid gap-4">
@@ -240,7 +240,7 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Dated events */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300">
           <div className="flex items-center justify-between">
             <div className="text-lg font-semibold text-[#0B1A2B]">
               Dated events
@@ -253,7 +253,7 @@ export default async function CaseChronologyPage({
               dated.map((ev) => (
                 <div
                   key={ev.id}
-                  className="flex items-start justify-between gap-4 p-4"
+                  className="flex items-start justify-between gap-4 p-4 transition hover:bg-slate-50"
                 >
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-slate-600">
@@ -289,7 +289,7 @@ export default async function CaseChronologyPage({
         </div>
 
         {/* Undated events */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300">
           <div className="flex items-center justify-between">
             <div className="text-lg font-semibold text-[#0B1A2B]">
               Undated events
@@ -302,7 +302,7 @@ export default async function CaseChronologyPage({
               undated.map((ev) => (
                 <div
                   key={ev.id}
-                  className="flex items-start justify-between gap-4 p-4"
+                  className="flex items-start justify-between gap-4 p-4 transition hover:bg-slate-50"
                 >
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-slate-600">

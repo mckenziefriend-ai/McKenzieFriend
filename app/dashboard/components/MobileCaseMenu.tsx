@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 const navItems = [
-  { label: "McKenzie Friend AI", href: "chat" },
+  { label: "Chat", href: "chat" },
   { label: "Chronology", href: "chronology" },
   { label: "Statements", href: "statements" },
   { label: "Documents", href: "documents" },
@@ -41,7 +41,7 @@ export default function MobileCaseMenu({
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-[#0B1A2B]/45"
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[82vw] max-w-xs flex-col bg-[#0B1A2B] text-white shadow-2xl">
+          <aside className="absolute left-0 top-0 flex h-full w-[82vw] max-w-xs animate-slide-in-left flex-col bg-[#0B1A2B] text-white shadow-2xl">
             <div className="border-b border-white/10 px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <Link href="/dashboard/cases" className="text-xs font-semibold text-white/60">

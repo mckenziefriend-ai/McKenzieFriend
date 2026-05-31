@@ -22,8 +22,8 @@ export default async function ChatPage({ params }: { params: Promise<{ caseid: s
     .limit(80);
 
   return (
-    <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="McKenzie Friend AI" assistant={false}>
-      <CaseChatClient caseId={caseId} initialMessages={(chatMessages as any) ?? []} />
+    <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Chat" assistant={false}>
+      <CaseChatClient caseId={caseId} caseTitle={caseRow.title} initialMessages={(chatMessages as any) ?? []} />
     </CaseWorkspaceShell>
   );
 }

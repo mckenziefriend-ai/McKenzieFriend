@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import MobileCaseMenu from "./MobileCaseMenu";
 
 const navItems = [
-  { label: "McKenzie Friend AI", href: "chat" },
+  { label: "Chat", href: "chat" },
   { label: "Chronology", href: "chronology" },
   { label: "Statements", href: "statements" },
   { label: "Documents", href: "documents" },
@@ -15,7 +15,7 @@ const navItems = [
 export function CaseWorkspaceShell({
   caseId,
   title,
-  active = "McKenzie Friend AI",
+  active = "Chat",
   children,
 }: {
   caseId: string;
@@ -70,7 +70,7 @@ export function CaseWorkspaceShell({
                   href={`/dashboard/cases/${caseId}/${item.href}`}
                   prefetch
                   className={[
-                    "flex items-center border-l-2 px-3 py-2.5 text-sm font-medium transition",
+                    "flex items-center border-l-2 px-3 py-2.5 text-sm font-medium transition hover:translate-x-0.5",
                     isActive
                       ? "border-[#88D2DC] bg-white/10 text-white"
                       : "border-transparent text-white/70 hover:bg-white/5 hover:text-white",
