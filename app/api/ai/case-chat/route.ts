@@ -54,11 +54,48 @@ type LegalSource = {
 };
 
 function safeJson(text: string) {
+  const raw = String(text || "").trim();
+
   try {
-    return JSON.parse(text);
-  } catch {
-    return { answer: text, action: null };
+    return JSON.parse(raw);
+  } catch {}
+
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+    } catch {}
   }
+
+  const answerMatch = raw.match(/"answer"\s*:\s*"([\s\S]*?)"\s*,\s*"action"/);
+  if (answerMatch?.[1]) {
+    try {
+      return { answer: JSON.parse(`"${answerMatch[1]}"`), action: null };
+    } catch {
+      return { answer: answerMatch[1], action: null };
+    }
+  }
+
+  return { answer: raw, action: null };
+}
+
+function cleanVisibleAnswer(value: unknown) {
+  let text = String(value || "").trim();
+  text = text.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+
+  const leakPatterns = [
+    /,?\s*"action"\s*:\s*\{[\s\S]*$/i,
+    /,?\s*action\s*:\s*\{[\s\S]*$/i,
+    /,?\s*\{\s*"type"\s*:\s*"create_[\s\S]*$/i,
+  ];
+
+  for (const pattern of leakPatterns) {
+    text = text.replace(pattern, "").trim();
+  }
+
+  text = text.replace(/^["']|["']$/g, "").trim();
+  return text;
 }
 
 function cleanFileName(name: string) {
@@ -382,7 +419,7 @@ Conversation behaviour:
 - If the user describes an incident/date/deadline, decide whether to reply conversationally or propose a chronology/calendar entry.
 - Never say you have created or saved something unless an action has actually been confirmed and saved by the app. Before saving, show the proposed item in the answer and return an action object.
 
-Return JSON only in this shape:
+Return valid JSON only. Do not include markdown code fences. Do not put the action object inside the answer text. Return JSON only in this shape:
 {
   "answer": "natural answer, including any proposed item preview if action is not null",
   "action": null or {
@@ -409,8 +446,8 @@ create_statement: {"title":"...","body":"draft text..."}`,
     });
 
     const parsed = safeJson(response.choices[0]?.message?.content ?? "{}");
-    const answer = String(parsed.answer || "").trim() || "I can help with that.";
     const action = normaliseAction(parsed.action);
+    const answer = cleanVisibleAnswer(parsed.answer) || "I can help with that.";
 
     await supabase.from("case_chat_messages").insert({
       case_id: caseId,
@@ -427,5 +464,49 @@ create_statement: {"title":"...","body":"draft text..."}`,
       { error: error?.message || "The assistant could not respond." },
       { status: error?.status || 500 }
     );
+  }
+}
+
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const caseId = searchParams.get("caseId") || "";
+
+    if (!caseId) {
+      return NextResponse.json({ error: "caseId is required." }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+    }
+
+    const { data: caseRow } = await supabase
+      .from("cases")
+      .select("id")
+      .eq("id", caseId)
+      .single();
+
+    if (!caseRow) {
+      return NextResponse.json({ error: "Case not found." }, { status: 404 });
+    }
+
+    const { error } = await supabase
+      .from("case_chat_messages")
+      .delete()
+      .eq("case_id", caseId)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ message: "Chat cleared." });
+  } catch (error: any) {
+    console.error("Clear chat failed:", error);
+    return NextResponse.json({ error: error?.message || "Could not clear chat." }, { status: 500 });
   }
 }

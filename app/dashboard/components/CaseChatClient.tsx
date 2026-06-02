@@ -71,6 +71,20 @@ function editPrompt(action: ProposedAction) {
   return "Edit the proposed entry. ";
 }
 
+function statementDraft(action: ProposedAction) {
+  if (action.type !== "create_statement") return "";
+  return String(action.payload?.body || "");
+}
+
+function statementTitle(action: ProposedAction) {
+  if (action.type !== "create_statement") return "statement-draft";
+  return String(action.payload?.title || "statement-draft")
+    .replace(/[^a-z0-9-_ ]/gi, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 80) || "statement-draft";
+}
+
 export default function CaseChatClient({
   caseId,
   caseTitle,
@@ -173,6 +187,56 @@ export default function CaseChatClient({
     setInput(editPrompt(action));
   }
 
+  async function clearChat() {
+    if (loading) return;
+    const confirmed = window.confirm("Clear this case chat?");
+    if (!confirmed) return;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/api/ai/case-chat?caseId=${encodeURIComponent(caseId)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Could not clear chat.");
+      setMessages([]);
+    } catch (err: any) {
+      setError(err?.message || "Could not clear chat.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setError("Could not copy text.");
+    }
+  }
+
+  function downloadText(filename: string, text: string) {
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename.endsWith(".txt") ? filename : `${filename}.txt`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function translateMessage(text: string) {
+    const language = window.prompt("Translate to which language?", "Urdu");
+    if (!language) return;
+    setInput(`Translate this into ${language}:\n\n${text}`);
+  }
+
+  function adjustTone(text: string) {
+    setInput(`Make this more formal, factual and suitable for court preparation. Keep the meaning the same:\n\n${text}`);
+  }
+
   return (
     <section className="flex h-[calc(100dvh-109px)] flex-col bg-[#F8FAFC] md:h-[calc(100dvh-56px)]">
       <div className="shrink-0 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:px-7">
@@ -181,9 +245,13 @@ export default function CaseChatClient({
             <h1 className="text-sm font-semibold tracking-tight text-[#0B1A2B]">McKenzie Friend AI</h1>
             {caseTitle ? <div className="mt-0.5 truncate text-xs text-slate-500">{caseTitle}</div> : null}
           </div>
-          <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 sm:block">
-            Case chat
-          </div>
+          <button
+            type="button"
+            onClick={clearChat}
+            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-white active:scale-[0.98]"
+          >
+            Clear chat
+          </button>
         </div>
       </div>
 
@@ -225,6 +293,14 @@ export default function CaseChatClient({
                     {message.content}
                   </div>
 
+                  {message.role === "assistant" ? (
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      <button type="button" onClick={() => void copyText(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Copy</button>
+                      <button type="button" onClick={() => translateMessage(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Translate</button>
+                      <button type="button" onClick={() => adjustTone(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Adjust tone</button>
+                    </div>
+                  ) : null}
+
                   {message.role === "assistant" && message.action ? (
                     <div className="mt-3 max-w-[94%] animate-soft-in rounded-2xl border border-[#88D2DC]/60 bg-white p-4 shadow-sm md:max-w-[80%]">
                       <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -254,6 +330,24 @@ export default function CaseChatClient({
                         >
                           Edit
                         </button>
+                        {message.action.type === "create_statement" && statementDraft(message.action) ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => void copyText(statementDraft(message.action!))}
+                              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+                            >
+                              Copy draft
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => downloadText(statementTitle(message.action!), statementDraft(message.action!))}
+                              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+                            >
+                              Download .txt
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
