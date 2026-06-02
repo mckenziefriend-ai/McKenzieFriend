@@ -14,7 +14,62 @@ type Message = {
   action?: ProposedAction | null;
 };
 
-const shortcuts = ["Add event", "Draft statement", "Add date", "Build bundle"];
+const shortcuts = ["Draft a statement", "Add an event", "Add a date", "Build bundle"];
+
+function actionTitle(action: ProposedAction) {
+  if (action.type === "create_chronology_event") return "Proposed chronology event";
+  if (action.type === "create_calendar_item") return "Proposed calendar item";
+  if (action.type === "create_bundle_item") return "Proposed bundle item";
+  if (action.type === "create_statement") return "Draft statement preview";
+  return "Proposed entry";
+}
+
+function actionRows(action: ProposedAction) {
+  const payload = action.payload || {};
+
+  if (action.type === "create_chronology_event") {
+    return [
+      ["Date", payload.date_unknown || !payload.event_date ? "Date unknown" : payload.event_date],
+      ["Details", payload.summary],
+      ["Evidence", payload.evidence || "None linked"],
+    ];
+  }
+
+  if (action.type === "create_calendar_item") {
+    return [
+      ["Type", payload.item_type || "Other"],
+      ["Title", payload.title],
+      ["Date/time", payload.starts_at || "Not set"],
+      ["Notes", payload.notes || "None"],
+    ];
+  }
+
+  if (action.type === "create_bundle_item") {
+    return [
+      ["Section", payload.section || "General"],
+      ["Type", payload.item_type || "Other"],
+      ["Title", payload.title],
+      ["Notes", payload.notes || "None"],
+    ];
+  }
+
+  if (action.type === "create_statement") {
+    return [
+      ["Title", payload.title],
+      ["Preview", payload.body ? String(payload.body).slice(0, 900) : "No draft text"],
+    ];
+  }
+
+  return Object.entries(payload).map(([key, value]) => [key, value ? String(value) : "—"]);
+}
+
+function editPrompt(action: ProposedAction) {
+  if (action.type === "create_chronology_event") return "Edit the proposed chronology event. ";
+  if (action.type === "create_calendar_item") return "Edit the proposed calendar item. ";
+  if (action.type === "create_bundle_item") return "Edit the proposed bundle item. ";
+  if (action.type === "create_statement") return "Edit the proposed statement draft. ";
+  return "Edit the proposed entry. ";
+}
 
 export default function CaseChatClient({
   caseId,
@@ -114,6 +169,10 @@ export default function CaseChatClient({
     }
   }
 
+  function askToEdit(action: ProposedAction) {
+    setInput(editPrompt(action));
+  }
+
   return (
     <section className="flex h-[calc(100dvh-109px)] flex-col bg-[#F8FAFC] md:h-[calc(100dvh-56px)]">
       <div className="shrink-0 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:px-7">
@@ -123,7 +182,7 @@ export default function CaseChatClient({
             {caseTitle ? <div className="mt-0.5 truncate text-xs text-slate-500">{caseTitle}</div> : null}
           </div>
           <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 sm:block">
-            Synced
+            Case chat
           </div>
         </div>
       </div>
@@ -132,15 +191,18 @@ export default function CaseChatClient({
         <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col">
           {messages.length === 0 ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="w-full max-w-2xl animate-soft-in rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm md:px-7 md:py-8">
+              <div className="w-full max-w-2xl animate-soft-in px-1 py-6 md:px-0 md:py-8">
                 <div className="text-2xl font-semibold tracking-tight text-[#0B1A2B] md:text-3xl">McKenzie Friend AI</div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                  Start with a question, note, date, document, or draft.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
                   {shortcuts.map((shortcut) => (
                     <button
                       key={shortcut}
                       type="button"
                       onClick={() => setInput(shortcut)}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-[#88D2DC] hover:bg-[#88D2DC]/10 active:scale-[0.98]"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-[#88D2DC] hover:bg-[#88D2DC]/10 active:scale-[0.98]"
                     >
                       {shortcut}
                     </button>
@@ -157,21 +219,42 @@ export default function CaseChatClient({
                       "whitespace-pre-wrap text-sm leading-7 transition",
                       message.role === "user"
                         ? "ml-auto max-w-[88%] rounded-2xl bg-[#0B1A2B] px-4 py-3 text-white shadow-sm md:max-w-[72%]"
-                        : "max-w-[92%] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-800 shadow-sm md:max-w-[78%]",
+                        : "max-w-[94%] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-800 shadow-sm md:max-w-[80%]",
                     ].join(" ")}
                   >
                     {message.content}
                   </div>
+
                   {message.role === "assistant" && message.action ? (
-                    <div className="mt-3 rounded-2xl border border-[#88D2DC]/50 bg-[#88D2DC]/10 p-3 md:max-w-[78%]">
-                      <button
-                        type="button"
-                        onClick={() => runAction(message.action!, index)}
-                        disabled={actionLoading !== null}
-                        className="rounded-lg bg-[#0B1A2B] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#10243A] active:scale-[0.98] disabled:opacity-50"
-                      >
-                        {actionLoading === index ? "Saving…" : message.action.label}
-                      </button>
+                    <div className="mt-3 max-w-[94%] animate-soft-in rounded-2xl border border-[#88D2DC]/60 bg-white p-4 shadow-sm md:max-w-[80%]">
+                      <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        {actionTitle(message.action)}
+                      </div>
+                      <div className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+                        {actionRows(message.action).map(([label, value]) => (
+                          <div key={String(label)} className="grid gap-1 px-3 py-2.5 text-sm sm:grid-cols-[140px_1fr]">
+                            <div className="font-medium text-slate-500">{String(label)}</div>
+                            <div className="whitespace-pre-wrap text-slate-800">{String(value ?? "—")}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => runAction(message.action!, index)}
+                          disabled={actionLoading !== null}
+                          className="rounded-lg bg-[#0B1A2B] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#10243A] active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {actionLoading === index ? "Saving…" : message.action.label}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => askToEdit(message.action!)}
+                          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>

@@ -39,6 +39,20 @@ type BundleItem = {
   notes: string | null;
 };
 
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string | null;
+  action?: any;
+  created_at?: string | null;
+};
+
+type LegalSource = {
+  title: string | null;
+  source_type: string | null;
+  jurisdiction: string | null;
+  content: string | null;
+};
+
 function safeJson(text: string) {
   try {
     return JSON.parse(text);
@@ -71,6 +85,36 @@ async function getRequestData(req: Request) {
     caseId: String(body?.caseId ?? ""),
     message: String(body?.message ?? ""),
     files: [] as any[],
+  };
+}
+
+function toShortJson(action: any) {
+  if (!action?.type) return "";
+  const payload = action.payload || {};
+  const parts = Object.entries(payload)
+    .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "")
+    .slice(0, 6)
+    .map(([key, value]) => `${key}: ${String(value).slice(0, 160)}`)
+    .join("; ");
+  return `${action.type}${parts ? ` (${parts})` : ""}`;
+}
+
+function makeActionLabel(type: string) {
+  if (type === "create_chronology_event") return "Add to chronology";
+  if (type === "create_calendar_item") return "Add to calendar";
+  if (type === "create_bundle_item") return "Add to bundle";
+  if (type === "create_statement") return "Save to Statements";
+  return "Save";
+}
+
+function normaliseAction(action: any) {
+  if (!action || typeof action !== "object" || !action.type) return null;
+  const allowed = ["create_chronology_event", "create_calendar_item", "create_bundle_item", "create_statement"];
+  if (!allowed.includes(action.type)) return null;
+  return {
+    type: action.type,
+    label: action.label || makeActionLabel(action.type),
+    payload: action.payload || {},
   };
 }
 
@@ -167,37 +211,49 @@ export async function POST(req: Request) {
       content: userMessage,
     });
 
-    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult] = await Promise.all([
+    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, chatResult, legalResult] = await Promise.all([
       supabase
         .from("case_events")
         .select("event_date,date_unknown,summary,evidence")
         .eq("case_id", caseId)
         .order("event_date", { ascending: true, nullsFirst: false })
-        .limit(60),
+        .limit(80),
       supabase
         .from("case_statements")
         .select("title,statement_by,body")
         .eq("case_id", caseId)
         .order("created_at", { ascending: false })
-        .limit(12),
+        .limit(14),
       supabase
         .from("case_documents")
         .select("file_name,category,summary,file_type,created_at")
         .eq("case_id", caseId)
         .order("created_at", { ascending: false })
-        .limit(35),
+        .limit(50),
       supabase
         .from("case_calendar_items")
         .select("title,item_type,starts_at,notes")
         .eq("case_id", caseId)
         .order("starts_at", { ascending: true })
-        .limit(30),
+        .limit(40),
       supabase
         .from("case_bundle_items")
         .select("title,section,item_type,notes")
         .eq("case_id", caseId)
         .order("position", { ascending: true })
-        .limit(60),
+        .limit(80),
+      supabase
+        .from("case_chat_messages")
+        .select("role,content,action,created_at")
+        .eq("case_id", caseId)
+        .order("created_at", { ascending: false })
+        .limit(16),
+      supabase
+        .from("legal_sources")
+        .select("title,source_type,jurisdiction,content")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(8),
     ]);
 
     const events = eventsResult.error ? [] : ((eventsResult.data ?? []) as CaseEvent[]);
@@ -205,6 +261,8 @@ export async function POST(req: Request) {
     const documents = documentsResult.error ? [] : ((documentsResult.data ?? []) as CaseDocument[]);
     const calendar = calendarResult.error ? [] : ((calendarResult.data ?? []) as CalendarItem[]);
     const bundle = bundleResult.error ? [] : ((bundleResult.data ?? []) as BundleItem[]);
+    const chatHistory = chatResult.error ? [] : ([...((chatResult.data ?? []) as ChatMessage[])].reverse());
+    const legalSources = legalResult.error ? [] : ((legalResult.data ?? []) as LegalSource[]);
 
     const eventText = events
       .map((event, index) => {
@@ -216,7 +274,7 @@ export async function POST(req: Request) {
 
     const statementText = statements
       .map((statement, index) => {
-        const body = (statement.body || "").slice(0, 1200);
+        const body = (statement.body || "").slice(0, 1800);
         return `${index + 1}. ${statement.title || "Untitled statement"}${statement.statement_by ? ` by ${statement.statement_by}` : ""}\n${body}`;
       })
       .join("\n\n");
@@ -236,16 +294,30 @@ export async function POST(req: Request) {
       .map((item, index) => `${index + 1}. ${item.section || "General"} — ${item.title || "Untitled"} (${item.item_type || "Other"})${item.notes ? ` — ${item.notes}` : ""}`)
       .join("\n");
 
+    const chatHistoryText = chatHistory
+      .map((item) => {
+        const action = item.action ? `\nProposed action: ${toShortJson(item.action)}` : "";
+        return `${item.role === "user" ? "User" : "Assistant"}: ${(item.content || "").slice(0, 1400)}${action}`;
+      })
+      .join("\n\n");
+
+    const legalSourceText = legalSources
+      .map((source, index) => `${index + 1}. ${source.title || "Untitled source"} (${source.jurisdiction || "England and Wales"}, ${source.source_type || "Guidance"})\n${(source.content || "").slice(0, 3500)}`)
+      .join("\n\n");
+
     const uploadedText = uploadedDocs.length
       ? `\n\nNew upload in this message:\n${uploadedDocs.map((doc, index) => `${index + 1}. ${doc.name} (${doc.category})`).join("\n")}`
       : "";
 
-    const prompt = `
+    const context = `
 Current case:
 Title: ${caseRow.title || "Untitled case"}
 Court: ${caseRow.court_name || "Not added"}
 Case number: ${caseRow.case_number || "Not added"}
 Next hearing: ${caseRow.hearing_datetime || "Not added"}
+
+Recent conversation:
+${chatHistoryText || "No previous chat in this case."}
 
 Chronology:
 ${eventText || "No chronology events added."}
@@ -263,13 +335,16 @@ Bundle:
 ${bundleText || "No bundle items."}
 ${uploadedText}
 
-User message:
+Legal role/source material available:
+${legalSourceText || "No legal source material loaded yet. If answering legal/procedural points, be careful and say when the user may need to check the rules or get legal advice."}
+
+Latest user message:
 ${message}
 `;
 
     const userContent: any = imageInputs.length
-      ? [{ type: "text", text: prompt }, ...imageInputs]
-      : prompt;
+      ? [{ type: "text", text: context }, ...imageInputs]
+      : context;
 
     const response = await openai.chat.completions.create({
       model: "gpt-5-mini",
@@ -277,17 +352,39 @@ ${message}
       messages: [
         {
           role: "system",
-          content: `You are McKenzie Friend AI for civil and family case preparation in England and Wales.
+          content: `You are McKenzie Friend AI for litigants in person dealing with civil and family matters in England and Wales.
 
-Stay within the McKenzie Friend role. You may provide moral support, help with case papers, take a note-taking/organising approach, help draft wording, help organise documents, chronologies, statements, calendars and bundles, explain procedural language cautiously, and translate text.
+Your job is to act like a capable McKenzie Friend-style assistant: conversational, practical, careful and case-aware. You can have a normal focused conversation about the case without forcing every message into a form or tool. Work with incomplete information. Infer the user's likely task from the current message, recent chat and case context, but never invent facts.
 
-Do not act as a solicitor or barrister. Do not claim to represent the user. Do not say you can sign, file, send or serve documents for the user. Do not conduct litigation. Do not address the court, make oral submissions or examine witnesses. Do not give definitive legal advice or guarantee outcomes. If the user needs representation, rights of audience, conduct of litigation, formal legal advice or certified translation, say they may need a qualified professional or court permission as appropriate.
+Allowed role:
+- Provide moral support.
+- Help organise case papers.
+- Help draft, improve and structure wording for the user to review.
+- Help prepare chronologies, statements, bundles, document notes, calendars, questions and hearing notes.
+- Explain procedure and legal language in plain English using England and Wales sources where available.
+- Translate or simplify text.
 
-Be concise and adult. Do not over-explain. Do not invent facts, dates, documents, laws or outcomes. Use only the case material provided unless the user asks a general question. Reply in the user's language unless they ask otherwise.
+Boundaries:
+- Do not claim to be a solicitor, barrister or legal representative.
+- Do not conduct litigation.
+- Do not act as the user's agent.
+- Do not say you can sign, file, send, serve or submit documents for the user.
+- Do not address the court, make oral submissions or examine witnesses.
+- Do not guarantee outcomes.
+- If a request would cross the boundary, reframe it into something allowed, such as drafting wording for the user to review.
+
+Conversation behaviour:
+- Be natural and adult. No patronising tutorials.
+- Short answers are fine. Longer answers only when the question needs it.
+- If the user says "yes", "do that", "make it shorter", "change the title", or similar, use the recent conversation and pending proposed action to understand what they mean.
+- Ask one short follow-up only when genuinely needed.
+- If the user asks for a statement and there is enough chronology/document context, draft a preview. If not, ask what type of statement or what it should cover.
+- If the user describes an incident/date/deadline, decide whether to reply conversationally or propose a chronology/calendar entry.
+- Never say you have created or saved something unless an action has actually been confirmed and saved by the app. Before saving, show the proposed item in the answer and return an action object.
 
 Return JSON only in this shape:
 {
-  "answer": "short useful answer",
+  "answer": "natural answer, including any proposed item preview if action is not null",
   "action": null or {
     "type": "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement",
     "label": "button label",
@@ -295,21 +392,25 @@ Return JSON only in this shape:
   }
 }
 
-Only include an action when the user asks you to add/create/make an entry or when there is a clear single proposed entry. The action is only a proposal and the user must confirm it.
+Action rules:
+- Only include an action when there is a clear proposed item the user can review and confirm.
+- The answer must include a readable preview of the proposed item, not just a button.
+- If facts are missing, use placeholders only where sensible and say what is missing.
+- Do not silently create empty statements.
 
 Payload rules:
 create_chronology_event: {"event_date":"YYYY-MM-DD" or null,"date_unknown":boolean,"summary":"...","evidence":"..." or null}
 create_calendar_item: {"title":"...","item_type":"Hearing"|"Deadline"|"Appointment"|"Reminder"|"Other","starts_at":"YYYY-MM-DDTHH:mm" or null,"notes":"..." or null}
 create_bundle_item: {"title":"...","section":"A"|"B"|"C"|"D"|"E"|"General","item_type":"Document"|"Chronology"|"Statement"|"Evidence"|"Other","notes":"..." or null}
-create_statement: {"title":"...","body":"..."}`,
+create_statement: {"title":"...","body":"draft text..."}`,
         },
         { role: "user", content: userContent },
       ],
     });
 
     const parsed = safeJson(response.choices[0]?.message?.content ?? "{}");
-    const answer = String(parsed.answer || "").trim() || "Done.";
-    const action = parsed.action ?? null;
+    const answer = String(parsed.answer || "").trim() || "I can help with that.";
+    const action = normaliseAction(parsed.action);
 
     await supabase.from("case_chat_messages").insert({
       case_id: caseId,
