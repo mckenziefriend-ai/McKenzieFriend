@@ -99,6 +99,8 @@ export default function CaseChatClient({
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [toneOpen, setToneOpen] = useState(false);
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -114,25 +116,28 @@ export default function CaseChatClient({
     event.target.value = "";
   }
 
-  async function sendMessage(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    const text = input.trim();
-    if ((!text && files.length === 0) || loading) return;
+  async function submitChatMessage({
+    text,
+    visibleText,
+    filesToSend = [],
+  }: {
+    text: string;
+    visibleText?: string;
+    filesToSend?: File[];
+  }) {
+    const cleanText = text.trim();
+    if ((!cleanText && filesToSend.length === 0) || loading) return;
 
-    const attachmentsText = files.length ? `\n\nAttached: ${files.map((file) => file.name).join(", ")}` : "";
-    const visibleText = `${text || "Uploaded image"}${attachmentsText}`;
-    const filesToSend = files;
+    const shownText = visibleText || cleanText || "Uploaded image";
 
-    setInput("");
-    setFiles([]);
     setError("");
     setLoading(true);
-    setMessages((current) => [...current, { role: "user", content: visibleText }]);
+    setMessages((current) => [...current, { role: "user", content: shownText }]);
 
     try {
       const formData = new FormData();
       formData.append("caseId", caseId);
-      formData.append("message", text || "Please review the uploaded image.");
+      formData.append("message", cleanText || "Please review the uploaded image.");
       filesToSend.forEach((file) => formData.append("files", file));
 
       const res = await fetch("/api/ai/case-chat", {
@@ -156,6 +161,20 @@ export default function CaseChatClient({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function sendMessage(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    const text = input.trim();
+    if ((!text && files.length === 0) || loading) return;
+
+    const attachmentsText = files.length ? `\n\nAttached: ${files.map((file) => file.name).join(", ")}` : "";
+    const visibleText = `${text || "Uploaded image"}${attachmentsText}`;
+    const filesToSend = files;
+
+    setInput("");
+    setFiles([]);
+    await submitChatMessage({ text: text || "Please review the uploaded image.", visibleText, filesToSend });
   }
 
   async function runAction(action: ProposedAction, index: number) {
@@ -227,14 +246,29 @@ export default function CaseChatClient({
     URL.revokeObjectURL(url);
   }
 
-  function translateMessage(text: string) {
+  async function translateMessage(text: string) {
     const language = window.prompt("Translate to which language?", "Urdu");
     if (!language) return;
-    setInput(`Translate this into ${language}:\n\n${text}`);
+    await submitChatMessage({
+      text: `Translate this into ${language}. Keep the meaning the same. If it is for official court use, mention that a certified translation may be needed.\n\n${text}`,
+      visibleText: `Translate to ${language}`,
+    });
   }
 
-  function adjustTone(text: string) {
-    setInput(`Make this more formal, factual and suitable for court preparation. Keep the meaning the same:\n\n${text}`);
+  async function applyTone(tone: string) {
+    const text = input.trim();
+    if (!text) {
+      setError("Type or paste text first, then choose a tone.");
+      setToneOpen(false);
+      return;
+    }
+
+    setToneOpen(false);
+    setInput("");
+    await submitChatMessage({
+      text: `${tone}. Keep the meaning the same and keep it suitable for England and Wales court preparation where relevant:\n\n${text}`,
+      visibleText: tone,
+    });
   }
 
   return (
@@ -245,13 +279,30 @@ export default function CaseChatClient({
             <h1 className="text-sm font-semibold tracking-tight text-[#0B1A2B]">McKenzie Friend AI</h1>
             {caseTitle ? <div className="mt-0.5 truncate text-xs text-slate-500">{caseTitle}</div> : null}
           </div>
-          <button
-            type="button"
-            onClick={clearChat}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-white active:scale-[0.98]"
-          >
-            Clear chat
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg leading-none text-slate-600 transition hover:bg-white active:scale-[0.98]"
+              aria-label="Chat options"
+            >
+              ⋯
+            </button>
+            {menuOpen ? (
+              <div className="absolute right-0 top-11 z-20 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void clearChat();
+                  }}
+                  className="block w-full px-3 py-2 text-left text-slate-700 transition hover:bg-slate-50"
+                >
+                  Clear chat
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -295,9 +346,16 @@ export default function CaseChatClient({
 
                   {message.role === "assistant" ? (
                     <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                      <button type="button" onClick={() => void copyText(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Copy</button>
-                      <button type="button" onClick={() => translateMessage(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Translate</button>
-                      <button type="button" onClick={() => adjustTone(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Adjust tone</button>
+                      <button
+                        type="button"
+                        onClick={() => void copyText(message.content)}
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
+                        aria-label="Copy message"
+                        title="Copy"
+                      >
+                        ⧉
+                      </button>
+                      <button type="button" onClick={() => void translateMessage(message.content)} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-600 transition hover:bg-slate-50">Translate</button>
                     </div>
                   ) : null}
 
@@ -397,6 +455,37 @@ export default function CaseChatClient({
             placeholder="Message"
             className="max-h-32 min-h-[48px] min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-sm text-[#0B1A2B] outline-none placeholder:text-slate-400"
           />
+          <div className="relative self-stretch">
+            <button
+              type="button"
+              onClick={() => setToneOpen((open) => !open)}
+              className="h-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+            >
+              Tone
+            </button>
+            {toneOpen ? (
+              <div className="absolute bottom-14 right-0 z-20 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                {[
+                  "Make this more formal",
+                  "Make this more factual",
+                  "Make this shorter",
+                  "Make this clearer",
+                  "Make this less emotional",
+                  "Turn this into statement wording",
+                  "Turn this into chronology wording",
+                ].map((tone) => (
+                  <button
+                    key={tone}
+                    type="button"
+                    onClick={() => void applyTone(tone)}
+                    className="block w-full px-3 py-2 text-left text-slate-700 transition hover:bg-slate-50"
+                  >
+                    {tone.replace("Make this ", "").replace("Turn this into ", "")}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <button
             type="submit"
             disabled={loading || (!input.trim() && files.length === 0)}
