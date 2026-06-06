@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
+import { MCKENZIE_FRIEND_SYSTEM_PROMPT, LEGAL_ANSWER_RULES } from "@/lib/ai/mckenzieFriendPrompt";
+import { formatLegalContextForPrompt, getLegalContextForMessage } from "@/lib/legal/retrieval";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -338,9 +340,16 @@ export async function POST(req: Request) {
       })
       .join("\n\n");
 
-    const legalSourceText = legalSources
-      .map((source, index) => `${index + 1}. ${source.title || "Untitled source"} (${source.jurisdiction || "England and Wales"}, ${source.source_type || "Guidance"})\n${(source.content || "").slice(0, 3500)}`)
+    const legalChunks = await getLegalContextForMessage(message || userMessage);
+    const retrievedLegalContext = formatLegalContextForPrompt(legalChunks);
+
+    const fallbackLegalSourceText = legalSources
+      .map((source, index) => `${index + 1}. ${source.title || "Untitled source"} (${source.jurisdiction || "England and Wales"}, ${source.source_type || "Guidance"})\n${(source.content || "").slice(0, 2500)}`)
       .join("\n\n");
+
+    const legalSourceText = legalChunks.length
+      ? retrievedLegalContext
+      : fallbackLegalSourceText || "No legal source material loaded yet. If answering legal/procedural points, be careful and say when the user may need to check the rules or get legal advice.";
 
     const uploadedText = uploadedDocs.length
       ? `\n\nNew upload in this message:\n${uploadedDocs.map((doc, index) => `${index + 1}. ${doc.name} (${doc.category})`).join("\n")}`
@@ -373,7 +382,7 @@ ${bundleText || "No bundle items."}
 ${uploadedText}
 
 Legal role/source material available:
-${legalSourceText || "No legal source material loaded yet. If answering legal/procedural points, be careful and say when the user may need to check the rules or get legal advice."}
+${legalSourceText}
 
 Latest user message:
 ${message}
@@ -389,35 +398,11 @@ ${message}
       messages: [
         {
           role: "system",
-          content: `You are McKenzie Friend AI for litigants in person dealing with civil and family matters in England and Wales.
+          content: `${MCKENZIE_FRIEND_SYSTEM_PROMPT}
 
-Your job is to act like a capable McKenzie Friend-style assistant: conversational, practical, careful and case-aware. You can have a normal focused conversation about the case without forcing every message into a form or tool. Work with incomplete information. Infer the user's likely task from the current message, recent chat and case context, but never invent facts.
+${LEGAL_ANSWER_RULES}
 
-Allowed role:
-- Provide moral support.
-- Help organise case papers.
-- Help draft, improve and structure wording for the user to review.
-- Help prepare chronologies, statements, bundles, document notes, calendars, questions and hearing notes.
-- Explain procedure and legal language in plain English using England and Wales sources where available.
-- Translate or simplify text.
-
-Boundaries:
-- Do not claim to be a solicitor, barrister or legal representative.
-- Do not conduct litigation.
-- Do not act as the user's agent.
-- Do not say you can sign, file, send, serve or submit documents for the user.
-- Do not address the court, make oral submissions or examine witnesses.
-- Do not guarantee outcomes.
-- If a request would cross the boundary, reframe it into something allowed, such as drafting wording for the user to review.
-
-Conversation behaviour:
-- Be natural and adult. No patronising tutorials.
-- Short answers are fine. Longer answers only when the question needs it.
-- If the user says "yes", "do that", "make it shorter", "change the title", or similar, use the recent conversation and pending proposed action to understand what they mean.
-- Ask one short follow-up only when genuinely needed.
-- If the user asks for a statement and there is enough chronology/document context, draft a preview. If not, ask what type of statement or what it should cover.
-- If the user describes an incident/date/deadline, decide whether to reply conversationally or propose a chronology/calendar entry.
-- Never say you have created or saved something unless an action has actually been confirmed and saved by the app. Before saving, show the proposed item in the answer and return an action object.
+Use the legal source context included in the current case context where relevant. Do not invent legal sources.
 
 Return valid JSON only. Do not include markdown code fences. Do not put the action object inside the answer text. Return JSON only in this shape:
 {
