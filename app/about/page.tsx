@@ -35,7 +35,7 @@ export default function AboutPage() {
               Create an account
             </a>
             <a
-              href="/contact"
+              href="mailto:contact@mckenziefriend.ai"
               className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/0 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
             >
               Contact us
@@ -229,7 +229,7 @@ export default function AboutPage() {
                 Create an account
               </a>
               <a
-                href="/contact"
+                href="mailto:contact@mckenziefriend.ai"
                 className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
               >
                 Contact us

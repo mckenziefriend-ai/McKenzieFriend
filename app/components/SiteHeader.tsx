@@ -20,7 +20,6 @@ export default function SiteHeader({ onHomeClick }: Props) {
 
   const isHome = pathname === "/";
   const isAbout = pathname === "/about";
-  const isContact = pathname === "/contact";
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -115,13 +114,8 @@ export default function SiteHeader({ onHomeClick }: Props) {
       </a>
 
       <a
-        href="/contact"
-        className={cn(
-          navBtn,
-          isContact ? active : inactive,
-          mobile && "w-full justify-start"
-        )}
-        aria-current={isContact ? "page" : undefined}
+        href="mailto:contact@mckenziefriend.ai"
+        className={cn(navBtn, inactive, mobile && "w-full justify-start")}
         onClick={() => mobile && setMobileOpen(false)}
       >
         Contact

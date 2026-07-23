@@ -461,7 +461,7 @@ export default function Home() {
                     in.
                   </p>
                   <div className="mt-6">
-                    <a href="/contact" className={cn(btnOutline, "px-5")}>
+                    <a href="mailto:contact@mckenziefriend.ai" className={cn(btnOutline, "px-5")}>
                       Ask about data handling
                     </a>
                   </div>
@@ -528,7 +528,7 @@ export default function Home() {
                     Create an account
                     <Icon name="arrowRight" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </a>
-                  <a href="/contact" className={heroGhostBtn}>
+                  <a href="mailto:contact@mckenziefriend.ai" className={heroGhostBtn}>
                     Contact us
                   </a>
                 </div>

@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs"; // keep it on Node (not edge) for predictable fetch behaviour
 
 export async function GET(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();
 
