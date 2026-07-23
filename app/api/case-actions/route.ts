@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { apiError } from "@/lib/apiError";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 type ActionRequest = {
   caseId: string;
@@ -30,10 +32,14 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
+    const rate = checkRateLimit(`actions:${user.id}`, 60, 5 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
+
     const { data: caseRow } = await supabase
       .from("cases")
       .select("id")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (!caseRow) return NextResponse.json({ error: "Case not found." }, { status: 404 });
@@ -111,8 +117,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
-  } catch (error: any) {
-    console.error("Case action failed:", error);
-    return NextResponse.json({ error: error?.message || "Could not save." }, { status: 500 });
+  } catch (error) {
+    return apiError("Case action failed", error);
   }
 }

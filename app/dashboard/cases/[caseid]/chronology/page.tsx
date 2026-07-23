@@ -46,6 +46,7 @@ export default async function CaseChronologyPage({
       "id,title,created_at,court_name,court_slug,case_number,hearing_title,hearing_datetime,proceedings_heading,proceedings_lines"
     )
     .eq("id", caseId)
+    .eq("user_id", user.id)
     .single();
 
   // ✅ list page is /dashboard/cases now
@@ -122,7 +123,7 @@ export default async function CaseChronologyPage({
         String(formData.get("proceedings_lines") ?? "").trim() || null,
     };
 
-    await supabase.from("cases").update(payload).eq("id", caseId);
+    await supabase.from("cases").update(payload).eq("id", caseId).eq("user_id", user.id);
 
     redirect(`/dashboard/cases/${caseId}/chronology`);
   }

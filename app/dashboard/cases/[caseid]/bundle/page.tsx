@@ -25,7 +25,7 @@ export default async function BundlePage({ params }: { params: Promise<{ caseid:
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: caseRow } = await supabase.from("cases").select("id,title").eq("id", caseId).single();
+  const { data: caseRow } = await supabase.from("cases").select("id,title").eq("id", caseId).eq("user_id", user.id).single();
   if (!caseRow) redirect("/dashboard/cases");
 
   const [itemsResult, docsResult, statementsResult, eventsResult] = await Promise.all([

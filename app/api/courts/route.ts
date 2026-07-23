@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const runtime = "nodejs"; // keep it on Node (not edge) for predictable fetch behaviour
 
@@ -12,6 +13,9 @@ export async function GET(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
+
+  const rate = checkRateLimit(`courts:${user.id}`, 60, 5 * 60 * 1000);
+  if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
 
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();

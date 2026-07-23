@@ -3,6 +3,8 @@ import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { MCKENZIE_FRIEND_SYSTEM_PROMPT, LEGAL_ANSWER_RULES } from "@/lib/ai/mckenzieFriendPrompt";
 import { formatLegalContextForPrompt, getLegalContextForMessage } from "@/lib/legal/retrieval";
+import { apiError } from "@/lib/apiError";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -182,10 +184,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not signed in." }, { status: 401 });
     }
 
+    const rate = checkRateLimit(`ai:${user.id}`, 20, 5 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
+
     const { data: caseRow, error: caseError } = await supabase
       .from("cases")
       .select("id,title,case_number,court_name,hearing_datetime")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (caseError || !caseRow) {
@@ -443,12 +449,8 @@ create_statement: {"title":"...","body":"draft text..."}`,
     });
 
     return NextResponse.json({ answer, action, uploaded: uploadedDocs });
-  } catch (error: any) {
-    console.error("Case chat failed:", error);
-    return NextResponse.json(
-      { error: error?.message || "The assistant could not respond." },
-      { status: error?.status || 500 }
-    );
+  } catch (error) {
+    return apiError("Case chat failed", error);
   }
 }
 
@@ -475,6 +477,7 @@ export async function DELETE(req: Request) {
       .from("cases")
       .select("id")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (!caseRow) {
@@ -490,8 +493,7 @@ export async function DELETE(req: Request) {
     if (error) throw error;
 
     return NextResponse.json({ message: "Chat cleared." });
-  } catch (error: any) {
-    console.error("Clear chat failed:", error);
-    return NextResponse.json({ error: error?.message || "Could not clear chat." }, { status: 500 });
+  } catch (error) {
+    return apiError("Clear chat failed", error);
   }
 }

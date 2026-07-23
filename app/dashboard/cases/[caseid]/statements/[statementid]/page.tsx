@@ -24,6 +24,7 @@ export default async function StatementEditorPage({
     .from("cases")
     .select("id,title")
     .eq("id", caseId)
+    .eq("user_id", user.id)
     .single();
   if (!caseRow) redirect("/dashboard/cases");
 
