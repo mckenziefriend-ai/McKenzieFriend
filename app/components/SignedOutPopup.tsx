@@ -12,6 +12,9 @@ export default function SignedOutPopup() {
   useEffect(() => {
     if (sp.get("signedout") !== "1") return;
 
+    // Reacting to a one-shot URL flag (external state) then stripping it and
+    // starting an auto-hide timer — a legitimate effect, not derived render state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(true);
 
     // remove the query flag so refresh doesn't show it again

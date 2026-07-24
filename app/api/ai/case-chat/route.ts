@@ -5,6 +5,7 @@ import { formatLegalContextForPrompt, getLegalContextForMessage } from "@/lib/le
 import { apiError } from "@/lib/apiError";
 import { getOpenAI } from "@/lib/ai/openai";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { ACTION_TYPES, type ProposedAction } from "@/lib/ai/actions";
 
 type CaseEvent = {
   event_date: string | null;
@@ -44,9 +45,12 @@ type BundleItem = {
 type ChatMessage = {
   role: "user" | "assistant";
   content: string | null;
-  action?: any;
+  action?: ProposedAction | null;
   created_at?: string | null;
 };
+
+type ImagePart = { type: "image_url"; image_url: { url: string } };
+type TextPart = { type: "text"; text: string };
 
 function safeJson(text: string) {
   const raw = String(text || "").trim();
@@ -108,7 +112,7 @@ async function getRequestData(req: Request) {
     return {
       caseId: String(formData.get("caseId") ?? ""),
       message: String(formData.get("message") ?? ""),
-      files: formData.getAll("files").filter((file: any) => file && typeof file.arrayBuffer === "function") as any[],
+      files: formData.getAll("files").filter((file): file is File => file instanceof File),
     };
   }
 
@@ -116,11 +120,11 @@ async function getRequestData(req: Request) {
   return {
     caseId: String(body?.caseId ?? ""),
     message: String(body?.message ?? ""),
-    files: [] as any[],
+    files: [] as File[],
   };
 }
 
-function toShortJson(action: any) {
+function toShortJson(action: ProposedAction) {
   if (!action?.type) return "";
   const payload = action.payload || {};
   const parts = Object.entries(payload)
@@ -139,14 +143,20 @@ function makeActionLabel(type: string) {
   return "Save";
 }
 
-function normaliseAction(action: any) {
-  if (!action || typeof action !== "object" || !action.type) return null;
-  const allowed = ["create_chronology_event", "create_calendar_item", "create_bundle_item", "create_statement"];
-  if (!allowed.includes(action.type)) return null;
+function normaliseAction(action: unknown): ProposedAction | null {
+  if (!action || typeof action !== "object") return null;
+  const candidate = action as { type?: unknown; label?: unknown; payload?: unknown };
+  const type = candidate.type;
+  if (typeof type !== "string" || !ACTION_TYPES.includes(type as ProposedAction["type"])) {
+    return null;
+  }
   return {
-    type: action.type,
-    label: action.label || makeActionLabel(action.type),
-    payload: action.payload || {},
+    type: type as ProposedAction["type"],
+    label: typeof candidate.label === "string" && candidate.label ? candidate.label : makeActionLabel(type),
+    payload:
+      candidate.payload && typeof candidate.payload === "object"
+        ? (candidate.payload as Record<string, unknown>)
+        : {},
   };
 }
 
@@ -190,7 +200,7 @@ export async function POST(req: Request) {
     }
 
     const uploadedDocs: { name: string; category: string; type: string | null }[] = [];
-    const imageInputs: any[] = [];
+    const imageInputs: ImagePart[] = [];
 
     for (const file of files.slice(0, 4)) {
       const fileName = String(file.name || "image");
@@ -395,7 +405,7 @@ Latest user message:
 ${message}
 `;
 
-    const userContent: any = imageInputs.length
+    const userContent: string | (TextPart | ImagePart)[] = imageInputs.length
       ? [{ type: "text", text: context }, ...imageInputs]
       : context;
 

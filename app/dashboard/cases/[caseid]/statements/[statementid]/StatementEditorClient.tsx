@@ -34,8 +34,6 @@ function formatDateUK(dateISO: string) {
 
 export default function StatementEditorClient({
   caseId,
-  statementid,
-  caseTitle: _caseTitle,
   st,
   events,
   saveStatement,

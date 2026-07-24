@@ -13,7 +13,6 @@ export default function DeleteEventButton({
     <form
       action={action}
       onSubmit={(e) => {
-        // eslint-disable-next-line no-alert
         if (!confirm("Delete this event?")) e.preventDefault();
       }}
     >

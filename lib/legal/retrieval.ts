@@ -32,6 +32,16 @@ type ChunkRow = {
   } | null;
 };
 
+type RankedChunkRow = {
+  heading: string | null;
+  content: string | null;
+  citation_label: string | null;
+  title: string | null;
+  jurisdiction: string | null;
+  source_type: string | null;
+  rank: number;
+};
+
 export async function getLegalContextForMessage(message: string): Promise<LegalContextChunk[]> {
   const searchTerms = buildSearchTerms(message);
   if (!searchTerms) return [];
@@ -51,7 +61,7 @@ export async function getLegalContextForMessage(message: string): Promise<LegalC
         console.warn(`[retrieval] no ranked legal chunks matched: "${searchTerms}"`);
         return [];
       }
-      return (rpc.data as any[]).map((row) => ({
+      return (rpc.data as RankedChunkRow[]).map((row) => ({
         title: row.title ?? "Legal source",
         jurisdiction: row.jurisdiction ?? "England and Wales",
         sourceType: row.source_type ?? "Guidance",

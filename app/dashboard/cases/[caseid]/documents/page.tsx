@@ -119,6 +119,9 @@ export default async function DocumentsPage({
     }
 
     const name = safeFileName(file.name || "document");
+    // Runs inside a "use server" action (request time), not during render, so
+    // Date.now() here is not a render-purity concern.
+    // eslint-disable-next-line react-hooks/purity
     const storagePath = `${user.id}/${caseId}/${Date.now()}-${name}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 

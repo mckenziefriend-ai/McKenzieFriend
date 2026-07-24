@@ -63,6 +63,9 @@ export default function Home() {
     if (typeof IntersectionObserver === "undefined") return;
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
     if (!els.length) return;
+    // Progressive enhancement: only hide-until-revealed once we've confirmed
+    // JS + IntersectionObserver are available. Mount-time sync, runs once.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRevealReady(true);
     const io = new IntersectionObserver(
       (entries) => {

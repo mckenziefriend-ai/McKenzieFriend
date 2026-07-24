@@ -40,21 +40,25 @@ export async function GET(req: Request) {
     return NextResponse.json({ results: [] }, { status: 200 });
   }
 
-  const data = await res.json();
+  const data: unknown = await res.json();
 
-  // We don’t know your exact JSON shape yet, so normalize defensively.
+  // We don’t know the exact JSON shape, so normalize defensively.
   // Common pattern is an array of courts with `name` + `slug` (or similar).
-  const rawResults: any[] =
+  const asRecord = data as { results?: unknown; courts?: unknown };
+  const rawResults: unknown[] =
     Array.isArray(data) ? data :
-    Array.isArray(data?.results) ? data.results :
-    Array.isArray(data?.courts) ? data.courts :
+    Array.isArray(asRecord?.results) ? asRecord.results :
+    Array.isArray(asRecord?.courts) ? asRecord.courts :
     [];
 
   const results = rawResults
-    .map((r) => ({
-      name: String(r.name ?? r.title ?? "").trim(),
-      slug: String(r.slug ?? r.id ?? "").trim(),
-    }))
+    .map((entry) => {
+      const r = (entry ?? {}) as Record<string, unknown>;
+      return {
+        name: String(r.name ?? r.title ?? "").trim(),
+        slug: String(r.slug ?? r.id ?? "").trim(),
+      };
+    })
     .filter((r) => r.name.length > 0)
     .slice(0, 8);
 

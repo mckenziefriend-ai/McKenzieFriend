@@ -7,7 +7,7 @@ type ActionRequest = {
   caseId: string;
   action: {
     type: "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement";
-    payload: Record<string, any>;
+    payload: Record<string, unknown>;
   };
 };
 
