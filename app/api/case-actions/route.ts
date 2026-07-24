@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { apiError } from "@/lib/apiError";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { clean } from "@/lib/coerce";
 
 type ActionRequest = {
   caseId: string;
@@ -10,11 +11,6 @@ type ActionRequest = {
     payload: Record<string, unknown>;
   };
 };
-
-function clean(value: unknown) {
-  const text = String(value ?? "").trim();
-  return text || null;
-}
 
 export async function POST(req: Request) {
   try {
