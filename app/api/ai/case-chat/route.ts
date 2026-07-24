@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { MCKENZIE_FRIEND_SYSTEM_PROMPT, LEGAL_ANSWER_RULES } from "@/lib/ai/mckenzieFriendPrompt";
 import { formatLegalContextForPrompt, getLegalContextForMessage } from "@/lib/legal/retrieval";
 import { apiError } from "@/lib/apiError";
+import { getOpenAI } from "@/lib/ai/openai";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 type CaseEvent = {
   event_date: string | null;
@@ -398,7 +396,7 @@ ${message}
       ? [{ type: "text", text: context }, ...imageInputs]
       : context;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-5-mini",
       response_format: { type: "json_object" },
       messages: [

@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { apiError } from "@/lib/apiError";
+import { getOpenAI } from "@/lib/ai/openai";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 type SelectedEvent = {
   id: string;
@@ -103,7 +99,7 @@ Important:
 - Use them where relevant.
 - Do not force every selected event into the draft if it does not fit naturally.
 `;
-const response = await openai.chat.completions.create({
+const response = await getOpenAI().chat.completions.create({
   model: "gpt-5-mini",
   messages: [
     {
