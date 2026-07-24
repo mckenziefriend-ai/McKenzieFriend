@@ -9,23 +9,60 @@ export type LegalContextChunk = {
   citationLabel: string | null;
 };
 
-function buildSearchTerms(message: string) {
-  const cleaned = message
+// Keep tokens of 2+ chars: dropping <=3 discarded legally-significant terms
+// like "CPR" and "FPR" — the exact tokens most likely to find the right rule.
+export function buildSearchTerms(message: string) {
+  return message
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, " ")
     .split(/\s+/)
-    .filter((word) => word.length > 3)
+    .filter((word) => word.length >= 2)
     .slice(0, 14)
-    .join(" | ");
-
-  return cleaned || "mckenzie friend court assistance";
+    .join(" ");
 }
 
+type ChunkRow = {
+  heading: string | null;
+  content: string | null;
+  citation_label: string | null;
+  legal_sources?: {
+    title: string | null;
+    jurisdiction: string | null;
+    source_type: string | null;
+  } | null;
+};
+
 export async function getLegalContextForMessage(message: string): Promise<LegalContextChunk[]> {
+  const searchTerms = buildSearchTerms(message);
+  if (!searchTerms) return [];
+
   try {
     const supabase = await createClient();
-    const searchTerms = buildSearchTerms(message);
 
+    // Preferred path: ranked retrieval via the search_legal_chunks RPC
+    // (ts_rank with a relevance floor — see supabase/legal_search.sql).
+    const rpc = await supabase.rpc("search_legal_chunks", {
+      query_text: searchTerms,
+      match_limit: 8,
+    });
+
+    if (!rpc.error && Array.isArray(rpc.data)) {
+      if (!rpc.data.length) {
+        console.warn(`[retrieval] no ranked legal chunks matched: "${searchTerms}"`);
+        return [];
+      }
+      return (rpc.data as any[]).map((row) => ({
+        title: row.title ?? "Legal source",
+        jurisdiction: row.jurisdiction ?? "England and Wales",
+        sourceType: row.source_type ?? "Guidance",
+        heading: row.heading ?? null,
+        content: row.content ?? "",
+        citationLabel: row.citation_label ?? null,
+      }));
+    }
+
+    // Fallback only if the RPC is not installed yet. This still filters by the
+    // search terms (unranked); it does NOT inject arbitrary unrelated sources.
     const { data: chunks, error: chunkError } = await supabase
       .from("legal_chunks")
       .select(
@@ -46,34 +83,21 @@ export async function getLegalContextForMessage(message: string): Promise<LegalC
       })
       .limit(8);
 
-    if (!chunkError && chunks?.length) {
-      return chunks.map((row: any) => ({
-        title: row.legal_sources?.title ?? "Legal source",
-        jurisdiction: row.legal_sources?.jurisdiction ?? "England and Wales",
-        sourceType: row.legal_sources?.source_type ?? "Guidance",
-        heading: row.heading ?? null,
-        content: row.content ?? "",
-        citationLabel: row.citation_label ?? null,
-      }));
+    if (chunkError || !chunks?.length) {
+      console.warn(`[retrieval] no legal chunks matched: "${searchTerms}"`);
+      return [];
     }
 
-    const { data: sources, error: sourceError } = await supabase
-      .from("legal_sources")
-      .select("title,jurisdiction,source_type,content")
-      .eq("is_active", true)
-      .limit(4);
-
-    if (sourceError || !sources?.length) return [];
-
-    return sources.map((source: any) => ({
-      title: source.title ?? "Legal source",
-      jurisdiction: source.jurisdiction ?? "England and Wales",
-      sourceType: source.source_type ?? "Guidance",
-      heading: null,
-      content: String(source.content ?? "").slice(0, 4000),
-      citationLabel: source.title ?? null,
+    return (chunks as unknown as ChunkRow[]).map((row) => ({
+      title: row.legal_sources?.title ?? "Legal source",
+      jurisdiction: row.legal_sources?.jurisdiction ?? "England and Wales",
+      sourceType: row.legal_sources?.source_type ?? "Guidance",
+      heading: row.heading ?? null,
+      content: row.content ?? "",
+      citationLabel: row.citation_label ?? null,
     }));
-  } catch {
+  } catch (error) {
+    console.error("[retrieval] legal context lookup failed:", error);
     return [];
   }
 }

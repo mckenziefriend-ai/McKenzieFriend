@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { PRODUCT_DISCLAIMER, withProvenanceText } from "@/lib/disclaimers";
 
 type ProposedAction = {
   type: "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement";
@@ -235,7 +236,7 @@ export default function CaseChatClient({
   }
 
   function downloadText(filename: string, text: string) {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([withProvenanceText(text)], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -304,6 +305,7 @@ export default function CaseChatClient({
             ) : null}
           </div>
         </div>
+        <p className="mt-2 text-[11px] leading-4 text-slate-500">{PRODUCT_DISCLAIMER}</p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-8 md:py-7">

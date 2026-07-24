@@ -48,13 +48,6 @@ type ChatMessage = {
   created_at?: string | null;
 };
 
-type LegalSource = {
-  title: string | null;
-  source_type: string | null;
-  jurisdiction: string | null;
-  content: string | null;
-};
-
 function safeJson(text: string) {
   const raw = String(text || "").trim();
 
@@ -254,7 +247,7 @@ export async function POST(req: Request) {
       content: userMessage,
     });
 
-    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, chatResult, legalResult] = await Promise.all([
+    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, chatResult] = await Promise.all([
       supabase
         .from("case_events")
         .select("event_date,date_unknown,summary,evidence")
@@ -291,21 +284,30 @@ export async function POST(req: Request) {
         .eq("case_id", caseId)
         .order("created_at", { ascending: false })
         .limit(16),
-      supabase
-        .from("legal_sources")
-        .select("title,source_type,jurisdiction,content")
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false })
-        .limit(8),
     ]);
 
-    const events = eventsResult.error ? [] : ((eventsResult.data ?? []) as CaseEvent[]);
-    const statements = statementsResult.error ? [] : ((statementsResult.data ?? []) as CaseStatement[]);
-    const documents = documentsResult.error ? [] : ((documentsResult.data ?? []) as CaseDocument[]);
-    const calendar = calendarResult.error ? [] : ((calendarResult.data ?? []) as CalendarItem[]);
-    const bundle = bundleResult.error ? [] : ((bundleResult.data ?? []) as BundleItem[]);
-    const chatHistory = chatResult.error ? [] : ([...((chatResult.data ?? []) as ChatMessage[])].reverse());
-    const legalSources = legalResult.error ? [] : ((legalResult.data ?? []) as LegalSource[]);
+    // Track which context queries failed rather than silently treating a
+    // failed load as "no data". Drafting a statement from a partial case file
+    // is more dangerous than a visible error, so we surface incompleteness to
+    // the user (and refuse to draft) further down.
+    const contextErrors: string[] = [];
+    const noteError = (name: string, result: { error: unknown }) => {
+      if (result.error) {
+        console.error(`[case-chat] context query "${name}" failed:`, result.error);
+        contextErrors.push(name);
+        return true;
+      }
+      return false;
+    };
+
+    const events = noteError("chronology", eventsResult) ? [] : ((eventsResult.data ?? []) as CaseEvent[]);
+    const statements = noteError("statements", statementsResult) ? [] : ((statementsResult.data ?? []) as CaseStatement[]);
+    const documents = noteError("documents", documentsResult) ? [] : ((documentsResult.data ?? []) as CaseDocument[]);
+    const calendar = noteError("calendar", calendarResult) ? [] : ((calendarResult.data ?? []) as CalendarItem[]);
+    const bundle = noteError("bundle", bundleResult) ? [] : ((bundleResult.data ?? []) as BundleItem[]);
+    const chatHistory = noteError("chat history", chatResult)
+      ? []
+      : ([...((chatResult.data ?? []) as ChatMessage[])].reverse());
 
     const eventText = events
       .map((event, index) => {
@@ -345,22 +347,23 @@ export async function POST(req: Request) {
       .join("\n\n");
 
     const legalChunks = await getLegalContextForMessage(message || userMessage);
-    const retrievedLegalContext = formatLegalContextForPrompt(legalChunks);
 
-    const fallbackLegalSourceText = legalSources
-      .map((source, index) => `${index + 1}. ${source.title || "Untitled source"} (${source.jurisdiction || "England and Wales"}, ${source.source_type || "Guidance"})\n${(source.content || "").slice(0, 2500)}`)
-      .join("\n\n");
-
+    // M3: only use relevance-matched retrieved chunks. Do NOT fall back to
+    // injecting arbitrary active legal_sources as if they were relevant —
+    // "no source found" is far safer than a confidently-wrong sourced answer.
     const legalSourceText = legalChunks.length
-      ? retrievedLegalContext
-      : fallbackLegalSourceText || "No legal source material loaded yet. If answering legal/procedural points, be careful and say when the user may need to check the rules or get legal advice.";
+      ? formatLegalContextForPrompt(legalChunks)
+      : "No specific legal source matched this message. Do not cite specific rules from memory as if sourced; if answering legal/procedural points, be careful and say the user may need to check the rules or get legal advice.";
 
     const uploadedText = uploadedDocs.length
       ? `\n\nNew upload in this message:\n${uploadedDocs.map((doc, index) => `${index + 1}. ${doc.name} (${doc.category})`).join("\n")}`
       : "";
 
-    const context = `
-Current case:
+    const contextWarning = contextErrors.length
+      ? `IMPORTANT: The following parts of the case file could not be loaded this turn: ${contextErrors.join(", ")}. Treat those sections as UNKNOWN, not empty. Do not draft a witness statement or rely on the missing sections; tell the user those parts could not be loaded and to try again.\n\n`
+      : "";
+
+    const context = `${contextWarning}Current case:
 Title: ${caseRow.title || "Untitled case"}
 Court: ${caseRow.court_name || "Not added"}
 Case number: ${caseRow.case_number || "Not added"}
@@ -435,8 +438,20 @@ create_statement: {"title":"...","body":"draft text..."}`,
     });
 
     const parsed = safeJson(response.choices[0]?.message?.content ?? "{}");
-    const action = normaliseAction(parsed.action);
-    const answer = cleanVisibleAnswer(parsed.answer) || "I can help with that.";
+    let action = normaliseAction(parsed.action);
+    let answer = cleanVisibleAnswer(parsed.answer) || "I can help with that.";
+
+    // M9: don't let a statement be drafted from a partial case file, and never
+    // hide from the user that context was incomplete.
+    if (contextErrors.length) {
+      const missing = contextErrors.join(", ");
+      if (action?.type === "create_statement") {
+        action = null;
+        answer = `I couldn't load part of your case file (${missing} failed to load), so I haven't drafted a statement — a statement built from an incomplete file could leave out important facts. Please try again in a moment.`;
+      } else {
+        answer = `${answer}\n\n⚠️ I couldn't load part of your case file (${missing}) this time, so this reply may be based on incomplete information. Please retry if anything looks missing.`;
+      }
+    }
 
     await supabase.from("case_chat_messages").insert({
       case_id: caseId,
@@ -446,7 +461,7 @@ create_statement: {"title":"...","body":"draft text..."}`,
       action,
     });
 
-    return NextResponse.json({ answer, action, uploaded: uploadedDocs });
+    return NextResponse.json({ answer, action, uploaded: uploadedDocs, contextIncomplete: contextErrors.length > 0 });
   } catch (error) {
     return apiError("Case chat failed", error);
   }

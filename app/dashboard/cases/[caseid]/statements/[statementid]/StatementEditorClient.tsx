@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { PRODUCT_DISCLAIMER, provenanceFooter } from "@/lib/disclaimers";
 
 type Statement = {
   id: string;
@@ -296,13 +297,17 @@ export default function StatementEditorClient({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm print:hidden">
         <h2 className="text-2xl font-semibold tracking-tight">Statement editor</h2>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={() => window.print()} className="rounded-xl bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">Print / Save PDF</button>
           <Link href={`/dashboard/cases/${caseId}/statements`} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">Back</Link>
         </div>
       </div>
+
+      <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs leading-5 text-slate-500 print:hidden">
+        {PRODUCT_DISCLAIMER}
+      </p>
 
       <form action={saveStatement} className="grid gap-6">
           {/* Statement details */}
@@ -865,6 +870,11 @@ export default function StatementEditorClient({
             </div>
           </div>
         ) : null}
+
+        {/* Provenance footer — only rendered when printed or saved as PDF. */}
+        <div className="hidden border-t border-slate-300 pt-3 text-[11px] leading-4 text-slate-600 print:block">
+          {provenanceFooter()}
+        </div>
     </div>
   );
 }
