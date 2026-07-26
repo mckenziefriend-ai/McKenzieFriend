@@ -538,12 +538,16 @@ export default function Home() {
               </div>
             </div>
 
-            <footer className="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-600">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
-                <span className="text-slate-500">England &amp; Wales</span>
-              </div>
-            </footer>
+<footer className="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-600">
+  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <span>© {new Date().getFullYear()} McKenzieFriend.ai</span>
+    <span className="text-slate-500">England &amp; Wales</span>
+  </div>
+  <div className="mt-3 space-y-1 text-slate-500">
+    <p>MCKENZIEFRIEND AI LTD</p>
+    <p>Registered in England &amp; Wales · Company number 17362145</p>
+  </div>
+</footer>
           </div>
         </section>
       </div>
