@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { createClient } from "@/lib/supabase/server";
+import { apiError } from "@/lib/apiError";
+import { getOpenAI } from "@/lib/ai/openai";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 type EventPayload = {
   event_date: string | null;
@@ -20,6 +19,18 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+    }
+
+    const rate = checkRateLimit(`ai:${user.id}`, 20, 5 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
 
     const {
       event,
@@ -64,7 +75,7 @@ Summary: ${ev.summary}
 Evidence: ${ev.evidence || "None provided"}
 `;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-5-mini",
       messages: [
         {
@@ -82,16 +93,7 @@ Evidence: ${ev.evidence || "None provided"}
     const paragraph = response.choices[0]?.message?.content?.trim() ?? "";
 
     return NextResponse.json({ paragraph });
-  } catch (error: any) {
-    console.error("AI statement-event generation failed:", error);
-    return NextResponse.json(
-      {
-        error:
-          error?.message ||
-          error?.error?.message ||
-          "AI event paragraph generation failed.",
-      },
-      { status: error?.status || 500 }
-    );
+  } catch (error) {
+    return apiError("AI statement-event generation failed", error);
   }
 }

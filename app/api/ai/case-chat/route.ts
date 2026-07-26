@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { MCKENZIE_FRIEND_SYSTEM_PROMPT, LEGAL_ANSWER_RULES } from "@/lib/ai/mckenzieFriendPrompt";
 import { formatLegalContextForPrompt, getLegalContextForMessage } from "@/lib/legal/retrieval";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { apiError } from "@/lib/apiError";
+import { getOpenAI } from "@/lib/ai/openai";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { type ProposedAction } from "@/lib/ai/actions";
+import { safeJson, cleanVisibleAnswer, normaliseAction } from "@/lib/ai/parsing";
 
 type CaseEvent = {
   event_date: string | null;
@@ -44,61 +46,12 @@ type BundleItem = {
 type ChatMessage = {
   role: "user" | "assistant";
   content: string | null;
-  action?: any;
+  action?: ProposedAction | null;
   created_at?: string | null;
 };
 
-type LegalSource = {
-  title: string | null;
-  source_type: string | null;
-  jurisdiction: string | null;
-  content: string | null;
-};
-
-function safeJson(text: string) {
-  const raw = String(text || "").trim();
-
-  try {
-    return JSON.parse(raw);
-  } catch {}
-
-  const firstBrace = raw.indexOf("{");
-  const lastBrace = raw.lastIndexOf("}");
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    try {
-      return JSON.parse(raw.slice(firstBrace, lastBrace + 1));
-    } catch {}
-  }
-
-  const answerMatch = raw.match(/"answer"\s*:\s*"([\s\S]*?)"\s*,\s*"action"/);
-  if (answerMatch?.[1]) {
-    try {
-      return { answer: JSON.parse(`"${answerMatch[1]}"`), action: null };
-    } catch {
-      return { answer: answerMatch[1], action: null };
-    }
-  }
-
-  return { answer: raw, action: null };
-}
-
-function cleanVisibleAnswer(value: unknown) {
-  let text = String(value || "").trim();
-  text = text.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
-
-  const leakPatterns = [
-    /,?\s*"action"\s*:\s*\{[\s\S]*$/i,
-    /,?\s*action\s*:\s*\{[\s\S]*$/i,
-    /,?\s*\{\s*"type"\s*:\s*"create_[\s\S]*$/i,
-  ];
-
-  for (const pattern of leakPatterns) {
-    text = text.replace(pattern, "").trim();
-  }
-
-  text = text.replace(/^["']|["']$/g, "").trim();
-  return text;
-}
+type ImagePart = { type: "image_url"; image_url: { url: string } };
+type TextPart = { type: "text"; text: string };
 
 function cleanFileName(name: string) {
   return name
@@ -115,7 +68,7 @@ async function getRequestData(req: Request) {
     return {
       caseId: String(formData.get("caseId") ?? ""),
       message: String(formData.get("message") ?? ""),
-      files: formData.getAll("files").filter((file: any) => file && typeof file.arrayBuffer === "function") as any[],
+      files: formData.getAll("files").filter((file): file is File => file instanceof File),
     };
   }
 
@@ -123,11 +76,11 @@ async function getRequestData(req: Request) {
   return {
     caseId: String(body?.caseId ?? ""),
     message: String(body?.message ?? ""),
-    files: [] as any[],
+    files: [] as File[],
   };
 }
 
-function toShortJson(action: any) {
+function toShortJson(action: ProposedAction) {
   if (!action?.type) return "";
   const payload = action.payload || {};
   const parts = Object.entries(payload)
@@ -136,25 +89,6 @@ function toShortJson(action: any) {
     .map(([key, value]) => `${key}: ${String(value).slice(0, 160)}`)
     .join("; ");
   return `${action.type}${parts ? ` (${parts})` : ""}`;
-}
-
-function makeActionLabel(type: string) {
-  if (type === "create_chronology_event") return "Add to chronology";
-  if (type === "create_calendar_item") return "Add to calendar";
-  if (type === "create_bundle_item") return "Add to bundle";
-  if (type === "create_statement") return "Save to Statements";
-  return "Save";
-}
-
-function normaliseAction(action: any) {
-  if (!action || typeof action !== "object" || !action.type) return null;
-  const allowed = ["create_chronology_event", "create_calendar_item", "create_bundle_item", "create_statement"];
-  if (!allowed.includes(action.type)) return null;
-  return {
-    type: action.type,
-    label: action.label || makeActionLabel(action.type),
-    payload: action.payload || {},
-  };
 }
 
 export async function POST(req: Request) {
@@ -182,10 +116,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not signed in." }, { status: 401 });
     }
 
+    const rate = checkRateLimit(`ai:${user.id}`, 20, 5 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
+
     const { data: caseRow, error: caseError } = await supabase
       .from("cases")
       .select("id,title,case_number,court_name,hearing_datetime")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (caseError || !caseRow) {
@@ -193,7 +131,7 @@ export async function POST(req: Request) {
     }
 
     const uploadedDocs: { name: string; category: string; type: string | null }[] = [];
-    const imageInputs: any[] = [];
+    const imageInputs: ImagePart[] = [];
 
     for (const file of files.slice(0, 4)) {
       const fileName = String(file.name || "image");
@@ -250,7 +188,7 @@ export async function POST(req: Request) {
       content: userMessage,
     });
 
-    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, chatResult, legalResult] = await Promise.all([
+    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, chatResult] = await Promise.all([
       supabase
         .from("case_events")
         .select("event_date,date_unknown,summary,evidence")
@@ -287,21 +225,30 @@ export async function POST(req: Request) {
         .eq("case_id", caseId)
         .order("created_at", { ascending: false })
         .limit(16),
-      supabase
-        .from("legal_sources")
-        .select("title,source_type,jurisdiction,content")
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false })
-        .limit(8),
     ]);
 
-    const events = eventsResult.error ? [] : ((eventsResult.data ?? []) as CaseEvent[]);
-    const statements = statementsResult.error ? [] : ((statementsResult.data ?? []) as CaseStatement[]);
-    const documents = documentsResult.error ? [] : ((documentsResult.data ?? []) as CaseDocument[]);
-    const calendar = calendarResult.error ? [] : ((calendarResult.data ?? []) as CalendarItem[]);
-    const bundle = bundleResult.error ? [] : ((bundleResult.data ?? []) as BundleItem[]);
-    const chatHistory = chatResult.error ? [] : ([...((chatResult.data ?? []) as ChatMessage[])].reverse());
-    const legalSources = legalResult.error ? [] : ((legalResult.data ?? []) as LegalSource[]);
+    // Track which context queries failed rather than silently treating a
+    // failed load as "no data". Drafting a statement from a partial case file
+    // is more dangerous than a visible error, so we surface incompleteness to
+    // the user (and refuse to draft) further down.
+    const contextErrors: string[] = [];
+    const noteError = (name: string, result: { error: unknown }) => {
+      if (result.error) {
+        console.error(`[case-chat] context query "${name}" failed:`, result.error);
+        contextErrors.push(name);
+        return true;
+      }
+      return false;
+    };
+
+    const events = noteError("chronology", eventsResult) ? [] : ((eventsResult.data ?? []) as CaseEvent[]);
+    const statements = noteError("statements", statementsResult) ? [] : ((statementsResult.data ?? []) as CaseStatement[]);
+    const documents = noteError("documents", documentsResult) ? [] : ((documentsResult.data ?? []) as CaseDocument[]);
+    const calendar = noteError("calendar", calendarResult) ? [] : ((calendarResult.data ?? []) as CalendarItem[]);
+    const bundle = noteError("bundle", bundleResult) ? [] : ((bundleResult.data ?? []) as BundleItem[]);
+    const chatHistory = noteError("chat history", chatResult)
+      ? []
+      : ([...((chatResult.data ?? []) as ChatMessage[])].reverse());
 
     const eventText = events
       .map((event, index) => {
@@ -341,22 +288,23 @@ export async function POST(req: Request) {
       .join("\n\n");
 
     const legalChunks = await getLegalContextForMessage(message || userMessage);
-    const retrievedLegalContext = formatLegalContextForPrompt(legalChunks);
 
-    const fallbackLegalSourceText = legalSources
-      .map((source, index) => `${index + 1}. ${source.title || "Untitled source"} (${source.jurisdiction || "England and Wales"}, ${source.source_type || "Guidance"})\n${(source.content || "").slice(0, 2500)}`)
-      .join("\n\n");
-
+    // M3: only use relevance-matched retrieved chunks. Do NOT fall back to
+    // injecting arbitrary active legal_sources as if they were relevant —
+    // "no source found" is far safer than a confidently-wrong sourced answer.
     const legalSourceText = legalChunks.length
-      ? retrievedLegalContext
-      : fallbackLegalSourceText || "No legal source material loaded yet. If answering legal/procedural points, be careful and say when the user may need to check the rules or get legal advice.";
+      ? formatLegalContextForPrompt(legalChunks)
+      : "No specific legal source matched this message. Do not cite specific rules from memory as if sourced; if answering legal/procedural points, be careful and say the user may need to check the rules or get legal advice.";
 
     const uploadedText = uploadedDocs.length
       ? `\n\nNew upload in this message:\n${uploadedDocs.map((doc, index) => `${index + 1}. ${doc.name} (${doc.category})`).join("\n")}`
       : "";
 
-    const context = `
-Current case:
+    const contextWarning = contextErrors.length
+      ? `IMPORTANT: The following parts of the case file could not be loaded this turn: ${contextErrors.join(", ")}. Treat those sections as UNKNOWN, not empty. Do not draft a witness statement or rely on the missing sections; tell the user those parts could not be loaded and to try again.\n\n`
+      : "";
+
+    const context = `${contextWarning}Current case:
 Title: ${caseRow.title || "Untitled case"}
 Court: ${caseRow.court_name || "Not added"}
 Case number: ${caseRow.case_number || "Not added"}
@@ -388,11 +336,11 @@ Latest user message:
 ${message}
 `;
 
-    const userContent: any = imageInputs.length
+    const userContent: string | (TextPart | ImagePart)[] = imageInputs.length
       ? [{ type: "text", text: context }, ...imageInputs]
       : context;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-5-mini",
       response_format: { type: "json_object" },
       messages: [
@@ -431,8 +379,20 @@ create_statement: {"title":"...","body":"draft text..."}`,
     });
 
     const parsed = safeJson(response.choices[0]?.message?.content ?? "{}");
-    const action = normaliseAction(parsed.action);
-    const answer = cleanVisibleAnswer(parsed.answer) || "I can help with that.";
+    let action = normaliseAction(parsed.action);
+    let answer = cleanVisibleAnswer(parsed.answer) || "I can help with that.";
+
+    // M9: don't let a statement be drafted from a partial case file, and never
+    // hide from the user that context was incomplete.
+    if (contextErrors.length) {
+      const missing = contextErrors.join(", ");
+      if (action?.type === "create_statement") {
+        action = null;
+        answer = `I couldn't load part of your case file (${missing} failed to load), so I haven't drafted a statement — a statement built from an incomplete file could leave out important facts. Please try again in a moment.`;
+      } else {
+        answer = `${answer}\n\n⚠️ I couldn't load part of your case file (${missing}) this time, so this reply may be based on incomplete information. Please retry if anything looks missing.`;
+      }
+    }
 
     await supabase.from("case_chat_messages").insert({
       case_id: caseId,
@@ -442,13 +402,9 @@ create_statement: {"title":"...","body":"draft text..."}`,
       action,
     });
 
-    return NextResponse.json({ answer, action, uploaded: uploadedDocs });
-  } catch (error: any) {
-    console.error("Case chat failed:", error);
-    return NextResponse.json(
-      { error: error?.message || "The assistant could not respond." },
-      { status: error?.status || 500 }
-    );
+    return NextResponse.json({ answer, action, uploaded: uploadedDocs, contextIncomplete: contextErrors.length > 0 });
+  } catch (error) {
+    return apiError("Case chat failed", error);
   }
 }
 
@@ -475,6 +431,7 @@ export async function DELETE(req: Request) {
       .from("cases")
       .select("id")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (!caseRow) {
@@ -490,8 +447,7 @@ export async function DELETE(req: Request) {
     if (error) throw error;
 
     return NextResponse.json({ message: "Chat cleared." });
-  } catch (error: any) {
-    console.error("Clear chat failed:", error);
-    return NextResponse.json({ error: error?.message || "Could not clear chat." }, { status: 500 });
+  } catch (error) {
+    return apiError("Clear chat failed", error);
   }
 }

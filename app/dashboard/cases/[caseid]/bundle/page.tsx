@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
 import PrintButton from "@/app/dashboard/components/PrintButton";
+import { provenanceFooter } from "@/lib/disclaimers";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function BundlePage({ params }: { params: Promise<{ caseid:
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const { data: caseRow } = await supabase.from("cases").select("id,title").eq("id", caseId).single();
+  const { data: caseRow } = await supabase.from("cases").select("id,title").eq("id", caseId).eq("user_id", user.id).single();
   if (!caseRow) redirect("/dashboard/cases");
 
   const [itemsResult, docsResult, statementsResult, eventsResult] = await Promise.all([
@@ -176,6 +177,11 @@ export default async function BundlePage({ params }: { params: Promise<{ caseid:
           ) : (
             <div className="px-4 py-10 text-sm text-slate-600">No bundle items.</div>
           )}
+        </div>
+
+        {/* Provenance footer — only rendered when the bundle is printed or saved as PDF. */}
+        <div className="mt-4 hidden border-t border-slate-300 pt-3 text-[11px] leading-4 text-slate-600 print:block">
+          {provenanceFooter()}
         </div>
       </div>
     </CaseWorkspaceShell>

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { removeStorageUnderPrefix } from "@/lib/storageCleanup";
 import DeleteCaseButton from "./DeleteCaseButton";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function CasesPage() {
   const { data: cases } = await supabase
     .from("cases")
     .select("id,title,created_at")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   const rows = (cases as CaseRow[] | null) ?? [];
@@ -84,6 +86,7 @@ export default async function CasesPage() {
       .from("cases")
       .select("id")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (!owned?.id) redirect("/dashboard/cases");
@@ -92,7 +95,9 @@ export default async function CasesPage() {
     cookieStore.set("mf_default_case_id", caseId, {
       path: "/",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 365,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 30,
     });
 
     redirect(`/dashboard/cases/${caseId}`);
@@ -115,11 +120,17 @@ export default async function CasesPage() {
       .from("cases")
       .select("id")
       .eq("id", caseId)
+      .eq("user_id", user.id)
       .single();
 
     if (!owned) redirect("/dashboard/cases");
 
-    await supabase.from("cases").delete().eq("id", caseId);
+    // Remove uploaded files first — the DB cascade only deletes the rows,
+    // not the storage objects. Cleanup failures are logged and do not block
+    // the delete.
+    await removeStorageUnderPrefix(supabase, `${user.id}/${caseId}`);
+
+    await supabase.from("cases").delete().eq("id", caseId).eq("user_id", user.id);
 
     redirect("/dashboard/cases");
   }
@@ -154,7 +165,11 @@ export default async function CasesPage() {
               </button>
             </form>
 
-            
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <Link href="/dashboard/account" className="text-sm font-semibold text-slate-600 hover:text-[#0B1A2B] hover:underline">
+                Account &amp; data deletion
+              </Link>
+            </div>
           </aside>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">

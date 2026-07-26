@@ -11,7 +11,6 @@ export default function DeleteCaseButton({
     <form
       action={action}
       onSubmit={(e) => {
-        // eslint-disable-next-line no-alert
         if (!confirm("Delete this case and all its events?")) e.preventDefault();
       }}
     >

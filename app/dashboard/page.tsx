@@ -23,6 +23,7 @@ export default async function DashboardPage() {
       .from("cases")
       .select("id")
       .eq("id", defaultCaseId)
+      .eq("user_id", user.id)
       .single();
 
     if (defaultCase?.id) redirect(`/dashboard/cases/${defaultCase.id}`);
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
   const { data: cases } = await supabase
     .from("cases")
     .select("id,title,created_at")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(3);
 

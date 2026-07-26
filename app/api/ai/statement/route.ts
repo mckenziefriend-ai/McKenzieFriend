@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { createClient } from "@/lib/supabase/server";
+import { apiError } from "@/lib/apiError";
+import { getOpenAI } from "@/lib/ai/openai";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 type SelectedEvent = {
   id: string;
@@ -20,6 +19,18 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+    }
+
+    const rate = checkRateLimit(`ai:${user.id}`, 20, 5 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
 
     const { notes, selectedEvents } = await req.json();
 
@@ -88,7 +99,7 @@ Important:
 - Use them where relevant.
 - Do not force every selected event into the draft if it does not fit naturally.
 `;
-const response = await openai.chat.completions.create({
+const response = await getOpenAI().chat.completions.create({
   model: "gpt-5-mini",
   messages: [
     {
@@ -121,20 +132,7 @@ You must:
       draft,
       requestId: response._request_id ?? null,
     });
-  } catch (error: any) {
-    console.error("AI statement generation failed:", error);
-
-    return NextResponse.json(
-      {
-        error:
-          error?.message ||
-          error?.error?.message ||
-          "AI generation failed.",
-        status: error?.status ?? null,
-        type: error?.type ?? null,
-        code: error?.code ?? null,
-      },
-      { status: error?.status || 500 }
-    );
+  } catch (error) {
+    return apiError("AI statement generation failed", error);
   }
 }

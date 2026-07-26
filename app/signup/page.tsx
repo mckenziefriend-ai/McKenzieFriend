@@ -21,7 +21,16 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    // NEXT_PUBLIC_SITE_URL (or this origin) must be in Supabase's allowed
+    // redirect list, or the confirmation link falls back to the project's
+    // default Site URL.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${siteUrl}/login` },
+    });
 
     setLoading(false);
     if (error) return setError(error.message);

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { createClient } from "@/lib/supabase/server";
+import { apiError } from "@/lib/apiError";
+import { getOpenAI } from "@/lib/ai/openai";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +12,18 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+    }
+
+    const rate = checkRateLimit(`ai:${user.id}`, 20, 5 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
 
     const body = await req.json();
     const mode = body?.mode;
@@ -58,7 +69,7 @@ Text:
 ${selectedText}
 `;
 
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: "gpt-5-mini",
         messages: [
           {
@@ -125,7 +136,7 @@ Statement:
 ${statementText}
 `;
 
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: "gpt-5-mini",
         messages: [
           {
@@ -154,17 +165,7 @@ ${statementText}
     }
 
     return NextResponse.json({ error: "Invalid mode." }, { status: 400 });
-  } catch (error: any) {
-    console.error("AI statement tools failed:", error);
-
-    return NextResponse.json(
-      {
-        error:
-          error?.message ||
-          error?.error?.message ||
-          "AI tool request failed.",
-      },
-      { status: error?.status || 500 }
-    );
+  } catch (error) {
+    return apiError("AI statement tools failed", error);
   }
 }

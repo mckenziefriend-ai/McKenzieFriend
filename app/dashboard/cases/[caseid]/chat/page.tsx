@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
-import CaseChatClient from "@/app/dashboard/components/CaseChatClient";
+import CaseChatClient, { type Message } from "@/app/dashboard/components/CaseChatClient";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export default async function ChatPage({ params }: { params: Promise<{ caseid: s
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: caseRow } = await supabase.from("cases").select("id,title").eq("id", caseId).single();
+  const { data: caseRow } = await supabase.from("cases").select("id,title").eq("id", caseId).eq("user_id", user.id).single();
   if (!caseRow) redirect("/dashboard/cases");
 
   const { data: chatMessages } = await supabase
@@ -23,7 +23,7 @@ export default async function ChatPage({ params }: { params: Promise<{ caseid: s
 
   return (
     <CaseWorkspaceShell caseId={caseId} title={caseRow.title} active="Chat" assistant={false}>
-      <CaseChatClient caseId={caseId} caseTitle={caseRow.title} initialMessages={(chatMessages as any) ?? []} />
+      <CaseChatClient caseId={caseId} caseTitle={caseRow.title} initialMessages={(chatMessages as Message[] | null) ?? []} />
     </CaseWorkspaceShell>
   );
 }

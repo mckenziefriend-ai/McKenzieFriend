@@ -1,18 +1,18 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { PRODUCT_DISCLAIMER, withProvenanceText } from "@/lib/disclaimers";
+import type { ProposedAction } from "@/lib/ai/actions";
 
-type ProposedAction = {
-  type: "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement";
-  label: string;
-  payload: Record<string, any>;
-};
-
-type Message = {
+export type Message = {
   role: "user" | "assistant";
   content: string;
   action?: ProposedAction | null;
 };
+
+function errorMessage(err: unknown, fallback: string) {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
 const shortcuts = ["Draft a statement", "Add an event", "Add a date", "Build bundle"];
 
@@ -156,8 +156,8 @@ export default function CaseChatClient({
           action: data.action || null,
         },
       ]);
-    } catch (err: any) {
-      setError(err?.message || "No response.");
+    } catch (err) {
+      setError(errorMessage(err, "No response."));
     } finally {
       setLoading(false);
     }
@@ -195,8 +195,8 @@ export default function CaseChatClient({
         ...current,
         { role: "assistant", content: data.message || "Saved." },
       ]);
-    } catch (err: any) {
-      setError(err?.message || "Could not save.");
+    } catch (err) {
+      setError(errorMessage(err, "Could not save."));
     } finally {
       setActionLoading(null);
     }
@@ -219,8 +219,8 @@ export default function CaseChatClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Could not clear chat.");
       setMessages([]);
-    } catch (err: any) {
-      setError(err?.message || "Could not clear chat.");
+    } catch (err) {
+      setError(errorMessage(err, "Could not clear chat."));
     } finally {
       setLoading(false);
     }
@@ -235,7 +235,7 @@ export default function CaseChatClient({
   }
 
   function downloadText(filename: string, text: string) {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([withProvenanceText(text)], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -304,6 +304,7 @@ export default function CaseChatClient({
             ) : null}
           </div>
         </div>
+        <p className="mt-2 text-[11px] leading-4 text-slate-500">{PRODUCT_DISCLAIMER}</p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-8 md:py-7">

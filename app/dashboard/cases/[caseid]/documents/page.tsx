@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CaseWorkspaceShell } from "@/app/dashboard/components/CaseWorkspaceShell";
+import UploadDocumentForm from "./UploadDocumentForm";
+import { MAX_UPLOAD_BYTES } from "@/lib/uploadLimits";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,7 @@ export default async function DocumentsPage({
     .from("cases")
     .select("id,title")
     .eq("id", caseId)
+    .eq("user_id", user.id)
     .single();
   if (!caseRow) redirect("/dashboard/cases");
 
@@ -97,6 +100,10 @@ export default async function DocumentsPage({
     if (!file || file.size === 0)
       redirect(`/dashboard/cases/${caseId}/documents`);
 
+    if (file.size > MAX_UPLOAD_BYTES) {
+      redirect(`/dashboard/cases/${caseId}/documents?error=filesize`);
+    }
+
     const allowedTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -112,6 +119,9 @@ export default async function DocumentsPage({
     }
 
     const name = safeFileName(file.name || "document");
+    // Runs inside a "use server" action (request time), not during render, so
+    // Date.now() here is not a render-purity concern.
+    // eslint-disable-next-line react-hooks/purity
     const storagePath = `${user.id}/${caseId}/${Date.now()}-${name}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -213,35 +223,7 @@ export default async function DocumentsPage({
           </div>
         ) : null}
 
-        <form action={uploadDocument} className="mb-6 grid gap-3 border-b border-slate-200 pb-6">
-          <div className="grid gap-3 md:grid-cols-[1fr_190px_auto] md:items-center">
-            <input
-              name="file"
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp"
-              required
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#0B1A2B] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white"
-            />
-            <select
-              name="category"
-              defaultValue="Evidence"
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
-            >
-              {categories.map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
-            <button type="submit" className="rounded-lg bg-[#0B1A2B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10243A]">
-              Upload
-            </button>
-          </div>
-          <textarea
-            name="summary"
-            rows={2}
-            placeholder="Notes"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#88D2DC] focus:ring-4 focus:ring-[#88D2DC]/20"
-          />
-        </form>
+        <UploadDocumentForm action={uploadDocument} categories={categories} />
 
         <div className="overflow-x-auto border border-slate-200 bg-white">
           <div className="grid min-w-[760px] grid-cols-[minmax(260px,1fr)_150px_110px_190px] border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">

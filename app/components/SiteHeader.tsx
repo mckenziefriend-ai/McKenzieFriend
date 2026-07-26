@@ -3,10 +3,71 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import NextImage from "next/image";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/browser";
 
 function cn(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
+}
+
+// Shared button styling (nav + auth). Module scope so hoisted components can
+// use them and they aren't recreated each render.
+const NAV_BTN =
+  "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
+  "px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-sm";
+const INACTIVE = "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
+const ACTIVE = "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
+const AUTH_PRIMARY = cn(
+  NAV_BTN,
+  "border border-transparent bg-[#0C1A2B] text-white hover:bg-[#16263D] shadow-sm"
+);
+const AUTH_SECONDARY = cn(
+  NAV_BTN,
+  "border border-[#0C1A2B] text-[#0C1A2B] bg-white hover:bg-zinc-50"
+);
+
+// Hoisted out of the header so it isn't redefined on every render
+// (react-hooks/static-components).
+function NavLinks({
+  pathname,
+  mobile = false,
+  onNavigate,
+}: {
+  pathname: string;
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
+  const isHome = pathname === "/";
+  const isAbout = pathname === "/about";
+  return (
+    <>
+      <Link
+        href="/"
+        className={cn(NAV_BTN, isHome ? ACTIVE : INACTIVE, mobile && "w-full justify-start")}
+        aria-current={isHome ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        Home
+      </Link>
+
+      <Link
+        href="/about"
+        className={cn(NAV_BTN, isAbout ? ACTIVE : INACTIVE, mobile && "w-full justify-start")}
+        aria-current={isAbout ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        About
+      </Link>
+
+      <a
+        href="mailto:contact@mckenziefriend.ai"
+        className={cn(NAV_BTN, INACTIVE, mobile && "w-full justify-start")}
+        onClick={onNavigate}
+      >
+        Contact
+      </a>
+    </>
+  );
 }
 
 type Props = {
@@ -18,12 +79,10 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean>(false);
 
-  const isHome = pathname === "/";
-  const isAbout = pathname === "/about";
-  const isContact = pathname === "/contact";
-
-  // Close mobile menu on route change
+  // Close mobile menu on route change (syncing UI to navigation — a
+  // legitimate effect, not derived render state).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false);
   }, [pathname]);
 
@@ -47,30 +106,8 @@ export default function SiteHeader({ onHomeClick }: Props) {
     };
   }, []);
 
-  /**
-   * Shared button base (nav + auth)
-   * Keeps sizing consistent across the header.
-   */
-  const navBtn =
-    "inline-flex items-center justify-center rounded-full font-semibold transition whitespace-nowrap leading-none " +
-    "px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-sm";
-
-  const inactive =
-    "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
-
-  const active =
-    "border-transparent bg-[#0B1A2B] text-white hover:bg-[#0B1A2B]/95";
-
-  // Auth buttons: prominent but same “family” as nav pills
-  const authPrimary = cn(
-    navBtn,
-    "border border-transparent bg-[#0C1A2B] text-white hover:bg-[#16263D] shadow-sm"
-  );
-
-  const authSecondary = cn(
-    navBtn,
-    "border border-[#0C1A2B] text-[#0C1A2B] bg-white hover:bg-zinc-50"
-  );
+  const authPrimary = AUTH_PRIMARY;
+  const authSecondary = AUTH_SECONDARY;
 
   const Logo = (
     <NextImage
@@ -86,66 +123,23 @@ export default function SiteHeader({ onHomeClick }: Props) {
   const BrandClasses =
     "group inline-flex flex-none items-center rounded-md px-1 py-1 hover:bg-zinc-50";
 
-  const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
-    <>
-      <a
-        href="/"
-        className={cn(
-          navBtn,
-          isHome ? active : inactive,
-          mobile && "w-full justify-start"
-        )}
-        aria-current={isHome ? "page" : undefined}
-        onClick={() => mobile && setMobileOpen(false)}
-      >
-        Home
-      </a>
-
-      <a
-        href="/about"
-        className={cn(
-          navBtn,
-          isAbout ? active : inactive,
-          mobile && "w-full justify-start"
-        )}
-        aria-current={isAbout ? "page" : undefined}
-        onClick={() => mobile && setMobileOpen(false)}
-      >
-        About
-      </a>
-
-      <a
-        href="/contact"
-        className={cn(
-          navBtn,
-          isContact ? active : inactive,
-          mobile && "w-full justify-start"
-        )}
-        aria-current={isContact ? "page" : undefined}
-        onClick={() => mobile && setMobileOpen(false)}
-      >
-        Contact
-      </a>
-    </>
-  );
-
   const DesktopAuth = useMemo(() => {
     if (signedIn) {
       return (
-        <a href="/dashboard" className={authPrimary}>
+        <Link href="/dashboard" className={authPrimary}>
           Your Dashboard
-        </a>
+        </Link>
       );
     }
 
     return (
       <>
-        <a href="/login" className={authSecondary}>
+        <Link href="/login" className={authSecondary}>
           Log in
-        </a>
-        <a href="/signup" className={authPrimary}>
+        </Link>
+        <Link href="/signup" className={authPrimary}>
           Sign up
-        </a>
+        </Link>
       </>
     );
   }, [signedIn, authPrimary, authSecondary]);
@@ -170,14 +164,14 @@ export default function SiteHeader({ onHomeClick }: Props) {
                 {Logo}
               </button>
             ) : (
-              <a
+              <Link
                 href="/"
                 className={BrandClasses}
                 aria-label="Go to home"
                 onClick={() => setMobileOpen(false)}
               >
                 {Logo}
-              </a>
+              </Link>
             )}
           </div>
 
@@ -186,7 +180,7 @@ export default function SiteHeader({ onHomeClick }: Props) {
             className="hidden sm:flex items-center justify-center gap-2"
             aria-label="Primary"
           >
-            <NavLinks />
+            <NavLinks pathname={pathname} />
           </nav>
 
           {/* Right: Desktop Auth */}
@@ -255,35 +249,35 @@ export default function SiteHeader({ onHomeClick }: Props) {
             {/* Mobile auth row (two-column, cleaner) */}
             <div className="grid grid-cols-2 gap-2 pb-2">
               {signedIn ? (
-                <a
+                <Link
                   href="/dashboard"
                   className={cn(authPrimary, "col-span-2 w-full")}
                   onClick={() => setMobileOpen(false)}
                 >
                   Your Dashboard
-                </a>
+                </Link>
               ) : (
                 <>
-                  <a
+                  <Link
                     href="/signup"
                     className={cn(authPrimary, "w-full")}
                     onClick={() => setMobileOpen(false)}
                   >
                     Sign up
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/login"
                     className={cn(authSecondary, "w-full")}
                     onClick={() => setMobileOpen(false)}
                   >
                     Log in
-                  </a>
+                  </Link>
                 </>
               )}
             </div>
 
             {/* Mobile nav links */}
-            <NavLinks mobile />
+            <NavLinks pathname={pathname} mobile onNavigate={() => setMobileOpen(false)} />
           </div>
         </nav>
       </div>
