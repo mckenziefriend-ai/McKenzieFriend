@@ -535,6 +535,8 @@ export default function Home() {
   <div className="mt-3 space-y-1 text-slate-500">
     <p>MCKENZIEFRIEND AI LTD</p>
     <p>Registered in England &amp; Wales · Company number 17362145</p>
+    <p>Registered office: 64 Lincoln Street, Birmingham, B12 9EX.</p>
+    <p>Registered with the Information Commissioner's Office (ref. ZC207595).</p>
   </div>
 </footer>
           </div>
