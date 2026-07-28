@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ConsentProvider from "./components/consent/ConsentProvider";
+import CookieBanner from "./components/consent/CookieBanner";
+import ConsentedAnalytics from "./components/consent/ConsentedAnalytics";
+import SiteFooter from "./components/SiteFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <ConsentProvider>
+          {children}
+          <SiteFooter />
+          <CookieBanner />
+          {/* Renders nothing unless NEXT_PUBLIC_GA_ID is set AND consent was given. */}
+          <ConsentedAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        </ConsentProvider>
       </body>
     </html>
   );
