@@ -96,10 +96,7 @@ export default function Home() {
           }
 
           .hero-surface {
-            background:
-              radial-gradient(120% 120% at 50% -20%, rgba(56, 189, 248, 0.18), transparent 55%),
-              radial-gradient(90% 80% at 85% 10%, rgba(99, 102, 241, 0.22), transparent 55%),
-              linear-gradient(180deg, #0b1220 0%, #0f1a2e 58%, #0b1220 100%);
+            background: #0B1221
           }
 
           .hero-grid {
@@ -109,11 +106,6 @@ export default function Home() {
             background-size: 46px 46px;
             -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 28%, #000 38%, transparent 80%);
             mask-image: radial-gradient(ellipse 80% 60% at 50% 28%, #000 38%, transparent 80%);
-          }
-
-          .hero-glow {
-            background: radial-gradient(48% 38% at 50% 0%, rgba(56, 189, 248, 0.28), transparent 70%);
-            filter: blur(18px);
           }
 
           .reveals-ready [data-reveal] {
@@ -152,9 +144,6 @@ export default function Home() {
         {/* ---------- HERO ---------- */}
         <section id="top" className="relative overflow-hidden">
           <div className="hero-surface relative">
-            <div className="hero-grid absolute inset-0 pointer-events-none" />
-            <div className="hero-glow absolute inset-0 pointer-events-none" />
-
             <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6 sm:py-28">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-medium text-white/90 backdrop-blur">
                 <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
