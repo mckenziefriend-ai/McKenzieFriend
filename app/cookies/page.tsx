@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DraftNotice, H2, H3, LegalPage, LI, P, UL } from "../components/legal/LegalUI";
+import { H2, H3, LegalPage, LI, P, UL } from "../components/legal/LegalUI";
 
 export const metadata: Metadata = {
   title: "Cookie Notice — McKenzieFriend.ai",
@@ -13,12 +13,8 @@ export default function CookiesPage() {
       kicker="Cookies"
       title="Cookie Notice"
       intro="We keep cookies to a minimum. Analytics cookies are off unless you accept them."
-      updated="[date]"
+      updated="28 July 2026"
     >
-      <DraftNotice>
-        <strong>DRAFT v1 — review before publishing.</strong>
-      </DraftNotice>
-
       <H2>What cookies we use</H2>
       <P>We keep cookies to a minimum and split them into two groups.</P>
 
