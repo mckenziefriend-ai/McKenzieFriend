@@ -38,27 +38,6 @@ export function LegalPage({
   );
 }
 
-/** Prominent notice used for the "this is a draft" warnings in the source text. */
-export function DraftNotice({ children }: { children: ReactNode }) {
-  return (
-    <div
-      role="note"
-      className="mb-10 rounded-2xl border-l-4 border-amber-400 bg-amber-50 p-5 text-sm leading-6 text-amber-900"
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Inline marker for [CONFIRM] / [ADD] placeholders carried over from the draft. */
-export function Placeholder({ children }: { children: ReactNode }) {
-  return (
-    <mark className="rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-900">
-      {children}
-    </mark>
-  );
-}
-
 export function H2({ children }: { children: ReactNode }) {
   return (
     <h2 className="mt-12 scroll-mt-24 text-xl font-semibold tracking-tight text-zinc-900 first:mt-0 sm:text-2xl">
