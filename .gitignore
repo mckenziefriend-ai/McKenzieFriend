@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated ingestion SQL (review + paste into Supabase, not source)
+/scripts/out/
