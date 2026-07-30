@@ -1,19 +1,37 @@
 /**
- * Pure parsers for legislation.gov.uk CLML (`data.xml`).
+ * Parsers for legislation.gov.uk CLML (`data.xml`).
  *
- * No network, no database — everything here is a pure function over an XML
- * string so it can be unit-tested against saved fixtures.
+ * Pure functions over XML strings — no network, no database — so everything
+ * here is unit-testable against saved fixtures.
  *
  * Guiding principle: CAPTURE, DON'T COMPUTE. We record the currency signals
  * legislation.gov.uk publishes. We never try to apply amendments ourselves to
  * derive "current" text — getting that subtly wrong is worse than not doing it.
  */
 
+import {
+  attrsOf,
+  childByTag,
+  childrenOf,
+  collapseWhitespace,
+  deepText,
+  isTextNode,
+  parseXml,
+  tagOf,
+  textOf,
+  walk,
+  type ClmlNode,
+} from "./xml";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 export type UnappliedEffect = {
   requiresApplied: boolean;
   type: string | null;
   affectedProvisionsLabel: string | null;
-  /** Structured section refs from <ukm:AffectedProvisions>, e.g. ["section-8"]. */
+  /** Structured refs from <ukm:AffectedProvisions>, e.g. ["section-8"]. */
   affectedFoundRefs: string[];
   affectingTitle: string | null;
   affectingUri: string | null;
@@ -27,11 +45,27 @@ export type InstrumentMeta = {
   upToDateTo: string | null;
 };
 
+export type EnumeratedProvision = {
+  /** Path under the instrument, e.g. "section/8", "schedule/14/paragraph/33". */
+  ref: string;
+  /** CLML element id, e.g. "section-8" — used for currency matching. */
+  id: string;
+  number: string | null;
+  heading: string | null;
+  content: string;
+  versionDate: string | null;
+  /** Raw CLML Status verbatim, e.g. "Repealed" | "Prospective" | null. */
+  status: string | null;
+  inForce: boolean;
+  position: number;
+};
+
 export type ProvisionParse = {
   number: string | null;
   heading: string | null;
   content: string;
   versionDate: string | null;
+  status: string | null;
   inForce: boolean;
   hasUnappliedAmendments: boolean;
   amendmentNote: string;
@@ -39,62 +73,213 @@ export type ProvisionParse = {
 };
 
 // ---------------------------------------------------------------------------
-// Small XML helpers (regex-based; CLML here is machine-generated and regular)
+// Tag classification (derived from every tag observed inside Children Act
+// provisions; unknown tags fall through to "recurse", so content is never lost)
 // ---------------------------------------------------------------------------
 
-function attrsOf(tag: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const m of tag.matchAll(/([\w:.-]+)="([^"]*)"/g)) out[m[1]] = m[2];
-  return out;
+/** Dropped entirely — editorial annotation markers, not statutory text. */
+const SKIP_TAGS: ReadonlySet<string> = new Set(["CommentaryRef"]);
+
+/** Unwrapped in place: their text joins the surrounding line. */
+const INLINE_TAGS: ReadonlySet<string> = new Set([
+  "Addition", "Substitution", "Repeal", "Term", "InlineAmendment", "Acronym",
+  "Character", "Citation", "CitationSubRef", "Abbreviation", "AppendText",
+  "Emphasis", "Strong", "Superscript", "Subscript", "Expanded", "Foreign",
+  "InternalLink", "ExternalLink", "Span", "Inline", "Definition",
+  "Uppercase", "SmallCaps", "Proviso",
+]);
+
+/** Numbered levels: each starts a new line with its own marker and indent. */
+const NUMBERED_LEVELS: Readonly<Record<string, number>> = {
+  P2: 0, P3: 1, P4: 2, P5: 3, P6: 4, P7: 5,
+};
+
+/** Transparent containers — recurse without starting a line. */
+const PARA_CONTAINERS: ReadonlySet<string> = new Set([
+  "P1para", "P2para", "P3para", "P4para", "P5para", "P6para", "P7para",
+]);
+
+/** Emit their content then end the line. */
+const BLOCK_TAGS: ReadonlySet<string> = new Set(["Text", "Para", "BlockText"]);
+
+const INDENT = "    ";
+
+// ---------------------------------------------------------------------------
+// Text formatting
+// ---------------------------------------------------------------------------
+
+/**
+ * Accumulates rendered lines. Markers are attached to the line they introduce,
+ * so "(a)" can never be jammed onto the following word.
+ */
+class LineBuilder {
+  private lines: string[] = [];
+  private parts: string[] = [];
+  private indent = 0;
+  private open = false;
+
+  startLine(indent: number, prefix: string) {
+    this.flush();
+    this.indent = indent;
+    this.open = true;
+    if (prefix) this.parts.push(prefix);
+  }
+
+  append(text: string, indent: number) {
+    if (!text) return;
+    if (!this.open) {
+      this.indent = indent;
+      this.open = true;
+    }
+    this.parts.push(text);
+  }
+
+  flush() {
+    const text = collapseWhitespace(this.parts.join(""));
+    this.parts = [];
+    this.open = false;
+    if (text) this.lines.push(INDENT.repeat(Math.max(0, this.indent)) + text);
+  }
+
+  result(): string {
+    this.flush();
+    return this.lines.join("\n").trim();
+  }
 }
 
-function firstTagText(xml: string, tag: string): string | null {
-  const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
-  return m ? stripTags(m[1]).trim() || null : null;
+/** The marker text of a node's own <Pnumber>, e.g. "2A" or "a". */
+function markerOf(node: ClmlNode): string {
+  const pnumber = childByTag(node, "Pnumber");
+  if (!pnumber) return "";
+  return collapseWhitespace(deepText(childrenOf(pnumber), SKIP_TAGS));
 }
 
-export function decodeEntities(text: string): string {
-  return text
-    .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&");
+function render(nodes: ClmlNode[], lb: LineBuilder, indent: number): void {
+  for (const node of nodes) {
+    if (isTextNode(node)) {
+      lb.append(textOf(node), indent);
+      continue;
+    }
+
+    const tag = tagOf(node);
+    if (!tag || SKIP_TAGS.has(tag)) continue;
+
+    const kids = childrenOf(node);
+
+    if (tag === "Pnumber") continue; // consumed by the parent's marker
+
+    if (INLINE_TAGS.has(tag)) {
+      render(kids, lb, indent);
+      continue;
+    }
+
+    if (tag in NUMBERED_LEVELS) {
+      const level = indent + NUMBERED_LEVELS[tag];
+      const marker = markerOf(node);
+      lb.startLine(level, marker ? `(${marker}) ` : "");
+      render(
+        kids.filter((child) => tagOf(child) !== "Pnumber"),
+        lb,
+        level
+      );
+      lb.flush();
+      continue;
+    }
+
+    if (PARA_CONTAINERS.has(tag)) {
+      render(kids, lb, indent);
+      continue;
+    }
+
+    if (BLOCK_TAGS.has(tag)) {
+      render(kids, lb, indent);
+      lb.flush();
+      continue;
+    }
+
+    if (tag === "ListItem" || tag === "tr") {
+      lb.flush();
+      render(kids, lb, indent);
+      lb.flush();
+      continue;
+    }
+
+    if (tag === "td") {
+      render(kids, lb, indent);
+      lb.append(" ", indent);
+      continue;
+    }
+
+    // Unknown / structural tag: recurse so nothing is ever dropped.
+    render(kids, lb, indent);
+  }
 }
 
-function stripTags(fragment: string): string {
-  return fragment.replace(/<[^>]+>/g, "");
+/**
+ * Renders a provision node (a <P1group> or bare <P1>) to structured text.
+ * The provision's own <Title> is excluded — it is stored as `heading`.
+ */
+export function renderProvision(node: ClmlNode): string {
+  const lb = new LineBuilder();
+  const tag = tagOf(node);
+  const kids = childrenOf(node).filter((child) => {
+    const childTag = tagOf(child);
+    // Drop only the provision's own heading, not nested ones.
+    if (childTag === "Title" || childTag === "TitleBlock") return false;
+    // A bare P1's own Pnumber is the section number, already stored separately.
+    if (tag === "P1" && childTag === "Pnumber") return false;
+    return true;
+  });
+
+  for (const child of kids) {
+    if (tagOf(child) === "P1") {
+      // Skip the P1's own Pnumber too when descending from a P1group.
+      const inner = childrenOf(child).filter((c) => tagOf(c) !== "Pnumber");
+      render(inner, lb, 0);
+      continue;
+    }
+    render([child], lb, 0);
+  }
+
+  return lb.result();
 }
 
-/** Extracts the <P1group>…</P1group> block for the requested provision. */
-export function extractProvisionBlock(xml: string): string | null {
-  const start = xml.indexOf("<P1group");
-  if (start === -1) return null;
-  const end = xml.indexOf("</P1group>", start);
-  if (end === -1) return null;
-  return xml.slice(start, end + "</P1group>".length);
+/**
+ * Extracts provision text from an XML fragment containing a <P1group> or <P1>.
+ * Kept as a string API so it can be called directly in tests.
+ */
+export function extractProvisionText(fragment: string): string {
+  const tree = parseXml(fragment);
+  const provision = findFirst(tree, (tag) => tag === "P1group" || tag === "P1");
+  if (!provision) return "";
+  return renderProvision(provision);
+}
+
+function findFirst(nodes: ClmlNode[], match: (tag: string) => boolean): ClmlNode | null {
+  for (const node of nodes) {
+    const tag = tagOf(node);
+    if (tag && match(tag)) return node;
+    const found = findFirst(childrenOf(node), match);
+    if (found) return found;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
-// Instrument-level metadata
+// Instrument metadata
 // ---------------------------------------------------------------------------
 
 export function parseInstrumentMeta(xml: string): InstrumentMeta {
-  const documentMainType =
-    xml.match(/<ukm:DocumentMainType\s+Value="([^"]*)"/)?.[1] ?? null;
+  const documentMainType = xml.match(/<ukm:DocumentMainType\s+Value="([^"]*)"/)?.[1] ?? null;
 
   let type: "act" | "si" | null = null;
   if (documentMainType) {
-    // e.g. UnitedKingdomPublicGeneralAct -> act; UnitedKingdomStatutoryInstrument -> si
-    if (/StatutoryInstrument|StatutoryRule|Order|Regulation/i.test(documentMainType)) type = "si";
+    if (/StatutoryInstrument|StatutoryRule/i.test(documentMainType)) type = "si";
     else if (/Act/i.test(documentMainType)) type = "act";
   }
 
   return {
-    title: firstTagText(xml, "dc:title"),
+    title: xml.match(/<dc:title>([^<]*)<\/dc:title>/)?.[1]?.trim() || null,
     documentMainType,
     type,
     upToDateTo: xml.match(/<dct:valid>([^<]*)<\/dct:valid>/)?.[1]?.trim() || null,
@@ -107,152 +292,256 @@ export function parseInstrumentMeta(xml: string): InstrumentMeta {
 
 export function parseUnappliedEffects(xml: string): UnappliedEffect[] {
   const effects: UnappliedEffect[] = [];
+  const tree = parseXml(xml);
 
-  // Match both self-closing and container forms.
-  const re = /<ukm:UnappliedEffect\s([^>]*?)(\/)?>([\s\S]*?)(?:<\/ukm:UnappliedEffect>|(?=<ukm:UnappliedEffect|<\/ukm:UnappliedEffects>))/g;
+  walk(tree, (node, tag) => {
+    if (tag !== "ukm:UnappliedEffect") return;
+    const attrs = attrsOf(node);
+    const kids = childrenOf(node);
 
-  for (const m of xml.matchAll(re)) {
-    const attrs = attrsOf("<x " + m[1] + ">");
-    const inner = m[3] ?? "";
-
-    const affectedBlock = inner.match(
-      /<ukm:AffectedProvisions>([\s\S]*?)<\/ukm:AffectedProvisions>/
-    )?.[1] ?? "";
-
+    const affectedBlock = kids.find((child) => tagOf(child) === "ukm:AffectedProvisions");
     const affectedFoundRefs: string[] = [];
-    for (const sec of affectedBlock.matchAll(/<ukm:Section\s([^>]*)>/g)) {
-      const secAttrs = attrsOf("<x " + sec[1] + ">");
-      // FoundRef is the parent section (e.g. "section-8" for an effect on s. 8(3)).
-      // Ref is the precise target (e.g. "section-8-3"). Prefer FoundRef, fall back
-      // to Ref so subsection-only effects still roll up to their parent section.
-      const ref = secAttrs.FoundRef || secAttrs.Ref;
-      if (ref) affectedFoundRefs.push(ref);
+    if (affectedBlock) {
+      walk(childrenOf(affectedBlock), (secNode, secTag) => {
+        if (secTag !== "ukm:Section") return;
+        const secAttrs = attrsOf(secNode);
+        // FoundRef is the parent provision (e.g. "section-8" for an effect on
+        // s. 8(3)); Ref is the precise target. Either rolls up correctly.
+        const ref = secAttrs.FoundRef || secAttrs.Ref;
+        if (ref) affectedFoundRefs.push(ref);
+      });
     }
+
+    const affectingTitleNode = kids.find((child) => tagOf(child) === "ukm:AffectingTitle");
 
     effects.push({
       requiresApplied: attrs.RequiresApplied === "true",
       type: attrs.Type ?? null,
       affectedProvisionsLabel: attrs.AffectedProvisions ?? null,
       affectedFoundRefs,
-      affectingTitle:
-        inner.match(/<ukm:AffectingTitle>([\s\S]*?)<\/ukm:AffectingTitle>/)?.[1]?.trim() ?? null,
+      affectingTitle: affectingTitleNode
+        ? collapseWhitespace(deepText(childrenOf(affectingTitleNode))) || null
+        : null,
       affectingUri: attrs.AffectingURI ?? null,
     });
-  }
+  });
 
   return effects;
 }
 
 /**
- * Does this effect target the given section?
+ * Does this effect target the given provision (by CLML id)?
  *
- * Roll-up matters: a pending change to s. 8(3) MUST flag s. 8. CLML gives us
- * `FoundRef="section-8"` on the nested <ukm:Section> for exactly that reason,
- * and `Ref="section-8-3"` is normalised down to its parent section here.
- *
- * The display-string fallback is deliberately strict so that "s. 25B(2)(c)"
- * does NOT match section 25, and "s. 104(3AZA)" does NOT match section 1.
+ * Roll-up matters: a pending change to s. 8(3) MUST flag s. 8. An effect ref of
+ * "section-8-3" rolls up to "section-8", while "section-8A" must NOT — hence
+ * requiring the next character to be "-" or end-of-string.
  */
-export function effectAffectsSection(effect: UnappliedEffect, sectionNumber: string): boolean {
+export function effectAffectsProvision(effect: UnappliedEffect, provisionId: string): boolean {
   for (const ref of effect.affectedFoundRefs) {
-    // "section-8" or "section-8-3" -> parent section "8"
-    const m = ref.match(/^section-(\d+[A-Z]*)(?:-|$)/i);
-    if (m && m[1].toLowerCase() === sectionNumber.toLowerCase()) return true;
+    if (ref === provisionId) return true;
+    if (ref.startsWith(`${provisionId}-`)) return true;
   }
+  return labelRefersToProvision(effect.affectedProvisionsLabel, provisionId);
+}
 
-  const label = effect.affectedProvisionsLabel;
+/**
+ * Display-string fallback for when structured refs are absent. Deliberately
+ * strict: "s. 25B(2)(c)" must not match section 25, and "s. 104(3AZA)" must not
+ * match section 1.
+ */
+function labelRefersToProvision(label: string | null, provisionId: string): boolean {
   if (!label) return false;
-  if (/^Sch\b/i.test(label)) return false; // schedule, not a section
 
-  const body = label.replace(/^ss?\.\s*/i, "");
-  for (const token of body.split(/[,;]|\s+and\s+|\s+/)) {
-    const t = token.trim();
-    if (!t) continue;
-    // Leading number plus any suffix letters: "8(3)" -> 8, "25B(2)" -> 25B
-    const m = t.match(/^(\d+[A-Z]*)/i);
-    if (m && m[1].toLowerCase() === sectionNumber.toLowerCase()) return true;
+  const sectionMatch = provisionId.match(/^section-(\w+)$/i);
+  const scheduleParaMatch = provisionId.match(/^schedule-(\w+)-paragraph-(\w+)$/i);
+
+  if (sectionMatch) {
+    if (/^Sch\b/i.test(label)) return false; // a schedule, not a section
+    const target = sectionMatch[1].toLowerCase();
+    const body = label.replace(/^ss?\.\s*/i, "");
+    for (const token of body.split(/[,;]|\s+and\s+|\s+/)) {
+      const m = token.trim().match(/^(\d+[A-Z]*)/i);
+      if (m && m[1].toLowerCase() === target) return true;
+    }
+    return false;
   }
+
+  if (scheduleParaMatch) {
+    if (!/^Sch\b/i.test(label)) return false;
+    const [, sched, para] = scheduleParaMatch;
+    const schedOk = new RegExp(`^Sch\\.\\s*${sched}\\b`, "i").test(label);
+    const paraOk = new RegExp(`\\bpara\\.\\s*${para}\\b`, "i").test(label);
+    return schedOk && paraOk;
+  }
+
   return false;
 }
 
-export function buildAmendmentNote(
-  matched: UnappliedEffect[],
-  sectionNumber: string
-): string {
+/** Back-compatible wrapper: match by section number rather than provision id. */
+export function effectAffectsSection(effect: UnappliedEffect, sectionNumber: string): boolean {
+  return effectAffectsProvision(effect, `section-${sectionNumber}`);
+}
+
+export function buildAmendmentNote(matched: UnappliedEffect[], provisionLabel: string): string {
   if (!matched.length) return "No outstanding effects.";
 
   const parts = matched.map((e) => {
     const what = e.type || "change";
-    const where = e.affectedProvisionsLabel || `s. ${sectionNumber}`;
+    const where = e.affectedProvisionsLabel || provisionLabel;
     const by = e.affectingTitle || e.affectingUri?.split("/id/")[1] || "an unidentified instrument";
     return `${what} in ${where} by ${by}`;
   });
 
   const count = matched.length;
-  return `${count} change${count === 1 ? "" : "s"} not yet applied to s. ${sectionNumber}: ${parts.join("; ")}.`;
+  return `${count} change${count === 1 ? "" : "s"} not yet applied to ${provisionLabel}: ${parts.join("; ")}.`;
 }
 
 // ---------------------------------------------------------------------------
-// Provision text
+// Whole-instrument enumeration
 // ---------------------------------------------------------------------------
 
-export function extractProvisionText(block: string): string {
-  let working = block;
+type EnumContext = {
+  scheduleLabel?: string;
+  scheduleTitle?: string;
+  partLabel?: string;
+  groupTitle?: string;
+  versionDate?: string;
+  status?: string;
+};
 
-  // Drop editorial annotation markers and the heading (captured separately).
-  working = working.replace(/<CommentaryRef[^>]*\/>/g, "");
-  working = working.replace(/<Title>[\s\S]*?<\/Title>/, "");
+function titleTextOf(node: ClmlNode): string | null {
+  const title = childByTag(node, "Title");
+  if (title) return collapseWhitespace(deepText(childrenOf(title), SKIP_TAGS)) || null;
+  const titleBlock = childByTag(node, "TitleBlock");
+  if (titleBlock) {
+    const inner = childByTag(titleBlock, "Title");
+    if (inner) return collapseWhitespace(deepText(childrenOf(inner), SKIP_TAGS)) || null;
+  }
+  return null;
+}
 
-  // Give block-level elements a line break so numbering doesn't run together.
-  working = working.replace(/<\/(P1para|P2para|P3para|P1|P2|P3|Text|Para)>/g, "\n");
-  working = working.replace(/<(P2|P3)\s/g, "\n<$1 ");
+function numberTextOf(node: ClmlNode): string | null {
+  const number = childByTag(node, "Number");
+  if (!number) return null;
+  return collapseWhitespace(deepText(childrenOf(number), SKIP_TAGS)) || null;
+}
 
-  const text = decodeEntities(stripTags(working));
+function composeHeading(ctx: EnumContext, isSchedule: boolean): string | null {
+  if (!isSchedule) return ctx.groupTitle ?? null;
 
-  return text
-    .split("\n")
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .join("\n")
-    .trim();
+  const bits: string[] = [];
+  if (ctx.scheduleLabel) {
+    bits.push(ctx.scheduleTitle ? `${ctx.scheduleLabel} (${ctx.scheduleTitle})` : ctx.scheduleLabel);
+  }
+  if (ctx.partLabel) bits.push(ctx.partLabel);
+  const prefix = bits.join(", ");
+  if (prefix && ctx.groupTitle) return `${prefix} — ${ctx.groupTitle}`;
+  return prefix || ctx.groupTitle || null;
+}
+
+/**
+ * Enumerates every provision in a whole-instrument document: sections and
+ * schedule paragraphs alike, in document order.
+ */
+export function enumerateProvisions(xml: string, legGovRef: string): EnumeratedProvision[] {
+  const tree = parseXml(xml);
+  const provisions: EnumeratedProvision[] = [];
+  const prefix = `/${legGovRef}/`;
+
+  const visit = (nodes: ClmlNode[], ctx: EnumContext): void => {
+    for (const node of nodes) {
+      const tag = tagOf(node);
+      if (!tag) continue;
+
+      const attrs = attrsOf(node);
+      const next: EnumContext = { ...ctx };
+      if (attrs.RestrictStartDate) next.versionDate = attrs.RestrictStartDate;
+      if (attrs.Status) next.status = attrs.Status;
+
+      if (tag === "Schedule") {
+        next.scheduleLabel = numberTextOf(node) ?? next.scheduleLabel;
+        next.scheduleTitle = titleTextOf(node) ?? undefined;
+        next.partLabel = undefined;
+        next.groupTitle = undefined;
+      } else if (tag === "Part" || tag === "Chapter") {
+        const label = numberTextOf(node);
+        const title = titleTextOf(node);
+        next.partLabel = label && title ? `${label} (${title})` : label ?? title ?? next.partLabel;
+      } else if (tag === "P1group" || tag === "Pblock") {
+        const title = titleTextOf(node);
+        if (title) next.groupTitle = title;
+      }
+
+      if (tag === "P1") {
+        const documentUri = attrs.DocumentURI ?? "";
+        const at = documentUri.indexOf(prefix);
+        if (at !== -1) {
+          const ref = documentUri.slice(at + prefix.length);
+          const id = attrs.id ?? ref.replace(/\//g, "-");
+          const status = next.status ?? null;
+          const isSchedule = ref.startsWith("schedule");
+
+          provisions.push({
+            ref,
+            id,
+            number: markerOf(node) || null,
+            heading: composeHeading(next, isSchedule),
+            content: renderProvision(node),
+            versionDate: next.versionDate ?? null,
+            status,
+            inForce: !(status === "Prospective" || status === "Repealed"),
+            position: provisions.length + 1,
+          });
+          // Do not descend further: nested P1s do not occur inside a provision.
+          continue;
+        }
+      }
+
+      visit(childrenOf(node), next);
+    }
+  };
+
+  visit(tree, {});
+  return provisions;
+}
+
+/** Human label for a provision, used in amendment notes. */
+export function provisionLabel(ref: string): string {
+  const section = ref.match(/^section\/(.+)$/);
+  if (section) return `s. ${section[1].replace(/\//g, "(")}`;
+  const schedulePara = ref.match(/^schedule\/([^/]+)\/paragraph\/(.+)$/);
+  if (schedulePara) return `Sch. ${schedulePara[1]} para. ${schedulePara[2]}`;
+  return ref;
 }
 
 // ---------------------------------------------------------------------------
-// Top level
+// Single-provision parse (kept for the per-provision path and its tests)
 // ---------------------------------------------------------------------------
 
 export function parseProvision(xml: string, sectionNumber: string): ProvisionParse {
-  const block = extractProvisionBlock(xml);
-  if (!block) {
-    throw new Error(`No <P1group> found for section ${sectionNumber}`);
-  }
+  const tree = parseXml(xml);
+  const provision = findFirst(tree, (tag) => tag === "P1group" || tag === "P1");
+  if (!provision) throw new Error(`No <P1group> found for section ${sectionNumber}`);
 
-  const groupTag = block.match(/<P1group[^>]*>/)?.[0] ?? "";
-  const groupAttrs = attrsOf(groupTag);
-
-  const heading = firstTagText(block, "Title");
-  const number = firstTagText(block, "Pnumber") ?? sectionNumber;
-
-  // in_force: CLML marks not-yet-commenced material with Status="Prospective".
-  // NOTE: all three proof provisions are in force, so the false branch is not
-  // exercised by real data yet — see TODO in scripts/lib/targets.ts.
-  const p1Tag = block.match(/<P1\s[^>]*>/)?.[0] ?? "";
-  const prospective =
-    /Status="Prospective"/i.test(groupTag) || /Status="Prospective"/i.test(p1Tag);
+  const attrs = attrsOf(provision);
+  const inner = childByTag(provision, "P1");
+  const number = markerOf(inner ?? provision) || sectionNumber;
+  const status = attrs.Status ?? attrsOf(inner ?? provision).Status ?? null;
 
   const allEffects = parseUnappliedEffects(xml);
   const matched = allEffects.filter(
-    (e) => e.requiresApplied && effectAffectsSection(e, number)
+    (effect) => effect.requiresApplied && effectAffectsSection(effect, number)
   );
 
   return {
     number,
-    heading,
-    content: extractProvisionText(block),
-    versionDate: groupAttrs.RestrictStartDate ?? null,
-    inForce: !prospective,
+    heading: titleTextOf(provision),
+    content: renderProvision(provision),
+    versionDate: attrs.RestrictStartDate ?? null,
+    status,
+    inForce: !(status === "Prospective" || status === "Repealed"),
     hasUnappliedAmendments: matched.length > 0,
-    amendmentNote: buildAmendmentNote(matched, number),
+    amendmentNote: buildAmendmentNote(matched, `s. ${number}`),
     matchedEffects: matched,
   };
 }
