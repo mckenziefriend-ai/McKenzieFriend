@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   buildAmendmentNote,
+  deriveInForce,
   effectAffectsProvision,
   effectAffectsSection,
   enumerateProvisions,
@@ -318,6 +319,53 @@ describe("enumerateProvisions — whole-instrument", () => {
     const s54 = provisions.find((p) => p.ref === "section/54");
     expect(s54).toBeDefined();
     expect(s54!.content).toBe("");
+  });
+
+  it("treats a provision with no operative text as not in force", () => {
+    // Verified against the live page: /ukpga/1989/41/section/54 renders
+    // "F1 54 . . . ." with "Textual Amendments: F1 S. 54 repealed (1.4.2002)".
+    // Reading these as in force is the dangerous direction for a legal tool.
+    const s54 = provisions.find((p) => p.ref === "section/54")!;
+    expect(s54.contentOmitted).toBe(true);
+    expect(s54.inForce).toBe(false);
+  });
+
+  it("does not fabricate a captured status for unmarked repealed provisions", () => {
+    // CLML sets no Status on s.54, so status must stay null — the signal lives
+    // in content_omitted, which is distinguishable from a captured status.
+    const s54 = provisions.find((p) => p.ref === "section/54")!;
+    expect(s54.status).toBeNull();
+  });
+
+  it("never reports a provision as in force while carrying no text", () => {
+    for (const p of provisions) {
+      if (p.contentOmitted) expect(p.inForce, `${p.ref}`).toBe(false);
+    }
+  });
+
+  it("keeps content_omitted false for provisions that do have text", () => {
+    const s1 = provisions.find((p) => p.ref === "section/1")!;
+    expect(s1.contentOmitted).toBe(false);
+    expect(s1.inForce).toBe(true);
+  });
+});
+
+describe("deriveInForce", () => {
+  it("is false for captured Repealed or Prospective status", () => {
+    expect(deriveInForce("Repealed", false)).toBe(false);
+    expect(deriveInForce("Prospective", false)).toBe(false);
+  });
+
+  it("is false when the source carried no operative text", () => {
+    expect(deriveInForce(null, true)).toBe(false);
+  });
+
+  it("is true for a normal provision with text and no status", () => {
+    expect(deriveInForce(null, false)).toBe(true);
+  });
+
+  it("ignores statuses that do not indicate not-in-force", () => {
+    expect(deriveInForce("Inherited", false)).toBe(true);
   });
 });
 

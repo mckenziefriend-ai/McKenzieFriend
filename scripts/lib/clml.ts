@@ -56,6 +56,8 @@ export type EnumeratedProvision = {
   versionDate: string | null;
   /** Raw CLML Status verbatim, e.g. "Repealed" | "Prospective" | null. */
   status: string | null;
+  /** Observed: the source carried no operative text (empty <Text/>). */
+  contentOmitted: boolean;
   inForce: boolean;
   position: number;
 };
@@ -66,6 +68,7 @@ export type ProvisionParse = {
   content: string;
   versionDate: string | null;
   status: string | null;
+  contentOmitted: boolean;
   inForce: boolean;
   hasUnappliedAmendments: boolean;
   amendmentNote: string;
@@ -480,16 +483,19 @@ export function enumerateProvisions(xml: string, legGovRef: string): EnumeratedP
           const id = attrs.id ?? ref.replace(/\//g, "-");
           const status = next.status ?? null;
           const isSchedule = ref.startsWith("schedule");
+          const content = renderProvision(node);
+          const contentOmitted = content.trim().length === 0;
 
           provisions.push({
             ref,
             id,
             number: markerOf(node) || null,
             heading: composeHeading(next, isSchedule),
-            content: renderProvision(node),
+            content,
             versionDate: next.versionDate ?? null,
             status,
-            inForce: !(status === "Prospective" || status === "Repealed"),
+            contentOmitted,
+            inForce: deriveInForce(status, contentOmitted),
             position: provisions.length + 1,
           });
           // Do not descend further: nested P1s do not occur inside a provision.
@@ -503,6 +509,22 @@ export function enumerateProvisions(xml: string, legGovRef: string): EnumeratedP
 
   visit(tree, {});
   return provisions;
+}
+
+/**
+ * A provision is in force unless legislation.gov.uk marks it otherwise, or the
+ * source carries no operative text at all.
+ *
+ * The empty-text case matters: some repealed provisions carry NO Status
+ * attribute — legislation.gov.uk shows a dotted heading with an empty <Text/>
+ * and states the repeal only in the annotation block (verified against the live
+ * page for Children Act 1989 s.54). Treating those as in force is the dangerous
+ * direction for a legal tool, so empty text means not in force. This reads a
+ * fact off the document; it does not compute amendments.
+ */
+export function deriveInForce(status: string | null, contentOmitted: boolean): boolean {
+  if (status === "Prospective" || status === "Repealed") return false;
+  return !contentOmitted;
 }
 
 /** Human label for a provision, used in amendment notes. */
@@ -533,13 +555,17 @@ export function parseProvision(xml: string, sectionNumber: string): ProvisionPar
     (effect) => effect.requiresApplied && effectAffectsSection(effect, number)
   );
 
+  const content = renderProvision(provision);
+  const contentOmitted = content.trim().length === 0;
+
   return {
     number,
     heading: titleTextOf(provision),
-    content: renderProvision(provision),
+    content,
     versionDate: attrs.RestrictStartDate ?? null,
     status,
-    inForce: !(status === "Prospective" || status === "Repealed"),
+    contentOmitted,
+    inForce: deriveInForce(status, contentOmitted),
     hasUnappliedAmendments: matched.length > 0,
     amendmentNote: buildAmendmentNote(matched, `s. ${number}`),
     matchedEffects: matched,

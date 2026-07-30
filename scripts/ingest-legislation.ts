@@ -173,6 +173,7 @@ async function main() {
         versionDate: provision.versionDate,
         inForce: provision.inForce,
         status: provision.status,
+        contentOmitted: provision.contentOmitted,
         hasUnappliedAmendments: matched.length > 0,
         amendmentNote: buildAmendmentNote(matched, label),
         sourceUrl: `${BASE_URL}/${target.legGovRef}/${provision.ref}`,
@@ -210,10 +211,11 @@ async function main() {
         `scheduleParas=${String(row.schedules).padEnd(5)} repealed=${row.repealed}`
     );
   }
-  console.log(`TOTAL provisions: ${provisionRows.length}`);
-  console.log(`in_force=false:   ${provisionRows.filter((p) => !p.inForce).length}`);
-  console.log(`unapplied:        ${provisionRows.filter((p) => p.hasUnappliedAmendments).length}`);
-  console.log(`empty content:    ${provisionRows.filter((p) => !p.content.trim()).length}`);
+  console.log(`TOTAL provisions:  ${provisionRows.length}`);
+  console.log(`in_force=false:    ${provisionRows.filter((p) => !p.inForce).length}`);
+  console.log(`  status=Repealed: ${provisionRows.filter((p) => p.status === "Repealed").length}`);
+  console.log(`  content omitted: ${provisionRows.filter((p) => p.contentOmitted).length}`);
+  console.log(`unapplied:         ${provisionRows.filter((p) => p.hasUnappliedAmendments).length}`);
 
   console.log("\nSQL files (run in this order):");
   for (const chunk of chunks) {
@@ -285,6 +287,26 @@ async function main() {
   } else {
     console.log(`  PASS  in_force=false exercised by ${repealedCount} Repealed provisions`);
   }
+
+  // Nothing may be reported as in force while carrying no operative text.
+  const emptyButInForce = provisionRows.filter((p) => p.contentOmitted && p.inForce);
+  if (emptyButInForce.length) {
+    failures.push(
+      `${emptyButInForce.length} provision(s) have no text but are marked in force, ` +
+        `e.g. ${emptyButInForce[0].ref}`
+    );
+  } else {
+    const omitted = provisionRows.filter((p) => p.contentOmitted).length;
+    console.log(`  PASS  ${omitted} text-omitted provisions all marked not in force`);
+  }
+
+  // The omitted-text case must never fabricate a captured status. Where CLML
+  // stated no Status, status stays null and content_omitted carries the signal.
+  const unmarkedOmitted = provisionRows.filter((p) => p.contentOmitted && p.status === null);
+  console.log(
+    `  INFO  ${unmarkedOmitted.length} provisions have no text and no CLML status ` +
+      `(flagged via content_omitted, status left null)`
+  );
 
   console.log(`\nRequests made: ${budget.made}${refresh ? "" : " (cache-first)"}`);
 

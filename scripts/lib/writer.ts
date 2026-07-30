@@ -30,6 +30,7 @@ export type ProvisionRow = {
   versionDate: string | null;
   inForce: boolean;
   status: string | null;
+  contentOmitted: boolean;
   hasUnappliedAmendments: boolean;
   amendmentNote: string | null;
   sourceUrl: string;
@@ -91,18 +92,19 @@ function provisionStatement(p: ProvisionRow): string[] {
   const flags = [
     p.hasUnappliedAmendments ? "unapplied amendments" : null,
     p.status ? `status=${p.status}` : null,
+    p.contentOmitted ? "content omitted (no operative text)" : null,
   ].filter(Boolean);
 
   return [
     `-- ${p.legGovRef} ${p.ref}${flags.length ? `  [${flags.join(", ")}]` : ""}`,
     "insert into public.legal_provisions",
     "  (instrument_id, ref, number, heading, content, version_date, in_force, status,",
-    "   has_unapplied_amendments, amendment_note, source_url, position)",
+    "   content_omitted, has_unapplied_amendments, amendment_note, source_url, position)",
     "select",
     `  i.id, ${sql(p.ref)}, ${sql(p.number)}, ${sql(p.heading)},`,
     `  ${sql(p.content)},`,
     `  ${sqlDate(p.versionDate)}, ${sqlBool(p.inForce)}, ${sql(p.status)},`,
-    `  ${sqlBool(p.hasUnappliedAmendments)}, ${sql(p.amendmentNote)},`,
+    `  ${sqlBool(p.contentOmitted)}, ${sqlBool(p.hasUnappliedAmendments)}, ${sql(p.amendmentNote)},`,
     `  ${sql(p.sourceUrl)}, ${p.position}`,
     "from public.legal_instruments i",
     `where i.leg_gov_ref = ${sql(p.legGovRef)}`,
@@ -113,6 +115,7 @@ function provisionStatement(p: ProvisionRow): string[] {
     "  version_date = excluded.version_date,",
     "  in_force = excluded.in_force,",
     "  status = excluded.status,",
+    "  content_omitted = excluded.content_omitted,",
     "  has_unapplied_amendments = excluded.has_unapplied_amendments,",
     "  amendment_note = excluded.amendment_note,",
     "  source_url = excluded.source_url,",
@@ -128,13 +131,19 @@ const VERIFICATION_QUERY = [
   "--   ukpga/1989/41 section/1  -> false, 'No outstanding effects.'",
   "--   ukpga/1973/18 section/25 -> false, 'No outstanding effects.'",
   "--   29 Children Act provisions -> status = 'Repealed', in_force = false",
+  "--   18 provisions -> content_omitted = true, in_force = false, status null",
+  "--      (repealed but unmarked in CLML, e.g. Children Act s.54)",
   "--",
   "-- select i.leg_gov_ref, i.up_to_date_to, p.ref, p.version_date,",
-  "--        p.in_force, p.status, p.has_unapplied_amendments,",
+  "--        p.in_force, p.status, p.content_omitted, p.has_unapplied_amendments,",
   "--        left(p.amendment_note, 100) as note",
   "-- from public.legal_provisions p",
   "-- join public.legal_instruments i on i.id = p.instrument_id",
   "-- order by i.leg_gov_ref, p.position;",
+  "--",
+  "-- Nothing should be in force with no text:",
+  "-- select count(*) from public.legal_provisions",
+  "-- where content_omitted and in_force;   -- expect 0",
   "--",
   "-- Row counts:",
   "-- select i.leg_gov_ref, count(*) filter (where p.ref like 'section%') as sections,",
