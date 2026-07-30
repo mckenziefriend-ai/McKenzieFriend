@@ -1,36 +1,50 @@
 /**
- * Track B step 1 — ingest legislation.gov.uk provisions with currency data.
+ * Track B — ingest legislation.gov.uk instruments with currency data.
  *
  * Standalone: NOT part of the app runtime. Run manually:
- *   npx tsx scripts/ingest-legislation.ts
+ *   npm run ingest:legislation            (uses the on-disk cache if present)
+ *   npm run ingest:legislation -- --refresh   (force re-download)
  *
- * What it does:
- *   1. Verifies each instrument ref actually resolves before relying on it.
- *   2. Fetches each target provision's data.xml (CLML).
- *   3. Parses text + currency signals (captured, never computed).
- *   4. Emits idempotent INSERT SQL to scripts/out/ for the Supabase editor.
- *   5. Asserts the proof expectations and exits non-zero if they don't hold.
+ * What it does, per instrument:
+ *   1. Fetches the WHOLE instrument's data.xml in ONE request (~5 MB), rather
+ *      than one request per provision (~600 against a free public service).
+ *   2. Verifies the returned title matches what we expected before storing.
+ *   3. Enumerates every section and schedule paragraph from that document.
+ *   4. Captures currency per provision (never computes it).
+ *   5. Emits idempotent INSERT SQL in numbered chunks for the Supabase editor.
+ *   6. Asserts the proof expectations and exits non-zero if they don't hold.
  *
- * Deliberately gentle on a public government API: sequential requests, a delay
- * between each, a descriptive User-Agent, and backoff on 429/5xx.
+ * Resumable: downloaded XML is cached under scripts/.cache/, so re-runs make
+ * zero network requests unless --refresh is passed.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseInstrumentMeta, parseProvision } from "./lib/clml";
+import {
+  buildAmendmentNote,
+  effectAffectsProvision,
+  enumerateProvisions,
+  parseInstrumentMeta,
+  parseUnappliedEffects,
+  provisionLabel,
+} from "./lib/clml";
 import {
   BASE_URL,
   MAX_RETRIES,
   PROOF_EXPECTATIONS,
   REQUEST_DELAY_MS,
   REQUEST_TIMEOUT_MS,
+  SQL_CHUNK_SIZE,
   TARGETS,
   USER_AGENT,
 } from "./lib/targets";
-import { buildSqlScript, type InstrumentRow, type ProvisionRow } from "./lib/writer";
+import { buildSqlChunks, type InstrumentRow, type ProvisionRow } from "./lib/writer";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
+const cacheDir = join(scriptDir, ".cache");
+const outDir = join(scriptDir, "out");
+const refresh = process.argv.includes("--refresh");
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -51,7 +65,6 @@ async function fetchWithRetry(url: string): Promise<string> {
 
       if (res.ok) return await res.text();
 
-      // Back off on rate limiting / transient server errors; give up on 4xx.
       if (res.status === 429 || res.status >= 500) {
         lastError = `HTTP ${res.status}`;
         const backoff = REQUEST_DELAY_MS * attempt * 2;
@@ -74,126 +87,149 @@ async function fetchWithRetry(url: string): Promise<string> {
   throw new Error(`Failed after ${MAX_RETRIES} attempts (${lastError}): ${url}`);
 }
 
-type SummaryRow = {
-  legGovRef: string;
-  ref: string;
-  versionDate: string | null;
-  inForce: boolean;
-  hasUnapplied: boolean;
-  note: string;
-};
+/** Fetch-with-cache so re-runs cost the API nothing. */
+async function getInstrumentXml(
+  legGovRef: string,
+  requestBudget: { made: number }
+): Promise<string> {
+  mkdirSync(cacheDir, { recursive: true });
+  const cachePath = join(cacheDir, `${legGovRef.replace(/\//g, "-")}.data.xml`);
+
+  if (!refresh && existsSync(cachePath)) {
+    const cached = readFileSync(cachePath, "utf8");
+    console.log(`  cache hit (${(cached.length / 1e6).toFixed(1)} MB) — no request made`);
+    return cached;
+  }
+
+  if (requestBudget.made > 0) await sleep(REQUEST_DELAY_MS);
+  const url = `${BASE_URL}/${legGovRef}/data.xml`;
+  const started = Date.now();
+  const xml = await fetchWithRetry(url);
+  requestBudget.made++;
+  console.log(
+    `  fetched ${(xml.length / 1e6).toFixed(1)} MB in ${Date.now() - started}ms (1 request)`
+  );
+  writeFileSync(cachePath, xml, "utf8");
+  return xml;
+}
 
 async function main() {
-  console.log("Track B — legislation.gov.uk ingestion (proof run)\n");
+  console.log("Track B — legislation.gov.uk whole-instrument ingestion\n");
   console.log(`User-Agent: ${USER_AGENT}`);
-  console.log(`Politeness: sequential, ${REQUEST_DELAY_MS}ms between requests\n`);
+  console.log(`Mode: ${refresh ? "refresh (re-download)" : "cache-first"}\n`);
 
   const instrumentRows: InstrumentRow[] = [];
   const provisionRows: ProvisionRow[] = [];
-  const summary: SummaryRow[] = [];
-  let requestCount = 0;
+  const budget = { made: 0 };
+  const perInstrument: { ref: string; sections: number; schedules: number; repealed: number }[] = [];
 
   for (const target of TARGETS) {
-    // --- Step 1: confirm the identifier resolves before relying on it --------
-    const instrumentUrl = `${BASE_URL}/${target.legGovRef}`;
     console.log(`Instrument ${target.legGovRef}`);
-    if (requestCount > 0) await sleep(REQUEST_DELAY_MS);
-    const instrumentXml = await fetchWithRetry(`${instrumentUrl}/data.xml`);
-    requestCount++;
+    const xml = await getInstrumentXml(target.legGovRef, budget);
 
-    const meta = parseInstrumentMeta(instrumentXml);
+    const meta = parseInstrumentMeta(xml);
     if (!meta.title) throw new Error(`No title returned for ${target.legGovRef}`);
     if (!meta.type) {
       throw new Error(
         `Could not classify ${target.legGovRef} (DocumentMainType=${meta.documentMainType})`
       );
     }
-
-    const titleMatches = meta.title.trim() === target.expectedTitle;
-    console.log(`  resolved: "${meta.title}" ${titleMatches ? "(matches expected)" : "(!! EXPECTED: " + target.expectedTitle + ")"}`);
-    console.log(`  type: ${meta.type} | up to date to: ${meta.upToDateTo ?? "(none)"}`);
-    if (!titleMatches) {
+    if (meta.title.trim() !== target.expectedTitle) {
       throw new Error(
         `Title mismatch for ${target.legGovRef}: got "${meta.title}", expected "${target.expectedTitle}"`
       );
     }
+    console.log(`  "${meta.title}" | type=${meta.type} | up to date to ${meta.upToDateTo ?? "(none)"}`);
 
     instrumentRows.push({
       title: meta.title,
       type: meta.type,
       jurisdiction: target.jurisdiction,
       legGovRef: target.legGovRef,
-      sourceUrl: instrumentUrl,
+      sourceUrl: `${BASE_URL}/${target.legGovRef}`,
       upToDateTo: meta.upToDateTo,
     });
 
-    // --- Step 2: each provision --------------------------------------------
-    for (const provision of target.provisions) {
-      const provisionUrl = `${BASE_URL}/${target.legGovRef}/${provision.ref}`;
-      await sleep(REQUEST_DELAY_MS);
-      const xml = await fetchWithRetry(`${provisionUrl}/data.xml`);
-      requestCount++;
+    // Currency: parse the effects block once per instrument, then scope per provision.
+    const pendingEffects = parseUnappliedEffects(xml).filter((e) => e.requiresApplied);
+    const provisions = enumerateProvisions(xml, target.legGovRef);
 
-      const parsed = parseProvision(xml, provision.sectionNumber);
+    let sections = 0;
+    let schedules = 0;
+    let repealed = 0;
 
-      console.log(
-        `  ${provision.ref}: "${parsed.heading ?? "(no heading)"}" ` +
-          `| ${parsed.content.length} chars | version ${parsed.versionDate ?? "?"} ` +
-          `| in force ${parsed.inForce} | unapplied ${parsed.hasUnappliedAmendments}`
+    for (const provision of provisions) {
+      const matched = pendingEffects.filter((effect) =>
+        effectAffectsProvision(effect, provision.id)
       );
+      const label = provisionLabel(provision.ref);
 
       provisionRows.push({
         legGovRef: target.legGovRef,
         ref: provision.ref,
-        number: parsed.number,
-        heading: parsed.heading,
-        content: parsed.content,
-        versionDate: parsed.versionDate,
-        inForce: parsed.inForce,
-        hasUnappliedAmendments: parsed.hasUnappliedAmendments,
-        amendmentNote: parsed.amendmentNote,
-        sourceUrl: provisionUrl,
+        number: provision.number,
+        heading: provision.heading,
+        content: provision.content,
+        versionDate: provision.versionDate,
+        inForce: provision.inForce,
+        status: provision.status,
+        contentOmitted: provision.contentOmitted,
+        hasUnappliedAmendments: matched.length > 0,
+        amendmentNote: buildAmendmentNote(matched, label),
+        sourceUrl: `${BASE_URL}/${target.legGovRef}/${provision.ref}`,
         position: provision.position,
       });
 
-      summary.push({
-        legGovRef: target.legGovRef,
-        ref: provision.ref,
-        versionDate: parsed.versionDate,
-        inForce: parsed.inForce,
-        hasUnapplied: parsed.hasUnappliedAmendments,
-        note: parsed.amendmentNote,
-      });
+      if (provision.ref.startsWith("section")) sections++;
+      else if (provision.ref.startsWith("schedule")) schedules++;
+      if (provision.status === "Repealed") repealed++;
     }
+
+    console.log(
+      `  enumerated ${provisions.length} provisions ` +
+        `(${sections} sections, ${schedules} schedule paragraphs; ${repealed} repealed)`
+    );
+    perInstrument.push({ ref: target.legGovRef, sections, schedules, repealed });
     console.log("");
   }
 
-  // --- Step 3: emit SQL -----------------------------------------------------
-  const outDir = join(scriptDir, "out");
+  // --- Emit chunked SQL ------------------------------------------------------
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outPath = join(outDir, `ingest-${stamp}.sql`);
-  writeFileSync(outPath, buildSqlScript(instrumentRows, provisionRows), "utf8");
+  const chunks = buildSqlChunks(instrumentRows, provisionRows, stamp, SQL_CHUNK_SIZE);
+  for (const chunk of chunks) {
+    writeFileSync(join(outDir, chunk.filename), chunk.sql, "utf8");
+  }
 
-  // --- Step 4: summary ------------------------------------------------------
+  // --- Summary ---------------------------------------------------------------
   console.log("=".repeat(78));
   console.log("SUMMARY");
   console.log("=".repeat(78));
-  for (const row of summary) {
+  for (const row of perInstrument) {
     console.log(
-      `${row.legGovRef.padEnd(14)} ${row.ref.padEnd(11)} ` +
-        `version=${(row.versionDate ?? "?").padEnd(11)} ` +
-        `in_force=${String(row.inForce).padEnd(5)} ` +
-        `unapplied=${String(row.hasUnapplied).padEnd(5)}`
+      `${row.ref.padEnd(16)} sections=${String(row.sections).padEnd(5)} ` +
+        `scheduleParas=${String(row.schedules).padEnd(5)} repealed=${row.repealed}`
     );
-    console.log(`  note: ${row.note.slice(0, 150)}${row.note.length > 150 ? "…" : ""}`);
+  }
+  console.log(`TOTAL provisions:  ${provisionRows.length}`);
+  console.log(`in_force=false:    ${provisionRows.filter((p) => !p.inForce).length}`);
+  console.log(`  status=Repealed: ${provisionRows.filter((p) => p.status === "Repealed").length}`);
+  console.log(`  content omitted: ${provisionRows.filter((p) => p.contentOmitted).length}`);
+  console.log(`unapplied:         ${provisionRows.filter((p) => p.hasUnappliedAmendments).length}`);
+
+  console.log("\nSQL files (run in this order):");
+  for (const chunk of chunks) {
+    const kb = (Buffer.byteLength(chunk.sql, "utf8") / 1024).toFixed(0);
+    console.log(`  ${chunk.filename}  (${kb} KB)`);
   }
 
+  // --- Proof assertions ------------------------------------------------------
   console.log("\n" + "=".repeat(78));
   console.log("PROOF ASSERTIONS");
   console.log("=".repeat(78));
 
   const failures: string[] = [];
+
   for (const expected of PROOF_EXPECTATIONS) {
     const actual = provisionRows.find(
       (p) => p.legGovRef === expected.legGovRef && p.ref === expected.ref
@@ -228,19 +264,61 @@ async function main() {
     else console.log(`  PASS  ${inst.legGovRef} up_to_date_to = ${inst.upToDateTo}`);
   }
 
-  console.log("");
-  console.log(`SQL written to: ${outPath}`);
-  console.log(`Requests made: ${requestCount}`);
+  // Text-quality gate: the marker-jamming regression must not come back.
+  //
+  // Scoped to line-start markers, which is the signature of OUR bug (a Pnumber
+  // glued to its text). Mid-sentence cases like "(e)or (f)" are faithful: the
+  // source XML genuinely has no space there (".. (1)<Emphasis>(d), (e)</Emphasis>or ..").
+  // Inserting spaces would alter statutory text, so we reproduce it verbatim.
+  const markerJamPattern = /^[ \t]*\([0-9A-Za-z]{1,4}\)[A-Za-z]/m;
+  const badMarkers = provisionRows.filter((p) => markerJamPattern.test(p.content));
+  if (badMarkers.length) {
+    failures.push(
+      `${badMarkers.length} provision(s) contain jammed markers, e.g. ${badMarkers[0].ref}`
+    );
+  } else {
+    console.log(`  PASS  no jammed line-start markers across ${provisionRows.length} provisions`);
+  }
+
+  // The Repealed branch of in_force must be exercised by real data.
+  const repealedCount = provisionRows.filter((p) => p.status === "Repealed").length;
+  if (repealedCount === 0) {
+    failures.push("no Repealed provisions found — in_force=false path unexercised");
+  } else {
+    console.log(`  PASS  in_force=false exercised by ${repealedCount} Repealed provisions`);
+  }
+
+  // Nothing may be reported as in force while carrying no operative text.
+  const emptyButInForce = provisionRows.filter((p) => p.contentOmitted && p.inForce);
+  if (emptyButInForce.length) {
+    failures.push(
+      `${emptyButInForce.length} provision(s) have no text but are marked in force, ` +
+        `e.g. ${emptyButInForce[0].ref}`
+    );
+  } else {
+    const omitted = provisionRows.filter((p) => p.contentOmitted).length;
+    console.log(`  PASS  ${omitted} text-omitted provisions all marked not in force`);
+  }
+
+  // The omitted-text case must never fabricate a captured status. Where CLML
+  // stated no Status, status stays null and content_omitted carries the signal.
+  const unmarkedOmitted = provisionRows.filter((p) => p.contentOmitted && p.status === null);
+  console.log(
+    `  INFO  ${unmarkedOmitted.length} provisions have no text and no CLML status ` +
+      `(flagged via content_omitted, status left null)`
+  );
+
+  console.log(`\nRequests made: ${budget.made}${refresh ? "" : " (cache-first)"}`);
 
   if (failures.length) {
     console.error("\nPROOF FAILED:");
-    for (const f of failures) console.error(`  - ${f}`);
+    for (const failure of failures) console.error(`  - ${failure}`);
     process.exitCode = 1;
     return;
   }
 
   console.log("\nAll proof assertions passed.");
-  console.log("Next: run the migration, then paste the generated SQL into the Supabase SQL editor.");
+  console.log("Next: run the two migrations, then the SQL files above in order.");
 }
 
 main().catch((error) => {
