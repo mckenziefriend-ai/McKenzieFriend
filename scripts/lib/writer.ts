@@ -1,15 +1,15 @@
 /**
  * Persistence boundary — the ONLY module that knows how rows reach the database.
  *
- * Today it emits idempotent INSERT SQL for pasting into the Supabase SQL
- * editor, so no service-role key exists anywhere. At ~600 provisions the output
- * is split into numbered chunk files small enough for the editor.
+ * Two modes:
+ *   "db"  (default) direct idempotent upserts via the service-role key. Used
+ *         for the full whitelist, where hand-pasting SQL is not reasonable.
+ *   "sql" (fallback) emits numbered chunk files to paste into the Supabase SQL
+ *         editor. Needs no key at all, so the whole pipeline can be exercised
+ *         and reviewed without the key existing anywhere.
  *
- * PROPOSED (not built here): at full whitelist scale (~35 instruments,
- * thousands of provisions) hand-pasting stops being reasonable. Replace this
- * module with a supabase-js writer using a service-role key held only in
- * scripts/.env (already covered by .gitignore's .env*, never in the app).
- * Nothing outside this file needs to change.
+ * Row shapes are shared by both modes and are built by pure functions, so the
+ * mapping is unit-testable even though the network write is not.
  */
 
 export type InstrumentRow = {
@@ -205,4 +205,131 @@ export function buildSqlChunks(
   }
 
   return chunks;
+}
+
+// ---------------------------------------------------------------------------
+// Direct database mode
+// ---------------------------------------------------------------------------
+
+/** Column mapping for legal_instruments. Pure — unit-testable. */
+export function instrumentToRecord(inst: InstrumentRow, syncedAt: string) {
+  return {
+    title: inst.title,
+    type: inst.type,
+    jurisdiction: inst.jurisdiction,
+    leg_gov_ref: inst.legGovRef,
+    source_url: inst.sourceUrl,
+    up_to_date_to: inst.upToDateTo,
+    last_synced: syncedAt,
+    updated_at: syncedAt,
+  };
+}
+
+/** Column mapping for legal_provisions. Pure — unit-testable. */
+export function provisionToRecord(
+  provision: ProvisionRow,
+  instrumentId: string,
+  syncedAt: string
+) {
+  return {
+    instrument_id: instrumentId,
+    ref: provision.ref,
+    number: provision.number,
+    heading: provision.heading,
+    content: provision.content,
+    version_date: provision.versionDate,
+    in_force: provision.inForce,
+    status: provision.status,
+    content_omitted: provision.contentOmitted,
+    has_unapplied_amendments: provision.hasUnappliedAmendments,
+    amendment_note: provision.amendmentNote,
+    source_url: provision.sourceUrl,
+    position: provision.position,
+    updated_at: syncedAt,
+  };
+}
+
+export function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+/** Minimal surface of the Supabase client we rely on, so tests can fake it. */
+export type UpsertClient = {
+  from: (table: string) => {
+    upsert: (
+      values: Record<string, unknown>[],
+      options: { onConflict: string }
+    ) => {
+      select: (columns: string) => Promise<{
+        data: Record<string, unknown>[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
+
+export type DbWriteResult = {
+  instrumentsWritten: number;
+  provisionsWritten: number;
+};
+
+/**
+ * Upserts instruments then provisions. Idempotent: conflicts update in place,
+ * so a re-run after a partial failure converges rather than duplicating.
+ *
+ * Batches are not one transaction — an interrupted run can leave a subset
+ * written. That is acceptable precisely because the operation is idempotent.
+ */
+export async function writeToDatabase(
+  client: UpsertClient,
+  instruments: InstrumentRow[],
+  provisions: ProvisionRow[],
+  batchSize = 500,
+  onProgress?: (written: number, total: number) => void
+): Promise<DbWriteResult> {
+  const syncedAt = new Date().toISOString();
+
+  const instrumentRecords = instruments.map((i) => instrumentToRecord(i, syncedAt));
+  const { data: instrumentRows, error: instrumentError } = await client
+    .from("legal_instruments")
+    .upsert(instrumentRecords, { onConflict: "leg_gov_ref" })
+    .select("id,leg_gov_ref");
+
+  if (instrumentError) {
+    throw new Error(`Instrument upsert failed: ${instrumentError.message}`);
+  }
+
+  const idByRef = new Map<string, string>();
+  for (const row of instrumentRows ?? []) {
+    idByRef.set(String(row.leg_gov_ref), String(row.id));
+  }
+
+  const missing = [...new Set(provisions.map((p) => p.legGovRef))].filter(
+    (ref) => !idByRef.has(ref)
+  );
+  if (missing.length) {
+    throw new Error(`No instrument id returned for: ${missing.join(", ")}`);
+  }
+
+  let provisionsWritten = 0;
+  for (const batch of chunk(provisions, batchSize)) {
+    const records = batch.map((p) =>
+      provisionToRecord(p, idByRef.get(p.legGovRef)!, syncedAt)
+    );
+    const { error } = await client
+      .from("legal_provisions")
+      .upsert(records, { onConflict: "instrument_id,ref" })
+      .select("id");
+    if (error) {
+      throw new Error(
+        `Provision upsert failed after ${provisionsWritten} rows: ${error.message}`
+      );
+    }
+    provisionsWritten += batch.length;
+    onProgress?.(provisionsWritten, provisions.length);
+  }
+
+  return { instrumentsWritten: instrumentRecords.length, provisionsWritten };
 }

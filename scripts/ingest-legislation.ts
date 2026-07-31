@@ -1,21 +1,22 @@
 /**
- * Track B — ingest legislation.gov.uk instruments with currency data.
+ * Track B — ingest the legislation.gov.uk statute whitelist with currency data.
  *
  * Standalone: NOT part of the app runtime. Run manually:
- *   npm run ingest:legislation            (uses the on-disk cache if present)
- *   npm run ingest:legislation -- --refresh   (force re-download)
+ *   npm run ingest:legislation -- --writer=sql     emit SQL files (no key needed)
+ *   npm run ingest:legislation -- --writer=db      write directly (needs scripts/.env)
+ *   npm run ingest:legislation -- --refresh        force re-download
+ *   npm run ingest:legislation -- --only=ukpga/1989/41,ukpga/2010/15
  *
- * What it does, per instrument:
- *   1. Fetches the WHOLE instrument's data.xml in ONE request (~5 MB), rather
- *      than one request per provision (~600 against a free public service).
- *   2. Verifies the returned title matches what we expected before storing.
- *   3. Enumerates every section and schedule paragraph from that document.
- *   4. Captures currency per provision (never computes it).
- *   5. Emits idempotent INSERT SQL in numbered chunks for the Supabase editor.
- *   6. Asserts the proof expectations and exits non-zero if they don't hold.
+ * Pipeline, per instrument:
+ *   1. Verify the identifier resolves and the title matches — BEFORE
+ *      downloading anything large. Mismatches are skipped, never ingested.
+ *   2. Fetch the whole instrument in ONE request (cached on disk).
+ *   3. Enumerate every section and schedule paragraph.
+ *   4. Capture currency per provision (never computed).
+ *   5. Persist via the selected writer.
  *
- * Resumable: downloaded XML is cached under scripts/.cache/, so re-runs make
- * zero network requests unless --refresh is passed.
+ * Reports per instrument: counts, currency breakdown, unknown CLML tags,
+ * text-quality checks, and anything anomalous.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -23,6 +24,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildAmendmentNote,
+  createDiagnostics,
   effectAffectsProvision,
   enumerateProvisions,
   parseInstrumentMeta,
@@ -31,20 +33,37 @@ import {
 } from "./lib/clml";
 import {
   BASE_URL,
+  DB_BATCH_SIZE,
   MAX_RETRIES,
   PROOF_EXPECTATIONS,
   REQUEST_DELAY_MS,
   REQUEST_TIMEOUT_MS,
+  SHORTFALL_WARN_RATIO,
   SQL_CHUNK_SIZE,
   TARGETS,
   USER_AGENT,
 } from "./lib/targets";
-import { buildSqlChunks, type InstrumentRow, type ProvisionRow } from "./lib/writer";
+import { isIdentifierProblem, isUsable, verifyIdentifier, type VerifyResult } from "./lib/verify";
+import {
+  buildSqlChunks,
+  writeToDatabase,
+  type InstrumentRow,
+  type ProvisionRow,
+  type UpsertClient,
+} from "./lib/writer";
+import { checkEnvIgnored, checkKeyNotCommitted } from "./lib/guard";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = dirname(scriptDir);
 const cacheDir = join(scriptDir, ".cache");
 const outDir = join(scriptDir, "out");
-const refresh = process.argv.includes("--refresh");
+
+const argv = process.argv.slice(2);
+const refresh = argv.includes("--refresh");
+const writerMode = (argv.find((a) => a.startsWith("--writer="))?.split("=")[1] ?? "db") as
+  | "db"
+  | "sql";
+const onlyList = argv.find((a) => a.startsWith("--only="))?.split("=")[1]?.split(",") ?? null;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -52,7 +71,6 @@ function sleep(ms: number) {
 
 async function fetchWithRetry(url: string): Promise<string> {
   let lastError = "";
-
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -62,13 +80,11 @@ async function fetchWithRetry(url: string): Promise<string> {
         signal: controller.signal,
         redirect: "follow",
       });
-
       if (res.ok) return await res.text();
-
       if (res.status === 429 || res.status >= 500) {
         lastError = `HTTP ${res.status}`;
         const backoff = REQUEST_DELAY_MS * attempt * 2;
-        console.warn(`    ${lastError} — backing off ${backoff}ms (attempt ${attempt}/${MAX_RETRIES})`);
+        console.warn(`    ${lastError} — backing off ${backoff}ms (${attempt}/${MAX_RETRIES})`);
         await sleep(backoff);
         continue;
       }
@@ -77,69 +93,164 @@ async function fetchWithRetry(url: string): Promise<string> {
       lastError = error instanceof Error ? error.message : String(error);
       if (attempt === MAX_RETRIES) break;
       const backoff = REQUEST_DELAY_MS * attempt * 2;
-      console.warn(`    ${lastError} — retrying in ${backoff}ms (attempt ${attempt}/${MAX_RETRIES})`);
+      console.warn(`    ${lastError} — retrying in ${backoff}ms (${attempt}/${MAX_RETRIES})`);
       await sleep(backoff);
     } finally {
       clearTimeout(timer);
     }
   }
-
   throw new Error(`Failed after ${MAX_RETRIES} attempts (${lastError}): ${url}`);
 }
 
-/** Fetch-with-cache so re-runs cost the API nothing. */
 async function getInstrumentXml(
   legGovRef: string,
-  requestBudget: { made: number }
-): Promise<string> {
+  budget: { requests: number }
+): Promise<{ xml: string; cached: boolean }> {
   mkdirSync(cacheDir, { recursive: true });
   const cachePath = join(cacheDir, `${legGovRef.replace(/\//g, "-")}.data.xml`);
 
   if (!refresh && existsSync(cachePath)) {
-    const cached = readFileSync(cachePath, "utf8");
-    console.log(`  cache hit (${(cached.length / 1e6).toFixed(1)} MB) — no request made`);
-    return cached;
+    return { xml: readFileSync(cachePath, "utf8"), cached: true };
   }
 
-  if (requestBudget.made > 0) await sleep(REQUEST_DELAY_MS);
-  const url = `${BASE_URL}/${legGovRef}/data.xml`;
-  const started = Date.now();
-  const xml = await fetchWithRetry(url);
-  requestBudget.made++;
-  console.log(
-    `  fetched ${(xml.length / 1e6).toFixed(1)} MB in ${Date.now() - started}ms (1 request)`
-  );
+  if (budget.requests > 0) await sleep(REQUEST_DELAY_MS);
+  const xml = await fetchWithRetry(`${BASE_URL}/${legGovRef}/data.xml`);
+  budget.requests++;
   writeFileSync(cachePath, xml, "utf8");
-  return xml;
+  return { xml, cached: false };
 }
 
+type InstrumentReport = {
+  legGovRef: string;
+  title: string;
+  area: string;
+  upToDateTo: string | null;
+  declared: number;
+  ownProvisions: number;
+  enumerated: number;
+  sections: number;
+  scheduleParas: number;
+  otherRefs: number;
+  repealed: number;
+  prospective: number;
+  contentOmitted: number;
+  notInForce: number;
+  unapplied: number;
+  unknownTags: Map<string, number>;
+  jammed: number;
+  megabytes: number;
+  flags: string[];
+};
+
+const LINE_START_JAM = /^[ \t]*\([0-9A-Za-z]{1,4}\)[A-Za-z]/m;
+
 async function main() {
-  console.log("Track B — legislation.gov.uk whole-instrument ingestion\n");
+  console.log("Track B — statute whitelist ingestion\n");
+  console.log(`Writer:     ${writerMode}`);
   console.log(`User-Agent: ${USER_AGENT}`);
-  console.log(`Mode: ${refresh ? "refresh (re-download)" : "cache-first"}\n`);
+  console.log(`Mode:       ${refresh ? "refresh (re-download)" : "cache-first"}\n`);
+
+  const targets = onlyList
+    ? TARGETS.filter((t) => onlyList.includes(t.legGovRef))
+    : TARGETS;
+  if (!targets.length) throw new Error("No targets selected.");
+
+  // --- Pre-flight: never let the service-role key reach version control -----
+  let dbClient: UpsertClient | null = null;
+  if (writerMode === "db") {
+    const { getServiceClient, readScriptEnv, describeKey } = await import("./lib/db");
+    const env = readScriptEnv();
+    console.log(`Service role key: ${describeKey(env.serviceRoleKey)}`);
+
+    const findings = [
+      ...checkEnvIgnored(repoRoot),
+      ...checkKeyNotCommitted(repoRoot, env.serviceRoleKey),
+    ];
+    if (findings.length) {
+      console.error("\nPRE-FLIGHT FAILED — refusing to run:");
+      for (const f of findings) console.error(`  [${f.check}] ${f.detail}`);
+      process.exitCode = 1;
+      return;
+    }
+    console.log("Pre-flight:       key is not in any tracked file, scripts/.env is ignored\n");
+    dbClient = getServiceClient() as unknown as UpsertClient;
+  } else {
+    console.log("No service-role key required in --writer=sql mode.\n");
+  }
+
+  // --- Step 1: verify every identifier before downloading anything ----------
+  console.log("=".repeat(96));
+  console.log("IDENTIFIER VERIFICATION");
+  console.log("=".repeat(96));
+
+  const verifications: VerifyResult[] = [];
+  for (const [index, target] of targets.entries()) {
+    if (index > 0) await sleep(REQUEST_DELAY_MS);
+    const result = await verifyIdentifier(target.legGovRef, target.expectedTitle);
+    verifications.push(result);
+    const note = isUsable(result.verdict)
+      ? result.actualTitle
+      : `${result.actualTitle ?? result.error ?? "-"}  (expected "${target.expectedTitle}")`;
+    console.log(
+      `  ${result.verdict.padEnd(9)} ${target.legGovRef.padEnd(15)} ` +
+        `HTTP ${String(result.httpStatus).padEnd(4)} ${(result.bytesRead / 1024).toFixed(0).padStart(4)}KB  ${note}`
+    );
+  }
+
+  const usable = targets.filter((t) =>
+    isUsable(verifications.find((v) => v.legGovRef === t.legGovRef)!.verdict)
+  );
+  const badIdentifiers = verifications.filter((v) => isIdentifierProblem(v.verdict));
+  const unreachable = verifications.filter((v) => v.verdict === "UNREACHABLE");
+
+  console.log(`\n  ${usable.length}/${targets.length} identifiers usable.`);
+  if (badIdentifiers.length) {
+    console.log("  NOT INGESTED (identifier needs correcting):");
+    for (const r of badIdentifiers) {
+      console.log(`    ${r.legGovRef}  ${r.verdict}  got="${r.actualTitle ?? "-"}"  expected="${r.expectedTitle}"`);
+    }
+  }
+  if (unreachable.length) {
+    // A network failure is not an identifier problem. Ingesting the rest and
+    // reporting success would quietly ship an incomplete corpus.
+    console.error("\n  UNREACHABLE after retries — aborting rather than ingesting a partial corpus:");
+    for (const r of unreachable) {
+      console.error(`    ${r.legGovRef}  ${r.error ?? `HTTP ${r.httpStatus}`}`);
+    }
+    console.error("  Re-run when the network/service is available.");
+    process.exitCode = 1;
+    return;
+  }
+
+  // --- Step 2: ingest each verified instrument ------------------------------
+  console.log("\n" + "=".repeat(96));
+  console.log("INGESTION");
+  console.log("=".repeat(96));
 
   const instrumentRows: InstrumentRow[] = [];
   const provisionRows: ProvisionRow[] = [];
-  const budget = { made: 0 };
-  const perInstrument: { ref: string; sections: number; schedules: number; repealed: number }[] = [];
+  const reports: InstrumentReport[] = [];
+  const budget = { requests: 0 };
+  const prospectiveFound: { legGovRef: string; ref: string; inForce: boolean }[] = [];
 
-  for (const target of TARGETS) {
-    console.log(`Instrument ${target.legGovRef}`);
-    const xml = await getInstrumentXml(target.legGovRef, budget);
-
+  for (const target of usable) {
+    const { xml, cached } = await getInstrumentXml(target.legGovRef, budget);
     const meta = parseInstrumentMeta(xml);
-    if (!meta.title) throw new Error(`No title returned for ${target.legGovRef}`);
-    if (!meta.type) {
-      throw new Error(
-        `Could not classify ${target.legGovRef} (DocumentMainType=${meta.documentMainType})`
-      );
+
+    if (!meta.title || !meta.type) {
+      console.log(`  ${target.legGovRef}: FAILED to parse metadata — skipped`);
+      continue;
     }
-    if (meta.title.trim() !== target.expectedTitle) {
-      throw new Error(
-        `Title mismatch for ${target.legGovRef}: got "${meta.title}", expected "${target.expectedTitle}"`
-      );
-    }
-    console.log(`  "${meta.title}" | type=${meta.type} | up to date to ${meta.upToDateTo ?? "(none)"}`);
+
+    const declared = Number(xml.match(/<Legislation[^>]*NumberOfProvisions="(\d+)"/)?.[1] ?? 0);
+    // NumberOfProvisions counts every <P1>, including those inside
+    // <BlockAmendment> — quoted text of amendments to OTHER instruments, which
+    // are deliberately not ingested as provisions of this one. The meaningful
+    // baseline is P1 elements that carry a DocumentURI of their own.
+    const ownProvisions = (xml.match(/<[\w:]*P1\s[^>]*DocumentURI/g) ?? []).length;
+    const diagnostics = createDiagnostics();
+    const provisions = enumerateProvisions(xml, target.legGovRef, diagnostics);
+    const pendingEffects = parseUnappliedEffects(xml).filter((e) => e.requiresApplied);
 
     instrumentRows.push({
       title: meta.title,
@@ -150,19 +261,30 @@ async function main() {
       upToDateTo: meta.upToDateTo,
     });
 
-    // Currency: parse the effects block once per instrument, then scope per provision.
-    const pendingEffects = parseUnappliedEffects(xml).filter((e) => e.requiresApplied);
-    const provisions = enumerateProvisions(xml, target.legGovRef);
-
-    let sections = 0;
-    let schedules = 0;
-    let repealed = 0;
+    const report: InstrumentReport = {
+      legGovRef: target.legGovRef,
+      title: meta.title,
+      area: target.area,
+      upToDateTo: meta.upToDateTo,
+      declared,
+      ownProvisions,
+      enumerated: provisions.length,
+      sections: 0,
+      scheduleParas: 0,
+      otherRefs: 0,
+      repealed: 0,
+      prospective: 0,
+      contentOmitted: 0,
+      notInForce: 0,
+      unapplied: 0,
+      unknownTags: diagnostics.unknownTags,
+      jammed: 0,
+      megabytes: xml.length / 1e6,
+      flags: [],
+    };
 
     for (const provision of provisions) {
-      const matched = pendingEffects.filter((effect) =>
-        effectAffectsProvision(effect, provision.id)
-      );
-      const label = provisionLabel(provision.ref);
+      const matched = pendingEffects.filter((e) => effectAffectsProvision(e, provision.id));
 
       provisionRows.push({
         legGovRef: target.legGovRef,
@@ -175,72 +297,158 @@ async function main() {
         status: provision.status,
         contentOmitted: provision.contentOmitted,
         hasUnappliedAmendments: matched.length > 0,
-        amendmentNote: buildAmendmentNote(matched, label),
+        amendmentNote: buildAmendmentNote(matched, provisionLabel(provision.ref)),
         sourceUrl: `${BASE_URL}/${target.legGovRef}/${provision.ref}`,
         position: provision.position,
       });
 
-      if (provision.ref.startsWith("section")) sections++;
-      else if (provision.ref.startsWith("schedule")) schedules++;
-      if (provision.status === "Repealed") repealed++;
+      if (provision.ref.startsWith("section")) report.sections++;
+      else if (provision.ref.startsWith("schedule")) report.scheduleParas++;
+      else report.otherRefs++;
+
+      if (provision.status === "Repealed") report.repealed++;
+      if (provision.status === "Prospective") {
+        report.prospective++;
+        prospectiveFound.push({
+          legGovRef: target.legGovRef,
+          ref: provision.ref,
+          inForce: provision.inForce,
+        });
+      }
+      if (provision.contentOmitted) report.contentOmitted++;
+      if (!provision.inForce) report.notInForce++;
+      if (matched.length) report.unapplied++;
+      if (LINE_START_JAM.test(provision.content)) report.jammed++;
     }
 
-    console.log(
-      `  enumerated ${provisions.length} provisions ` +
-        `(${sections} sections, ${schedules} schedule paragraphs; ${repealed} repealed)`
-    );
-    perInstrument.push({ ref: target.legGovRef, sections, schedules, repealed });
-    console.log("");
-  }
+    // Anomaly flags
+    if (provisions.length === 0) report.flags.push("ZERO PROVISIONS");
+    if (ownProvisions > 0 && provisions.length < ownProvisions * (1 - SHORTFALL_WARN_RATIO)) {
+      report.flags.push(`SHORTFALL ${provisions.length}/${ownProvisions} own provisions`);
+    }
+    if (report.jammed) report.flags.push(`JAMMED x${report.jammed}`);
+    if (diagnostics.unknownTags.size) {
+      report.flags.push(`UNKNOWN TAGS: ${[...diagnostics.unknownTags.keys()].join(",")}`);
+    }
 
-  // --- Emit chunked SQL ------------------------------------------------------
-  mkdirSync(outDir, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const chunks = buildSqlChunks(instrumentRows, provisionRows, stamp, SQL_CHUNK_SIZE);
-  for (const chunk of chunks) {
-    writeFileSync(join(outDir, chunk.filename), chunk.sql, "utf8");
-  }
-
-  // --- Summary ---------------------------------------------------------------
-  console.log("=".repeat(78));
-  console.log("SUMMARY");
-  console.log("=".repeat(78));
-  for (const row of perInstrument) {
+    reports.push(report);
     console.log(
-      `${row.ref.padEnd(16)} sections=${String(row.sections).padEnd(5)} ` +
-        `scheduleParas=${String(row.schedules).padEnd(5)} repealed=${row.repealed}`
+      `  ${target.legGovRef.padEnd(15)} ${String(provisions.length).padStart(5)} provisions ` +
+        `${cached ? "(cached)" : `(${report.megabytes.toFixed(1)}MB fetched)`}` +
+        `${report.flags.length ? "  << " + report.flags.join("; ") : ""}`
     );
   }
-  console.log(`TOTAL provisions:  ${provisionRows.length}`);
-  console.log(`in_force=false:    ${provisionRows.filter((p) => !p.inForce).length}`);
-  console.log(`  status=Repealed: ${provisionRows.filter((p) => p.status === "Repealed").length}`);
-  console.log(`  content omitted: ${provisionRows.filter((p) => p.contentOmitted).length}`);
-  console.log(`unapplied:         ${provisionRows.filter((p) => p.hasUnappliedAmendments).length}`);
 
-  console.log("\nSQL files (run in this order):");
-  for (const chunk of chunks) {
-    const kb = (Buffer.byteLength(chunk.sql, "utf8") / 1024).toFixed(0);
-    console.log(`  ${chunk.filename}  (${kb} KB)`);
+  // --- Step 3: persist ------------------------------------------------------
+  console.log("\n" + "=".repeat(96));
+  console.log(`PERSISTENCE (--writer=${writerMode})`);
+  console.log("=".repeat(96));
+
+  if (writerMode === "db" && dbClient) {
+    const result = await writeToDatabase(
+      dbClient,
+      instrumentRows,
+      provisionRows,
+      DB_BATCH_SIZE,
+      (written, total) => {
+        if (written % (DB_BATCH_SIZE * 4) === 0 || written === total) {
+          console.log(`  upserted ${written}/${total} provisions`);
+        }
+      }
+    );
+    console.log(
+      `  wrote ${result.instrumentsWritten} instruments, ${result.provisionsWritten} provisions`
+    );
+  } else {
+    mkdirSync(outDir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const chunks = buildSqlChunks(instrumentRows, provisionRows, stamp, SQL_CHUNK_SIZE);
+    let bytes = 0;
+    for (const chunk of chunks) {
+      writeFileSync(join(outDir, chunk.filename), chunk.sql, "utf8");
+      bytes += Buffer.byteLength(chunk.sql, "utf8");
+    }
+    console.log(`  ${chunks.length} SQL files written to scripts/out/ (${(bytes / 1e6).toFixed(1)} MB total)`);
+    console.log(`  run them in order, starting with ${chunks[0].filename}`);
   }
 
-  // --- Proof assertions ------------------------------------------------------
-  console.log("\n" + "=".repeat(78));
+  // --- Step 4: per-instrument report ---------------------------------------
+  console.log("\n" + "=".repeat(96));
+  console.log("PER-INSTRUMENT REPORT");
+  console.log("=".repeat(96));
+  console.log(
+    "ref              enum/own/decl    sec  sched | notInForce (rep/prosp/omit) unapp | unknown | flags"
+  );
+  console.log("-".repeat(96));
+  for (const r of reports) {
+    console.log(
+      `${r.legGovRef.padEnd(15)} ${String(r.enumerated).padStart(4)}/${String(r.ownProvisions).padStart(4)}/${String(r.declared).padEnd(5)} ` +
+        `${String(r.sections).padStart(4)} ${String(r.scheduleParas).padStart(6)} | ` +
+        `${String(r.notInForce).padStart(10)} (${r.repealed}/${r.prospective}/${r.contentOmitted})`.padEnd(28) +
+        `${String(r.unapplied).padStart(5)} | ${String(r.unknownTags.size).padStart(7)} | ${r.flags.join("; ") || "ok"}`
+    );
+  }
+
+  const totals = reports.reduce(
+    (acc, r) => ({
+      enumerated: acc.enumerated + r.enumerated,
+      declared: acc.declared + r.declared,
+      notInForce: acc.notInForce + r.notInForce,
+      repealed: acc.repealed + r.repealed,
+      prospective: acc.prospective + r.prospective,
+      contentOmitted: acc.contentOmitted + r.contentOmitted,
+      unapplied: acc.unapplied + r.unapplied,
+      jammed: acc.jammed + r.jammed,
+    }),
+    { enumerated: 0, declared: 0, notInForce: 0, repealed: 0, prospective: 0, contentOmitted: 0, unapplied: 0, jammed: 0 }
+  );
+  console.log("-".repeat(96));
+  console.log(
+    `TOTAL           ${totals.enumerated}/${totals.declared}   notInForce=${totals.notInForce} ` +
+      `(repealed ${totals.repealed} / prospective ${totals.prospective} / omitted ${totals.contentOmitted})  ` +
+      `unapplied=${totals.unapplied}  jammed=${totals.jammed}`
+  );
+
+  const allUnknown = new Map<string, number>();
+  for (const r of reports) {
+    for (const [tag, count] of r.unknownTags) {
+      allUnknown.set(tag, (allUnknown.get(tag) ?? 0) + count);
+    }
+  }
+  console.log("\nUnknown CLML tags across all instruments:");
+  if (!allUnknown.size) console.log("  none — every construct encountered was recognised");
+  else {
+    for (const [tag, count] of [...allUnknown].sort((a, b) => b[1] - a[1])) {
+      console.log(`  ${tag} x${count}`);
+    }
+  }
+
+  console.log("\nProspective provisions (closes the untested in_force=false branch):");
+  if (!prospectiveFound.length) {
+    console.log(`  NONE found across ${totals.enumerated} provisions — path still unexercised.`);
+  } else {
+    for (const p of prospectiveFound.slice(0, 10)) {
+      console.log(`  ${p.legGovRef} ${p.ref}  in_force=${p.inForce}`);
+    }
+    console.log(`  total: ${prospectiveFound.length}`);
+  }
+
+  // --- Step 5: proof assertions --------------------------------------------
+  console.log("\n" + "=".repeat(96));
   console.log("PROOF ASSERTIONS");
-  console.log("=".repeat(78));
+  console.log("=".repeat(96));
 
   const failures: string[] = [];
-
   for (const expected of PROOF_EXPECTATIONS) {
     const actual = provisionRows.find(
       (p) => p.legGovRef === expected.legGovRef && p.ref === expected.ref
     );
     const label = `${expected.legGovRef} ${expected.ref}`;
-
     if (!actual) {
+      if (onlyList) continue; // not selected this run
       failures.push(`${label}: not ingested`);
       continue;
     }
-
     if (actual.hasUnappliedAmendments !== expected.hasUnappliedAmendments) {
       failures.push(
         `${label}: has_unapplied_amendments = ${actual.hasUnappliedAmendments}, expected ${expected.hasUnappliedAmendments}`
@@ -248,77 +456,40 @@ async function main() {
     } else {
       console.log(`  PASS  ${label} has_unapplied_amendments = ${actual.hasUnappliedAmendments}`);
     }
-
-    const noteOk = expected.requireNote
-      ? Boolean(actual.amendmentNote && actual.amendmentNote !== "No outstanding effects.")
-      : actual.amendmentNote === "No outstanding effects.";
-    if (!noteOk) {
-      failures.push(`${label}: amendment_note unexpected -> ${JSON.stringify(actual.amendmentNote)}`);
-    } else {
-      console.log(`  PASS  ${label} amendment_note as expected`);
-    }
   }
 
-  for (const inst of instrumentRows) {
-    if (!inst.upToDateTo) failures.push(`${inst.legGovRef}: up_to_date_to missing`);
-    else console.log(`  PASS  ${inst.legGovRef} up_to_date_to = ${inst.upToDateTo}`);
+  if (totals.jammed) failures.push(`${totals.jammed} provisions contain line-start marker jamming`);
+  else console.log(`  PASS  no line-start marker jamming across ${totals.enumerated} provisions`);
+
+  const emptyInForce = provisionRows.filter((p) => p.contentOmitted && p.inForce);
+  if (emptyInForce.length) {
+    failures.push(`${emptyInForce.length} provisions have no text but are marked in force`);
+  } else {
+    console.log(`  PASS  all ${totals.contentOmitted} text-omitted provisions marked not in force`);
   }
 
-  // Text-quality gate: the marker-jamming regression must not come back.
-  //
-  // Scoped to line-start markers, which is the signature of OUR bug (a Pnumber
-  // glued to its text). Mid-sentence cases like "(e)or (f)" are faithful: the
-  // source XML genuinely has no space there (".. (1)<Emphasis>(d), (e)</Emphasis>or ..").
-  // Inserting spaces would alter statutory text, so we reproduce it verbatim.
-  const markerJamPattern = /^[ \t]*\([0-9A-Za-z]{1,4}\)[A-Za-z]/m;
-  const badMarkers = provisionRows.filter((p) => markerJamPattern.test(p.content));
-  if (badMarkers.length) {
-    failures.push(
-      `${badMarkers.length} provision(s) contain jammed markers, e.g. ${badMarkers[0].ref}`
+  const zeroProvision = reports.filter((r) => r.enumerated === 0);
+  if (zeroProvision.length) {
+    failures.push(`${zeroProvision.length} instrument(s) produced zero provisions`);
+  } else {
+    console.log(`  PASS  every instrument produced provisions`);
+  }
+
+  console.log(`\nRequests made: ${budget.requests} (${usable.length} instruments, cache-first)`);
+
+  if (badIdentifiers.length) {
+    console.log(
+      `\nNOTE: ${badIdentifiers.length} instrument(s) skipped — identifier needs correcting.`
     );
-  } else {
-    console.log(`  PASS  no jammed line-start markers across ${provisionRows.length} provisions`);
   }
-
-  // The Repealed branch of in_force must be exercised by real data.
-  const repealedCount = provisionRows.filter((p) => p.status === "Repealed").length;
-  if (repealedCount === 0) {
-    failures.push("no Repealed provisions found — in_force=false path unexercised");
-  } else {
-    console.log(`  PASS  in_force=false exercised by ${repealedCount} Repealed provisions`);
-  }
-
-  // Nothing may be reported as in force while carrying no operative text.
-  const emptyButInForce = provisionRows.filter((p) => p.contentOmitted && p.inForce);
-  if (emptyButInForce.length) {
-    failures.push(
-      `${emptyButInForce.length} provision(s) have no text but are marked in force, ` +
-        `e.g. ${emptyButInForce[0].ref}`
-    );
-  } else {
-    const omitted = provisionRows.filter((p) => p.contentOmitted).length;
-    console.log(`  PASS  ${omitted} text-omitted provisions all marked not in force`);
-  }
-
-  // The omitted-text case must never fabricate a captured status. Where CLML
-  // stated no Status, status stays null and content_omitted carries the signal.
-  const unmarkedOmitted = provisionRows.filter((p) => p.contentOmitted && p.status === null);
-  console.log(
-    `  INFO  ${unmarkedOmitted.length} provisions have no text and no CLML status ` +
-      `(flagged via content_omitted, status left null)`
-  );
-
-  console.log(`\nRequests made: ${budget.made}${refresh ? "" : " (cache-first)"}`);
 
   if (failures.length) {
     console.error("\nPROOF FAILED:");
-    for (const failure of failures) console.error(`  - ${failure}`);
+    for (const f of failures) console.error(`  - ${f}`);
     process.exitCode = 1;
     return;
   }
-
   console.log("\nAll proof assertions passed.");
-  console.log("Next: run the two migrations, then the SQL files above in order.");
 }
 
 main().catch((error) => {

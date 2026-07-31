@@ -7,7 +7,9 @@ import {
   effectAffectsProvision,
   effectAffectsSection,
   enumerateProvisions,
+  createDiagnostics,
   extractProvisionText,
+  localName,
   parseInstrumentMeta,
   parseProvision,
   parseUnappliedEffects,
@@ -407,5 +409,87 @@ describe("buildAmendmentNote", () => {
 
   it("states the no-outstanding-effects case explicitly", () => {
     expect(buildAmendmentNote([], "s. 25")).toBe("No outstanding effects.");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Namespace handling, diagnostics and formulae (added when scaling to 21 Acts)
+// ---------------------------------------------------------------------------
+
+describe("localName", () => {
+  it("strips a namespace prefix", () => {
+    expect(localName("xhtml:td")).toBe("td");
+    expect(localName("leg:Text")).toBe("Text");
+    expect(localName("math:mfrac")).toBe("mfrac");
+  });
+
+  it("leaves unprefixed names alone", () => {
+    expect(localName("Text")).toBe("Text");
+  });
+});
+
+describe("namespace-prefixed markup", () => {
+  // Real Acts use leg:Text / xhtml:td where the Children Act uses Text / td.
+  // Classifying on the raw name silently lost line breaks and cell handling.
+  it("treats leg:Text as a block, like Text", () => {
+    const plain = extractProvisionText(
+      "<P1group><P1><P1para><Text>One</Text><Text>Two</Text></P1para></P1></P1group>"
+    );
+    const prefixed = extractProvisionText(
+      "<P1group><P1><P1para><leg:Text>One</leg:Text><leg:Text>Two</leg:Text></P1para></P1></P1group>"
+    );
+    expect(plain).toBe("One\nTwo");
+    expect(prefixed).toBe(plain);
+  });
+
+  it("treats a prefixed numbered level like its unprefixed form", () => {
+    const text = extractProvisionText(
+      "<P1group><P1><P1para><leg:P2><leg:Pnumber>1</leg:Pnumber>" +
+        "<leg:P2para><leg:Text>Body text</leg:Text></leg:P2para></leg:P2></P1para></P1></P1group>"
+    );
+    expect(text).toBe("(1) Body text");
+  });
+});
+
+describe("parse diagnostics", () => {
+  it("records genuinely unrecognised tags", () => {
+    const diagnostics = createDiagnostics();
+    enumerateProvisions(
+      '<Legislation><Body><P1group><P1 DocumentURI="http://www.legislation.gov.uk/ukpga/1/2/section/1" id="section-1">' +
+        "<Pnumber>1</Pnumber><P1para><Text>Hi</Text><WidgetThing>x</WidgetThing></P1para></P1></P1group></Body></Legislation>",
+      "ukpga/1/2",
+      diagnostics
+    );
+    expect(diagnostics.unknownTags.get("WidgetThing")).toBe(1);
+  });
+
+  it("does not flag known constructs, prefixed or not", () => {
+    const diagnostics = createDiagnostics();
+    enumerateProvisions(CA89_TRIMMED, "ukpga/1989/41", diagnostics);
+    expect([...diagnostics.unknownTags.keys()]).toEqual([]);
+  });
+});
+
+describe("MathML formulae", () => {
+  it("renders a fraction as numerator/denominator, not run together", () => {
+    // "R over D" must not collapse to "RD" — that misstates the calculation.
+    const text = extractProvisionText(
+      "<P1group><P1><P1para><Text>" +
+        "<Formula><math:math><math:mfrac><math:mi>R</math:mi><math:mi>D</math:mi></math:mfrac>" +
+        "<math:mo>×</math:mo><math:mn>30.42</math:mn></math:math></Formula>" +
+        "</Text></P1para></P1></P1group>"
+    );
+    expect(text).toContain("R/D");
+    expect(text).not.toContain("RD");
+  });
+
+  it("puts the where-clause on its own line", () => {
+    const text = extractProvisionText(
+      "<P1group><P1><P1para><Text>" +
+        "<Formula><math:math><math:mi>R</math:mi></math:math>" +
+        "<Where><Para><Text>where—</Text></Para></Where></Formula>" +
+        "</Text></P1para></P1></P1group>"
+    );
+    expect(text.split("\n")).toContain("where—");
   });
 });

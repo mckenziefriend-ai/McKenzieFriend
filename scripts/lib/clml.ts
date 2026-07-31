@@ -11,7 +11,6 @@
 
 import {
   attrsOf,
-  childByTag,
   childrenOf,
   collapseWhitespace,
   deepText,
@@ -102,10 +101,81 @@ const PARA_CONTAINERS: ReadonlySet<string> = new Set([
   "P1para", "P2para", "P3para", "P4para", "P5para", "P6para", "P7para",
 ]);
 
-/** Emit their content then end the line. */
-const BLOCK_TAGS: ReadonlySet<string> = new Set(["Text", "Para", "BlockText"]);
+/**
+ * Emit their content then end the line. `Formula` is here so a displayed
+ * formula does not run into the "where—" clause that follows it.
+ */
+const BLOCK_TAGS: ReadonlySet<string> = new Set([
+  "Text", "Para", "BlockText", "P", "Formula",
+]);
+
+/**
+ * CLML documents vary in whether elements carry a namespace prefix: the same
+ * construct appears as `Text` in one instrument and `leg:Text` in another, and
+ * tables as `td` or `xhtml:td`. Classify on the local name so behaviour does
+ * not depend on which prefix a given document happens to use.
+ */
+export function localName(tag: string): string {
+  const colon = tag.indexOf(":");
+  return colon === -1 ? tag : tag.slice(colon + 1);
+}
+
+/** Local name of a node's element, or null for text nodes. */
+function localOf(node: ClmlNode): string | null {
+  const tag = tagOf(node);
+  return tag === null ? null : localName(tag);
+}
+
+/** First child whose local name matches, ignoring any namespace prefix. */
+function childByLocal(node: ClmlNode, local: string): ClmlNode | null {
+  return childrenOf(node).find((child) => localOf(child) === local) ?? null;
+}
+
+/**
+ * Tags we knowingly recurse through without special handling. Listing them
+ * explicitly means the diagnostics collector only reports genuinely novel
+ * constructs — the ones worth a human look when a new instrument is added.
+ */
+const STRUCTURAL_TAGS: ReadonlySet<string> = new Set([
+  "P1group", "P1", "P2group", "P3group", "Pnumber", "Title", "TitleBlock", "Number",
+  "Body", "Group", "Part", "Chapter", "Pblock", "PsubBlock",
+  "Schedules", "Schedule", "ScheduleBody",
+  "OrderedList", "UnorderedList", "ListItem",
+  "Tabular", "table", "tbody", "thead", "tr", "td", "th", "colgroup", "col", "caption",
+  "BlockAmendment", "Version", "Reference",
+  // Formulae. MathML is rendered as inline text; see renderMath note below.
+  "Formula", "Where", "math", "mrow", "mi", "mo", "mn", "mtext", "mstyle",
+  "mfrac", "msup", "msub", "msqrt", "mfenced",
+]);
 
 const INDENT = "    ";
+
+/**
+ * Records constructs the parser did not recognise, so scaling to a new
+ * instrument surfaces unfamiliar markup rather than silently recursing.
+ */
+export type ParseDiagnostics = { unknownTags: Map<string, number> };
+
+export function createDiagnostics(): ParseDiagnostics {
+  return { unknownTags: new Map() };
+}
+
+function isKnownTag(tag: string): boolean {
+  const local = localName(tag);
+  return (
+    SKIP_TAGS.has(local) ||
+    INLINE_TAGS.has(local) ||
+    local in NUMBERED_LEVELS ||
+    PARA_CONTAINERS.has(local) ||
+    BLOCK_TAGS.has(local) ||
+    STRUCTURAL_TAGS.has(local)
+  );
+}
+
+function noteUnknown(tag: string, diagnostics?: ParseDiagnostics): void {
+  if (!diagnostics || isKnownTag(tag)) return;
+  diagnostics.unknownTags.set(tag, (diagnostics.unknownTags.get(tag) ?? 0) + 1);
+}
 
 // ---------------------------------------------------------------------------
 // Text formatting
@@ -152,27 +222,45 @@ class LineBuilder {
 
 /** The marker text of a node's own <Pnumber>, e.g. "2A" or "a". */
 function markerOf(node: ClmlNode): string {
-  const pnumber = childByTag(node, "Pnumber");
+  const pnumber = childByLocal(node, "Pnumber");
   if (!pnumber) return "";
   return collapseWhitespace(deepText(childrenOf(pnumber), SKIP_TAGS));
 }
 
-function render(nodes: ClmlNode[], lb: LineBuilder, indent: number): void {
+function render(
+  nodes: ClmlNode[],
+  lb: LineBuilder,
+  indent: number,
+  diagnostics?: ParseDiagnostics
+): void {
   for (const node of nodes) {
     if (isTextNode(node)) {
       lb.append(textOf(node), indent);
       continue;
     }
 
-    const tag = tagOf(node);
-    if (!tag || SKIP_TAGS.has(tag)) continue;
+    const rawTag = tagOf(node);
+    if (!rawTag) continue;
+    const tag = localName(rawTag);
+    if (SKIP_TAGS.has(tag)) continue;
 
     const kids = childrenOf(node);
 
     if (tag === "Pnumber") continue; // consumed by the parent's marker
 
+    // MathML fractions must not collapse: R over D is "R/D", not "RD".
+    if (tag === "mfrac") {
+      const parts = kids.filter((child) => tagOf(child) !== null);
+      if (parts.length >= 2) {
+        render([parts[0]], lb, indent, diagnostics);
+        lb.append("/", indent);
+        render(parts.slice(1), lb, indent, diagnostics);
+        continue;
+      }
+    }
+
     if (INLINE_TAGS.has(tag)) {
-      render(kids, lb, indent);
+      render(kids, lb, indent, diagnostics);
       continue;
     }
 
@@ -181,40 +269,44 @@ function render(nodes: ClmlNode[], lb: LineBuilder, indent: number): void {
       const marker = markerOf(node);
       lb.startLine(level, marker ? `(${marker}) ` : "");
       render(
-        kids.filter((child) => tagOf(child) !== "Pnumber"),
+        kids.filter((child) => localOf(child) !== "Pnumber"),
         lb,
-        level
+        level,
+        diagnostics
       );
       lb.flush();
       continue;
     }
 
     if (PARA_CONTAINERS.has(tag)) {
-      render(kids, lb, indent);
+      render(kids, lb, indent, diagnostics);
       continue;
     }
 
     if (BLOCK_TAGS.has(tag)) {
-      render(kids, lb, indent);
+      render(kids, lb, indent, diagnostics);
       lb.flush();
       continue;
     }
 
-    if (tag === "ListItem" || tag === "tr") {
+    // `Where` sits inside `Formula` and explains its terms, so it must start
+    // a new line rather than running on from the formula itself.
+    if (tag === "ListItem" || tag === "tr" || tag === "Where") {
       lb.flush();
-      render(kids, lb, indent);
+      render(kids, lb, indent, diagnostics);
       lb.flush();
       continue;
     }
 
     if (tag === "td") {
-      render(kids, lb, indent);
+      render(kids, lb, indent, diagnostics);
       lb.append(" ", indent);
       continue;
     }
 
-    // Unknown / structural tag: recurse so nothing is ever dropped.
-    render(kids, lb, indent);
+    // Unrecognised tag: recurse so nothing is ever dropped, but record it.
+    noteUnknown(rawTag, diagnostics);
+    render(kids, lb, indent, diagnostics);
   }
 }
 
@@ -222,11 +314,11 @@ function render(nodes: ClmlNode[], lb: LineBuilder, indent: number): void {
  * Renders a provision node (a <P1group> or bare <P1>) to structured text.
  * The provision's own <Title> is excluded — it is stored as `heading`.
  */
-export function renderProvision(node: ClmlNode): string {
+export function renderProvision(node: ClmlNode, diagnostics?: ParseDiagnostics): string {
   const lb = new LineBuilder();
-  const tag = tagOf(node);
+  const tag = localOf(node);
   const kids = childrenOf(node).filter((child) => {
-    const childTag = tagOf(child);
+    const childTag = localOf(child);
     // Drop only the provision's own heading, not nested ones.
     if (childTag === "Title" || childTag === "TitleBlock") return false;
     // A bare P1's own Pnumber is the section number, already stored separately.
@@ -235,13 +327,13 @@ export function renderProvision(node: ClmlNode): string {
   });
 
   for (const child of kids) {
-    if (tagOf(child) === "P1") {
+    if (localOf(child) === "P1") {
       // Skip the P1's own Pnumber too when descending from a P1group.
-      const inner = childrenOf(child).filter((c) => tagOf(c) !== "Pnumber");
-      render(inner, lb, 0);
+      const inner = childrenOf(child).filter((c) => localOf(c) !== "Pnumber");
+      render(inner, lb, 0, diagnostics);
       continue;
     }
-    render([child], lb, 0);
+    render([child], lb, 0, diagnostics);
   }
 
   return lb.result();
@@ -253,7 +345,7 @@ export function renderProvision(node: ClmlNode): string {
  */
 export function extractProvisionText(fragment: string): string {
   const tree = parseXml(fragment);
-  const provision = findFirst(tree, (tag) => tag === "P1group" || tag === "P1");
+  const provision = findFirst(tree, (tag) => localName(tag) === "P1group" || localName(tag) === "P1");
   if (!provision) return "";
   return renderProvision(provision);
 }
@@ -413,18 +505,18 @@ type EnumContext = {
 };
 
 function titleTextOf(node: ClmlNode): string | null {
-  const title = childByTag(node, "Title");
+  const title = childByLocal(node, "Title");
   if (title) return collapseWhitespace(deepText(childrenOf(title), SKIP_TAGS)) || null;
-  const titleBlock = childByTag(node, "TitleBlock");
+  const titleBlock = childByLocal(node, "TitleBlock");
   if (titleBlock) {
-    const inner = childByTag(titleBlock, "Title");
+    const inner = childByLocal(titleBlock, "Title");
     if (inner) return collapseWhitespace(deepText(childrenOf(inner), SKIP_TAGS)) || null;
   }
   return null;
 }
 
 function numberTextOf(node: ClmlNode): string | null {
-  const number = childByTag(node, "Number");
+  const number = childByLocal(node, "Number");
   if (!number) return null;
   return collapseWhitespace(deepText(childrenOf(number), SKIP_TAGS)) || null;
 }
@@ -446,15 +538,20 @@ function composeHeading(ctx: EnumContext, isSchedule: boolean): string | null {
  * Enumerates every provision in a whole-instrument document: sections and
  * schedule paragraphs alike, in document order.
  */
-export function enumerateProvisions(xml: string, legGovRef: string): EnumeratedProvision[] {
+export function enumerateProvisions(
+  xml: string,
+  legGovRef: string,
+  diagnostics?: ParseDiagnostics
+): EnumeratedProvision[] {
   const tree = parseXml(xml);
   const provisions: EnumeratedProvision[] = [];
   const prefix = `/${legGovRef}/`;
 
   const visit = (nodes: ClmlNode[], ctx: EnumContext): void => {
     for (const node of nodes) {
-      const tag = tagOf(node);
-      if (!tag) continue;
+      const rawTag = tagOf(node);
+      if (!rawTag) continue;
+      const tag = localName(rawTag);
 
       const attrs = attrsOf(node);
       const next: EnumContext = { ...ctx };
@@ -483,7 +580,7 @@ export function enumerateProvisions(xml: string, legGovRef: string): EnumeratedP
           const id = attrs.id ?? ref.replace(/\//g, "-");
           const status = next.status ?? null;
           const isSchedule = ref.startsWith("schedule");
-          const content = renderProvision(node);
+          const content = renderProvision(node, diagnostics);
           const contentOmitted = content.trim().length === 0;
 
           provisions.push({
@@ -542,11 +639,11 @@ export function provisionLabel(ref: string): string {
 
 export function parseProvision(xml: string, sectionNumber: string): ProvisionParse {
   const tree = parseXml(xml);
-  const provision = findFirst(tree, (tag) => tag === "P1group" || tag === "P1");
+  const provision = findFirst(tree, (tag) => localName(tag) === "P1group" || localName(tag) === "P1");
   if (!provision) throw new Error(`No <P1group> found for section ${sectionNumber}`);
 
   const attrs = attrsOf(provision);
-  const inner = childByTag(provision, "P1");
+  const inner = childByLocal(provision, "P1");
   const number = markerOf(inner ?? provision) || sectionNumber;
   const status = attrs.Status ?? attrsOf(inner ?? provision).Status ?? null;
 
