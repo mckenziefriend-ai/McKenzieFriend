@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "ingest:legislation": "tsx scripts/ingest-legislation.ts"
+    "ingest:legislation": "tsx scripts/ingest-legislation.ts",
+    "embed:corpus": "tsx scripts/embed-corpus.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",
