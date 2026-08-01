@@ -46,6 +46,15 @@ const EMBED_BATCH = 100;
 const UPSERT_BATCH = 200;
 const PAGE_SIZE = 1000;
 
+/**
+ * Must name the columns of a real, non-partial unique constraint
+ * (legal_embeddings_parent_unique). Postgres cannot infer a PARTIAL unique
+ * index from ON CONFLICT (columns), and PostgREST cannot supply the predicate,
+ * so targeting one fails with "no unique or exclusion constraint matching the
+ * ON CONFLICT specification".
+ */
+const UPSERT_CONFLICT_TARGET = "provision_id,chunk_id,sub_chunk_index,embedding_model";
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -217,29 +226,18 @@ async function main() {
 
   let embedded = 0;
   let written = 0;
+  const buffer: Record<string, unknown>[] = [];
 
-  // The two corpora have different partial unique indexes, so they must be
-  // upserted with their own conflict targets rather than one guessed target.
-  const buffers: Record<"provision" | "guidance", Record<string, unknown>[]> = {
-    provision: [],
-    guidance: [],
-  };
-  const conflictTarget = {
-    provision: "provision_id,sub_chunk_index,embedding_model",
-    guidance: "chunk_id,sub_chunk_index,embedding_model",
-  } as const;
-
-  const flush = async (corpus: "provision" | "guidance") => {
-    const rows = buffers[corpus];
-    if (!rows.length) return;
+  const flush = async () => {
+    if (!buffer.length) return;
     const { error } = await client
       .from("legal_embeddings")
-      .upsert(rows, { onConflict: conflictTarget[corpus] });
+      .upsert(buffer, { onConflict: UPSERT_CONFLICT_TARGET });
     if (error) {
-      throw new Error(`Upsert of ${corpus} rows failed after ${written} written: ${error.message}`);
+      throw new Error(`Upsert failed after ${written} rows written: ${error.message}`);
     }
-    written += rows.length;
-    rows.length = 0;
+    written += buffer.length;
+    buffer.length = 0;
   };
 
   for (let i = 0; i < work.length; i += EMBED_BATCH) {
@@ -247,20 +245,15 @@ async function main() {
     const result = await provider.embed(batch.map((b) => b.content));
 
     for (const [index, item] of batch.entries()) {
-      buffers[item.corpus].push(
-        toEmbeddingRecord(item, result.vectors[index], result.model, result.dimensions)
-      );
+      buffer.push(toEmbeddingRecord(item, result.vectors[index], result.model, result.dimensions));
     }
     embedded += batch.length;
 
-    for (const corpus of ["provision", "guidance"] as const) {
-      if (buffers[corpus].length >= UPSERT_BATCH) await flush(corpus);
-    }
+    if (buffer.length >= UPSERT_BATCH) await flush();
     console.log(`  embedded ${embedded}/${work.length}`);
     if (i + EMBED_BATCH < work.length) await sleep(200);
   }
-  await flush("provision");
-  await flush("guidance");
+  await flush();
 
   console.log(`\nDone: embedded ${embedded} chunks, wrote ${written} rows.`);
   console.log(`Model recorded on every row: ${provider.model} @ ${provider.dimensions} dims`);

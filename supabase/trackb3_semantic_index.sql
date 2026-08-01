@@ -52,13 +52,40 @@ create table if not exists public.legal_embeddings (
 );
 
 -- Idempotency key. Includes the model so two models can coexist during a switch.
-create unique index if not exists legal_embeddings_provision_unique
-  on public.legal_embeddings (provision_id, sub_chunk_index, embedding_model)
-  where provision_id is not null;
+--
+-- This MUST be a single non-partial constraint. An earlier version used two
+-- partial unique indexes (one per corpus, WHERE provision_id/chunk_id is not
+-- null). Postgres cannot infer a partial index from ON CONFLICT (columns)
+-- without also being given its predicate, and PostgREST/supabase-js has no way
+-- to express that predicate — so every upsert failed with "no unique or
+-- exclusion constraint matching the ON CONFLICT specification".
+--
+-- NULLS NOT DISTINCT is load-bearing, not decoration: exactly one of
+-- provision_id/chunk_id is null on every row, and under default NULLS DISTINCT
+-- semantics two otherwise-identical rows would compare unequal and duplicate
+-- silently.
+--
+-- Idempotent against the already-applied original: drop the old partial
+-- indexes if present, then add the constraint only if it is not already there
+-- (Postgres has no ADD CONSTRAINT IF NOT EXISTS).
+drop index if exists public.legal_embeddings_provision_unique;
+drop index if exists public.legal_embeddings_guidance_unique;
 
-create unique index if not exists legal_embeddings_guidance_unique
-  on public.legal_embeddings (chunk_id, sub_chunk_index, embedding_model)
-  where chunk_id is not null;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'legal_embeddings_parent_unique'
+      and conrelid = 'public.legal_embeddings'::regclass
+  ) then
+    alter table public.legal_embeddings
+      add constraint legal_embeddings_parent_unique
+      unique nulls not distinct
+        (provision_id, chunk_id, sub_chunk_index, embedding_model);
+  end if;
+end
+$$;
 
 create index if not exists legal_embeddings_model_idx
   on public.legal_embeddings (embedding_model);
