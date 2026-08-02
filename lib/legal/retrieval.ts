@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildSearchTerms } from "@/lib/legal/searchTerms";
 import { hasCitation, parseCitation } from "@/lib/legal/citations";
+import { describeExtent, extentCoversEnglandWales } from "@/lib/legal/extent";
 import {
   DEFAULT_EMBEDDING_MODEL,
   EMBEDDING_DIMENSIONS,
@@ -21,6 +22,8 @@ export type LegalContextChunk = {
   legGovRef?: string | null;
   inForce?: boolean | null;
   status?: string | null;
+  /** CLML RestrictExtent, e.g. "E+W". Null for guidance. */
+  extent?: string | null;
   hasUnappliedAmendments?: boolean | null;
   upToDateTo?: string | null;
   similarity?: number | null;
@@ -41,6 +44,7 @@ type SemanticRow = {
   in_force: boolean | null;
   status: string | null;
   content_omitted: boolean | null;
+  extent: string | null;
   has_unapplied_amendments: boolean | null;
   amendment_note: string | null;
   up_to_date_to: string | null;
@@ -79,6 +83,22 @@ export function isCitableAsCurrentLaw(row: {
   return row.in_force === true;
 }
 
+/**
+ * Second guarantee, same defence-in-depth shape: the product is pinned to
+ * England & Wales, so Scotland-only and Northern-Ireland-only provisions must
+ * not be presented as the user's law. The SQL already filters; this re-checks.
+ *
+ * Conservative: unknown extent passes. Hiding a real E&W provision is worse
+ * than surfacing an ambiguous one.
+ */
+export function appliesInUserJurisdiction(row: {
+  corpus?: string;
+  extent?: string | null;
+}): boolean {
+  if (row.corpus === "guidance") return true;
+  return extentCoversEnglandWales(row.extent);
+}
+
 function toChunk(row: SemanticRow, matchType: "citation" | "semantic"): LegalContextChunk {
   return {
     title: row.title ?? "Legal source",
@@ -91,6 +111,7 @@ function toChunk(row: SemanticRow, matchType: "citation" | "semantic"): LegalCon
     legGovRef: row.leg_gov_ref ?? null,
     inForce: row.in_force ?? null,
     status: row.status ?? null,
+    extent: row.extent ?? null,
     hasUnappliedAmendments: row.has_unapplied_amendments ?? null,
     upToDateTo: row.up_to_date_to ?? null,
     similarity: row.similarity ?? null,
@@ -130,7 +151,7 @@ export async function getLegalContextForMessage(message: string): Promise<LegalC
       });
       if (!lookup.error && Array.isArray(lookup.data)) {
         for (const row of lookup.data as SemanticRow[]) {
-          if (!isCitableAsCurrentLaw(row)) continue;
+          if (!isCitableAsCurrentLaw(row) || !appliesInUserJurisdiction(row)) continue;
           push(toChunk(row, "citation"));
         }
       } else if (lookup.error) {
@@ -150,7 +171,7 @@ export async function getLegalContextForMessage(message: string): Promise<LegalC
 
       if (!semantic.error && Array.isArray(semantic.data)) {
         for (const row of semantic.data as SemanticRow[]) {
-          if (!isCitableAsCurrentLaw(row)) continue;
+          if (!isCitableAsCurrentLaw(row) || !appliesInUserJurisdiction(row)) continue;
           push(toChunk(row, "semantic"));
         }
         if (results.length) return results.slice(0, MATCH_LIMIT);
@@ -236,6 +257,9 @@ export function formatLegalContextForPrompt(chunks: LegalContextChunk[]) {
       // have amendments that have not yet been applied to the text.
       const currency: string[] = [];
       if (chunk.upToDateTo) currency.push(`up to date to ${chunk.upToDateTo}`);
+      // Only worth saying when it is not the plain E&W case.
+      const extentNote = describeExtent(chunk.extent);
+      if (extentNote) currency.push(extentNote);
       if (chunk.hasUnappliedAmendments) {
         currency.push("HAS AMENDMENTS NOT YET APPLIED — tell the user to check the latest text");
       }

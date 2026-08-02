@@ -30,6 +30,7 @@ export type ProvisionRow = {
   versionDate: string | null;
   inForce: boolean;
   status: string | null;
+  extent: string | null;
   contentOmitted: boolean;
   hasUnappliedAmendments: boolean;
   amendmentNote: string | null;
@@ -92,6 +93,7 @@ function provisionStatement(p: ProvisionRow): string[] {
   const flags = [
     p.hasUnappliedAmendments ? "unapplied amendments" : null,
     p.status ? `status=${p.status}` : null,
+    p.extent && p.extent !== "E+W" ? `extent=${p.extent}` : null,
     p.contentOmitted ? "content omitted (no operative text)" : null,
   ].filter(Boolean);
 
@@ -99,11 +101,12 @@ function provisionStatement(p: ProvisionRow): string[] {
     `-- ${p.legGovRef} ${p.ref}${flags.length ? `  [${flags.join(", ")}]` : ""}`,
     "insert into public.legal_provisions",
     "  (instrument_id, ref, number, heading, content, version_date, in_force, status,",
-    "   content_omitted, has_unapplied_amendments, amendment_note, source_url, position)",
+    "   extent, content_omitted, has_unapplied_amendments, amendment_note, source_url, position)",
     "select",
     `  i.id, ${sql(p.ref)}, ${sql(p.number)}, ${sql(p.heading)},`,
     `  ${sql(p.content)},`,
     `  ${sqlDate(p.versionDate)}, ${sqlBool(p.inForce)}, ${sql(p.status)},`,
+    `  ${sql(p.extent)},`,
     `  ${sqlBool(p.contentOmitted)}, ${sqlBool(p.hasUnappliedAmendments)}, ${sql(p.amendmentNote)},`,
     `  ${sql(p.sourceUrl)}, ${p.position}`,
     "from public.legal_instruments i",
@@ -115,6 +118,7 @@ function provisionStatement(p: ProvisionRow): string[] {
     "  version_date = excluded.version_date,",
     "  in_force = excluded.in_force,",
     "  status = excluded.status,",
+    "  extent = excluded.extent,",
     "  content_omitted = excluded.content_omitted,",
     "  has_unapplied_amendments = excluded.has_unapplied_amendments,",
     "  amendment_note = excluded.amendment_note,",
@@ -240,6 +244,7 @@ export function provisionToRecord(
     version_date: provision.versionDate,
     in_force: provision.inForce,
     status: provision.status,
+    extent: provision.extent,
     content_omitted: provision.contentOmitted,
     has_unapplied_amendments: provision.hasUnappliedAmendments,
     amendment_note: provision.amendmentNote,

@@ -52,6 +52,7 @@ import {
   type UpsertClient,
 } from "./lib/writer";
 import { checkEnvIgnored, checkKeyNotCommitted } from "./lib/guard";
+import { extentCoversEnglandWales } from "../lib/legal/extent";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = dirname(scriptDir);
@@ -135,6 +136,8 @@ type InstrumentReport = {
   prospective: number;
   contentOmitted: number;
   notInForce: number;
+  outsideEnglandWales: number;
+  extentCounts: Map<string, number>;
   unapplied: number;
   unknownTags: Map<string, number>;
   jammed: number;
@@ -276,6 +279,8 @@ async function main() {
       prospective: 0,
       contentOmitted: 0,
       notInForce: 0,
+      outsideEnglandWales: 0,
+      extentCounts: new Map<string, number>(),
       unapplied: 0,
       unknownTags: diagnostics.unknownTags,
       jammed: 0,
@@ -295,6 +300,7 @@ async function main() {
         versionDate: provision.versionDate,
         inForce: provision.inForce,
         status: provision.status,
+        extent: provision.extent,
         contentOmitted: provision.contentOmitted,
         hasUnappliedAmendments: matched.length > 0,
         amendmentNote: buildAmendmentNote(matched, provisionLabel(provision.ref)),
@@ -316,6 +322,11 @@ async function main() {
         });
       }
       if (provision.contentOmitted) report.contentOmitted++;
+      if (!extentCoversEnglandWales(provision.extent)) report.outsideEnglandWales++;
+      report.extentCounts.set(
+        provision.extent ?? "(none)",
+        (report.extentCounts.get(provision.extent ?? "(none)") ?? 0) + 1
+      );
       if (!provision.inForce) report.notInForce++;
       if (matched.length) report.unapplied++;
       if (LINE_START_JAM.test(provision.content)) report.jammed++;
@@ -377,7 +388,7 @@ async function main() {
   console.log("PER-INSTRUMENT REPORT");
   console.log("=".repeat(96));
   console.log(
-    "ref              enum/own/decl    sec  sched | notInForce (rep/prosp/omit) unapp | unknown | flags"
+    "ref              enum/own/decl    sec  sched | notInForce (rep/prosp/omit) unapp | non-E&W | unknown | flags"
   );
   console.log("-".repeat(96));
   for (const r of reports) {
@@ -385,6 +396,7 @@ async function main() {
       `${r.legGovRef.padEnd(15)} ${String(r.enumerated).padStart(4)}/${String(r.ownProvisions).padStart(4)}/${String(r.declared).padEnd(5)} ` +
         `${String(r.sections).padStart(4)} ${String(r.scheduleParas).padStart(6)} | ` +
         `${String(r.notInForce).padStart(10)} (${r.repealed}/${r.prospective}/${r.contentOmitted})`.padEnd(28) +
+        `${String(r.outsideEnglandWales).padStart(7)} |` +
         `${String(r.unapplied).padStart(5)} | ${String(r.unknownTags.size).padStart(7)} | ${r.flags.join("; ") || "ok"}`
     );
   }
@@ -415,6 +427,26 @@ async function main() {
       allUnknown.set(tag, (allUnknown.get(tag) ?? 0) + count);
     }
   }
+  // Extent distribution — lets a human sanity-check the capture on real data.
+  const extentTotals = new Map<string, number>();
+  for (const r of reports) {
+    for (const [extent, count] of r.extentCounts) {
+      extentTotals.set(extent, (extentTotals.get(extent) ?? 0) + count);
+    }
+  }
+  const outsideTotal = reports.reduce((sum, r) => sum + r.outsideEnglandWales, 0);
+  console.log("\nTerritorial extent distribution (captured verbatim from RestrictExtent):");
+  for (const [extent, count] of [...extentTotals].sort((a, b) => b[1] - a[1])) {
+    const applies = extentCoversEnglandWales(extent === "(none)" ? null : extent);
+    console.log(
+      `  ${extent.padEnd(14)} ${String(count).padStart(5)}  ${applies ? "applies in E&W" : "EXCLUDED (outside E&W)"}`
+    );
+  }
+  console.log(
+    `  -> ${outsideTotal} of ${totals.enumerated} provisions ` +
+      `(${((outsideTotal / Math.max(1, totals.enumerated)) * 100).toFixed(1)}%) do not extend to England & Wales`
+  );
+
   console.log("\nUnknown CLML tags across all instruments:");
   if (!allUnknown.size) console.log("  none — every construct encountered was recognised");
   else {
