@@ -76,7 +76,26 @@ comment on function public.extent_covers_england_wales is
 -- include_other_jurisdictions mirrors include_not_in_force: E&W is the default
 -- because the product is pinned to England & Wales, but the escape hatch stays
 -- open rather than being baked in.
+--
+-- DROP THE OLD SIGNATURES FIRST. Both functions gain a parameter, and Postgres
+-- treats a changed parameter list as a NEW overload rather than a replacement —
+-- "create or replace" would leave the trackb3 versions in place alongside these.
+-- PostgREST resolves RPC calls by the argument names supplied, so a lingering
+-- overload can produce "could not choose the best candidate function", and
+-- worse, a call that omits include_other_jurisdictions could silently bind to
+-- the OLD function and return unfiltered, non-E&W results.
+--
+-- Dropping by exact argument types is safe here: these are the trackb3
+-- signatures, and "if exists" makes it a no-op on a fresh database.
 -- ---------------------------------------------------------------------------
+drop function if exists public.search_legal_semantic(
+  vector, int, real, boolean, text
+);
+
+drop function if exists public.lookup_legal_provisions(
+  text[], text, int, boolean
+);
+
 create or replace function public.search_legal_semantic(
   query_embedding vector(1536),
   match_limit int default 8,
