@@ -21,6 +21,14 @@ jobs:
       - name: Lint
         run: npx eslint .
 
+      # Covers the WHOLE project, including tests and scripts. `next build`
+      # type-checks only the app graph and vitest does not type-check at all,
+      # so a type error in a test or script file was previously invisible to
+      # every gate — which is how a required field went missing from a fixture
+      # without anything failing.
+      - name: Typecheck
+        run: npx tsc --noEmit
+
       - name: Unit tests
         run: npm test
 

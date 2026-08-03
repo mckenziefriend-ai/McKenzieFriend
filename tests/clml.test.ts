@@ -9,6 +9,7 @@ import {
   enumerateProvisions,
   createDiagnostics,
   extractProvisionText,
+  isContentOmitted,
   localName,
   parseInstrumentMeta,
   parseProvision,
@@ -491,5 +492,54 @@ describe("MathML formulae", () => {
         "</Text></P1para></P1></P1group>"
     );
     expect(text.split("\n")).toContain("where—");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Repeal dot-notation
+// ---------------------------------------------------------------------------
+
+describe("isContentOmitted", () => {
+  it("treats genuinely empty content as omitted", () => {
+    expect(isContentOmitted("")).toBe(true);
+    expect(isContentOmitted("   \n  ")).toBe(true);
+  });
+
+  it("treats legislation.gov.uk's repeal dot-notation as omitted", () => {
+    // 753 provisions in the corpus render this way, with no Status attribute
+    // and no empty element — they were reading as in force.
+    expect(isContentOmitted(". . . . . . . . . . . . . . . .")).toBe(true);
+    expect(isContentOmitted("...")).toBe(true);
+    expect(isContentOmitted("…")).toBe(true);
+    expect(isContentOmitted("  . . .  \n . . .  ")).toBe(true);
+  });
+
+  it("never treats a provision containing words as omitted", () => {
+    expect(isContentOmitted("(1) A short provision.")).toBe(false);
+    expect(isContentOmitted("Yes.")).toBe(false);
+    expect(isContentOmitted("a")).toBe(false);
+  });
+
+  it("never treats a provision containing digits as omitted", () => {
+    // A bare cross-reference or figure is still content.
+    expect(isContentOmitted("30.42")).toBe(false);
+    expect(isContentOmitted("... 1985 ...")).toBe(false);
+  });
+
+  it("fails safe: anything it does not positively recognise is kept", () => {
+    // Other punctuation is not repeal notation, so the provision is kept.
+    expect(isContentOmitted("—")).toBe(false);
+    expect(isContentOmitted("(a)")).toBe(false);
+    expect(isContentOmitted("[ ]")).toBe(false);
+  });
+});
+
+describe("deriveInForce with dot-notation", () => {
+  it("marks a dots-only provision as not in force", () => {
+    expect(deriveInForce(null, isContentOmitted(". . . ."))).toBe(false);
+  });
+
+  it("leaves a real provision in force", () => {
+    expect(deriveInForce(null, isContentOmitted("(1) Real text."))).toBe(true);
   });
 });
