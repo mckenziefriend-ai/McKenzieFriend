@@ -55,6 +55,12 @@ export type EnumeratedProvision = {
   versionDate: string | null;
   /** Raw CLML Status verbatim, e.g. "Repealed" | "Prospective" | null. */
   status: string | null;
+  /**
+   * Territorial extent captured verbatim from RestrictExtent, e.g. "E+W",
+   * "E+W+S+N.I.", "S", "N.I.". Hierarchical: most provisions inherit it from
+   * an ancestor rather than carrying it themselves.
+   */
+  extent: string | null;
   /** Observed: the source carried no operative text (empty <Text/>). */
   contentOmitted: boolean;
   inForce: boolean;
@@ -502,6 +508,7 @@ type EnumContext = {
   groupTitle?: string;
   versionDate?: string;
   status?: string;
+  extent?: string;
 };
 
 function titleTextOf(node: ClmlNode): string | null {
@@ -557,6 +564,9 @@ export function enumerateProvisions(
       const next: EnumContext = { ...ctx };
       if (attrs.RestrictStartDate) next.versionDate = attrs.RestrictStartDate;
       if (attrs.Status) next.status = attrs.Status;
+      // Extent is hierarchical in the same way: the root always carries one and
+      // most provisions inherit rather than declaring their own.
+      if (attrs.RestrictExtent) next.extent = attrs.RestrictExtent;
 
       if (tag === "Schedule") {
         next.scheduleLabel = numberTextOf(node) ?? next.scheduleLabel;
@@ -591,6 +601,7 @@ export function enumerateProvisions(
             content,
             versionDate: next.versionDate ?? null,
             status,
+            extent: next.extent ?? null,
             contentOmitted,
             inForce: deriveInForce(status, contentOmitted),
             position: provisions.length + 1,
