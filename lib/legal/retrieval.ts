@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildSearchTerms } from "@/lib/legal/searchTerms";
 import { hasCitation, parseCitation } from "@/lib/legal/citations";
-import { describeExtent, extentCoversEnglandWales } from "@/lib/legal/extent";
+import { extentCoversEnglandWales } from "@/lib/legal/extent";
+import { buildLegalContext, type ContextSource, type SourceFlag } from "@/lib/legal/context";
 import {
   DEFAULT_EMBEDDING_MODEL,
   EMBEDDING_DIMENSIONS,
@@ -28,6 +29,9 @@ export type LegalContextChunk = {
   upToDateTo?: string | null;
   similarity?: number | null;
   matchType?: "citation" | "semantic" | "keyword";
+  sourceUrl?: string | null;
+  /** Non-empty only for explicitly-cited provisions that are not current E&W law. */
+  flags?: SourceFlag[];
 };
 
 type SemanticRow = {
@@ -99,6 +103,26 @@ export function appliesInUserJurisdiction(row: {
   return extentCoversEnglandWales(row.extent);
 }
 
+/**
+ * Why an explicitly-cited provision is not current E&W law.
+ *
+ * Empty for an ordinary in-force E&W provision. Non-empty means the source must
+ * be labelled in the prompt so the model states its status rather than
+ * explaining it as the user's governing law.
+ */
+export function flagsFor(row: {
+  corpus?: string;
+  in_force?: boolean | null;
+  content_omitted?: boolean | null;
+  extent?: string | null;
+}): SourceFlag[] {
+  const flags: SourceFlag[] = [];
+  if (row.corpus === "guidance") return flags;
+  if (!isCitableAsCurrentLaw(row)) flags.push("not-in-force");
+  if (!appliesInUserJurisdiction(row)) flags.push("outside-jurisdiction");
+  return flags;
+}
+
 function toChunk(row: SemanticRow, matchType: "citation" | "semantic"): LegalContextChunk {
   return {
     title: row.title ?? "Legal source",
@@ -115,6 +139,7 @@ function toChunk(row: SemanticRow, matchType: "citation" | "semantic"): LegalCon
     hasUnappliedAmendments: row.has_unapplied_amendments ?? null,
     upToDateTo: row.up_to_date_to ?? null,
     similarity: row.similarity ?? null,
+    sourceUrl: row.source_url ?? null,
     matchType,
   };
 }
@@ -142,17 +167,26 @@ export async function getLegalContextForMessage(message: string): Promise<LegalC
     };
 
     // --- 1. Exact citation lookup, merged above semantic hits ---------------
+    //
+    // Only here do we widen the filters. When the user names a provision, "not
+    // found" is a bad answer for something that exists but was repealed, never
+    // commenced, or belongs to another jurisdiction — the useful answer is to
+    // say what happened to it. Such rows are returned FLAGGED (see flagsFor)
+    // and are never admitted by the semantic path below.
     const citation = parseCitation(question);
     if (hasCitation(citation)) {
       const lookup = await supabase.rpc("lookup_legal_provisions", {
         provision_refs: citation.provisionRefs,
         instrument_hint: citation.instrumentHint,
         match_limit: MATCH_LIMIT,
+        include_not_in_force: true,
+        include_other_jurisdictions: true,
       });
       if (!lookup.error && Array.isArray(lookup.data)) {
         for (const row of lookup.data as SemanticRow[]) {
-          if (!isCitableAsCurrentLaw(row) || !appliesInUserJurisdiction(row)) continue;
-          push(toChunk(row, "citation"));
+          const chunk = toChunk(row, "citation");
+          chunk.flags = flagsFor(row);
+          push(chunk);
         }
       } else if (lookup.error) {
         console.warn("[retrieval] citation lookup failed:", lookup.error.message);
@@ -246,35 +280,17 @@ async function keywordFallback(
   }));
 }
 
-export function formatLegalContextForPrompt(chunks: LegalContextChunk[]) {
-  if (!chunks.length) {
-    return "No specific legal source chunks were retrieved for this message.";
-  }
+/**
+ * Renders retrieved sources into the prompt block, applying the token cap.
+ *
+ * Delegates to buildLegalContext so the ordering, truncation and flagging
+ * rules live in one pure, unit-tested place.
+ */
+export function formatLegalContextForPrompt(chunks: LegalContextChunk[]): string {
+  return buildLegalContext(chunks as ContextSource[]).text;
+}
 
-  return chunks
-    .map((chunk, index) => {
-      // Surface currency to the model: a provision can be in force but still
-      // have amendments that have not yet been applied to the text.
-      const currency: string[] = [];
-      if (chunk.upToDateTo) currency.push(`up to date to ${chunk.upToDateTo}`);
-      // Only worth saying when it is not the plain E&W case.
-      const extentNote = describeExtent(chunk.extent);
-      if (extentNote) currency.push(extentNote);
-      if (chunk.hasUnappliedAmendments) {
-        currency.push("HAS AMENDMENTS NOT YET APPLIED — tell the user to check the latest text");
-      }
-
-      return [
-        `Source ${index + 1}: ${chunk.title}`,
-        `Jurisdiction: ${chunk.jurisdiction}`,
-        `Type: ${chunk.sourceType}`,
-        chunk.heading ? `Heading: ${chunk.heading}` : null,
-        chunk.citationLabel ? `Citation: ${chunk.citationLabel}` : null,
-        currency.length ? `Currency: ${currency.join("; ")}` : null,
-        `Content: ${chunk.content}`,
-      ]
-        .filter(Boolean)
-        .join("\n");
-    })
-    .join("\n\n---\n\n");
+/** Same, but also returns what was dropped or truncated, for logging. */
+export function buildLegalContextForPrompt(chunks: LegalContextChunk[]) {
+  return buildLegalContext(chunks as ContextSource[]);
 }
