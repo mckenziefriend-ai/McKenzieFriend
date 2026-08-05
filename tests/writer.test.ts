@@ -30,6 +30,7 @@ function provision(overrides: Partial<ProvisionRow> = {}): ProvisionRow {
     versionDate: "2026-03-25",
     inForce: true,
     status: null,
+    extent: "E+W",
     contentOmitted: false,
     hasUnappliedAmendments: true,
     amendmentNote: "3 changes not yet applied to s. 8: …",

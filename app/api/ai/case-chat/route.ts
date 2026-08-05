@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MCKENZIE_FRIEND_SYSTEM_PROMPT, LEGAL_ANSWER_RULES } from "@/lib/ai/mckenzieFriendPrompt";
-import { formatLegalContextForPrompt, getLegalContextForMessage } from "@/lib/legal/retrieval";
+import { buildLegalContextForPrompt, getLegalContextForMessage } from "@/lib/legal/retrieval";
 import { apiError } from "@/lib/apiError";
 import { getOpenAI } from "@/lib/ai/openai";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
@@ -289,12 +289,22 @@ export async function POST(req: Request) {
 
     const legalChunks = await getLegalContextForMessage(message || userMessage);
 
-    // M3: only use relevance-matched retrieved chunks. Do NOT fall back to
-    // injecting arbitrary active legal_sources as if they were relevant —
-    // "no source found" is far safer than a confidently-wrong sourced answer.
-    const legalSourceText = legalChunks.length
-      ? formatLegalContextForPrompt(legalChunks)
-      : "No specific legal source matched this message. Do not cite specific rules from memory as if sourced; if answering legal/procedural points, be careful and say the user may need to check the rules or get legal advice.";
+    // Only relevance-matched sources are used, and the block is capped so a
+    // long statute cannot crowd out the case context — role-boundary adherence
+    // degrades in very long prompts, so the cap is a safety measure too.
+    // When nothing matched, buildLegalContextForPrompt emits an explicit
+    // "no sources" instruction rather than silence, so the model is told to say
+    // it has no provision rather than answering from memory.
+    const legalContext = buildLegalContextForPrompt(legalChunks);
+    const legalSourceText = legalContext.text;
+
+    if (legalChunks.length) {
+      console.info(
+        `[case-chat] legal sources: ${legalContext.used} used, ` +
+          `${legalContext.dropped} dropped, ${legalContext.truncated} truncated, ` +
+          `${legalContext.totalChars} chars`
+      );
+    }
 
     const uploadedText = uploadedDocs.length
       ? `\n\nNew upload in this message:\n${uploadedDocs.map((doc, index) => `${index + 1}. ${doc.name} (${doc.category})`).join("\n")}`
@@ -329,7 +339,7 @@ Bundle:
 ${bundleText || "No bundle items."}
 ${uploadedText}
 
-Legal role/source material available:
+Retrieved legal sources:
 ${legalSourceText}
 
 Latest user message:

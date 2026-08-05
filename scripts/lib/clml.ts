@@ -61,7 +61,10 @@ export type EnumeratedProvision = {
    * an ancestor rather than carrying it themselves.
    */
   extent: string | null;
-  /** Observed: the source carried no operative text (empty <Text/>). */
+  /**
+   * Observed: the source carried no operative text — either an empty <Text/>
+   * or nothing but legislation.gov.uk's repeal dot-notation (". . . .").
+   */
   contentOmitted: boolean;
   inForce: boolean;
   position: number;
@@ -591,7 +594,7 @@ export function enumerateProvisions(
           const status = next.status ?? null;
           const isSchedule = ref.startsWith("schedule");
           const content = renderProvision(node, diagnostics);
-          const contentOmitted = content.trim().length === 0;
+          const contentOmitted = isContentOmitted(content);
 
           provisions.push({
             ref,
@@ -617,6 +620,29 @@ export function enumerateProvisions(
 
   visit(tree, {});
   return provisions;
+}
+
+/**
+ * legislation.gov.uk renders a repealed or wholly-omitted provision as a run of
+ * dots rather than as empty text — ". . . . . . . ." — with no Status attribute
+ * and no empty element to detect. 753 of the 7,284 provisions in the corpus are
+ * in this state, and 564 of them were reading as in force.
+ *
+ * Deliberately strict: the whole content, once trimmed, must consist of nothing
+ * but dot-notation characters and whitespace. A single letter or digit anywhere
+ * disqualifies it, so a short but genuine provision is never caught. Where the
+ * source is ambiguous we keep the provision — hiding real law is the worse
+ * error, exactly as with the extent filter.
+ *
+ * This observes the document; it does not infer a legal conclusion. As with
+ * empty content, no Status is fabricated — see deriveInForce.
+ */
+const REPEAL_DOT_NOTATION = /^[.…·•\s]+$/;
+
+export function isContentOmitted(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed) return true;
+  return REPEAL_DOT_NOTATION.test(trimmed);
 }
 
 /**
@@ -664,7 +690,7 @@ export function parseProvision(xml: string, sectionNumber: string): ProvisionPar
   );
 
   const content = renderProvision(provision);
-  const contentOmitted = content.trim().length === 0;
+  const contentOmitted = isContentOmitted(content);
 
   return {
     number,
