@@ -48,3 +48,6 @@ next-env.d.ts
 
 # downloaded legislation XML cache (re-fetchable; multi-MB)
 /scripts/.cache/
+
+# retrieval eval run snapshots (regenerated; not source)
+/scripts/eval/runs/
