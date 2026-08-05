@@ -7,18 +7,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/browser";
 
+/**
+ * Shown both in the browser's own validation bubble and as the inline error, so
+ * the two can never drift apart.
+ */
+const AGE_GATE_MESSAGE = "Please confirm you are 18 or over to create an account.";
+
 export default function SignupPage() {
   const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Self-declaration age gate. The privacy notice states the service is for
+    // adults; this makes signup match it. Checked before signUp so an
+    // unconfirmed attempt never reaches the auth provider.
+    if (!confirmedAdult) {
+      setError(AGE_GATE_MESSAGE);
+      return;
+    }
+
     setLoading(true);
 
     // NEXT_PUBLIC_SITE_URL (or this origin) must be in Supabase's allowed
@@ -29,7 +45,12 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${siteUrl}/login` },
+      options: {
+        emailRedirectTo: `${siteUrl}/login`,
+        // Record that the declaration was made. A boolean flag only — no date
+        // of birth, and nothing that could identify a person is collected.
+        data: { confirmed_18: true },
+      },
     });
 
     setLoading(false);
@@ -97,6 +118,35 @@ export default function SignupPage() {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={confirmedAdult}
+                  onChange={(e) => {
+                    // Clear the custom message so the field can revalidate.
+                    e.currentTarget.setCustomValidity("");
+                    setConfirmedAdult(e.target.checked);
+                    if (e.target.checked) setError(null);
+                  }}
+                  // `required` blocks submission natively — which also works if
+                  // JS fails — but the default browser wording is generic.
+                  // This makes the native bubble carry our wording instead.
+                  onInvalid={(e) => e.currentTarget.setCustomValidity(AGE_GATE_MESSAGE)}
+                  aria-describedby="age-gate-note"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-400 accent-[#0C1A2B] focus:outline-none focus:ring-2 focus:ring-[#0C1A2B]"
+                  required
+                />
+                <span className="text-sm text-[#0C1A2B]">
+                  I confirm I am 18 or over.
+                </span>
+              </label>
+              <p id="age-gate-note" className="mt-2 text-xs leading-5 text-gray-600">
+                This service is for adults preparing their own case. It is not for
+                under-18s.
+              </p>
             </div>
 
             <button
