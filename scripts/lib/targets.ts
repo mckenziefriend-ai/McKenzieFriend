@@ -1,5 +1,6 @@
 /**
- * Ingestion targets — the statute half of drafts/legal-whitelist.md.
+ * Ingestion targets — the primary-legislation and procedure-rules half of
+ * drafts/legal-whitelist.md.
  *
  * Extending the corpus is a data edit here, no code change.
  *
@@ -8,14 +9,25 @@
  * whitelist only by its "(Pt 4)" annotation). Verification re-runs on every
  * ingest — nothing is ingested against an identifier that fails or mismatches.
  *
- * DEFERRED — FPR (uksi/2010/2955) and CPR (uksi/1998/3132):
- * Recon showed the parser handles their structure (FPR 852 provisions, CPR
- * 2,362; no jamming, no empty content, CPR currency correct). But FPR splits
- * rule numbers between the Pnumber text and a PuncAfter attribute we do not
- * read — rule 1.1 yields number "1" instead of "1.1", inconsistently within
- * FPR itself (rule 1.5 is correct). Rules also cite differently ("r. 1.1" vs
- * "s. 1"), which provisionLabel and the amendment notes do not yet handle.
- * Both are scheduled for a dedicated rules + Practice Directions task.
+ * The procedure rules (FPR, CPR) are now ingested alongside the Acts. Two
+ * things had to change first, both done: rule numbers are split between the
+ * Pnumber text and a PuncAfter attribute (see joinPnumber), and rules cite as
+ * "r. 12.3" rather than "s. 12" (see provisionLabel).
+ *
+ * KNOWN, out of scope: the CPR still carries the old RSC and CCR as Schedules 1
+ * and 2, and those 827 paragraphs do not number like anything else. Measured:
+ * refs of the form schedule/1/part/2/paragraph/Rule1A, numbers reading
+ * "Rule 4", "Rule1A" or null, and the same number recurring across Orders (572
+ * paragraphs share 99 distinct numbers), because the Order is the `part`
+ * segment rather than part of the number. They are therefore identified by ref
+ * and by heading — which does carry the Order — and not by number.
+ * provisionLabel leaves that ref shape alone deliberately rather than invent a
+ * citation that would be ambiguous. Pre-existing, unchanged here.
+ *
+ * DEFERRED — the Practice Directions. They live on justice.gov.uk rather than
+ * legislation.gov.uk, are not statutory instruments, and carry none of the
+ * currency or extent data this pipeline depends on. They need their own
+ * mechanism, not a target row.
  *
  * TODO (prospective path): as of the Children Act and MCA, no instrument had a
  * Status="Prospective" provision, so that branch of in_force was implemented
@@ -30,7 +42,7 @@ export type InstrumentTarget = {
   expectedTitle: string;
   jurisdiction: string;
   /** Whitelist grouping, for the per-instrument report. */
-  area: "family" | "civil" | "cross-cutting";
+  area: "family" | "civil" | "cross-cutting" | "procedure";
 };
 
 export const TARGETS: InstrumentTarget[] = [
@@ -60,6 +72,12 @@ export const TARGETS: InstrumentTarget[] = [
   { legGovRef: "ukpga/1998/42", expectedTitle: "Human Rights Act 1998", jurisdiction: "England and Wales", area: "cross-cutting" },
   { legGovRef: "ukpga/2010/15", expectedTitle: "Equality Act 2010", jurisdiction: "England and Wales", area: "cross-cutting" },
   { legGovRef: "ukpga/2012/10", expectedTitle: "Legal Aid, Sentencing and Punishment of Offenders Act 2012", jurisdiction: "England and Wales", area: "cross-cutting" },
+
+  // D. Procedure rules. These are SIs, so they carry the same currency and
+  // extent data as the Acts and need no special ingestion path — only the
+  // rule-numbering fix (see joinPnumber) and rule citation conventions.
+  { legGovRef: "uksi/2010/2955", expectedTitle: "The Family Procedure Rules 2010", jurisdiction: "England and Wales", area: "procedure" },
+  { legGovRef: "uksi/1998/3132", expectedTitle: "The Civil Procedure Rules 1998", jurisdiction: "England and Wales", area: "procedure" },
 ];
 
 /**

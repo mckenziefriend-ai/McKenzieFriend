@@ -147,6 +147,69 @@ describe("parseCitation", () => {
     const many = Array.from({ length: 30 }, (_, i) => `s.${i + 1}`).join(" ");
     expect(parseCitation(many).provisionRefs.length).toBeLessThanOrEqual(6);
   });
+
+  // -------------------------------------------------------------------------
+  // Procedure rules
+  // -------------------------------------------------------------------------
+
+  it.each([
+    ["r. 12.3", "rule/12.3"],
+    ["r.12.3", "rule/12.3"],
+    ["rule 12.3", "rule/12.3"],
+    ["rules 27.1", "rule/27.1"],
+    ["FPR 12.3", "rule/12.3"],
+    ["CPR 7.5", "rule/7.5"],
+    ["CPR r. 7.5", "rule/7.5"],
+    ["CPR rule 7.1A", "rule/7.1A"],
+    ["civil procedure rules 27.4", "rule/27.4"],
+  ])("parses %j as %s", (query, expected) => {
+    expect(parseCitation(query).provisionRefs).toContain(expected);
+  });
+
+  it("does not invent a Part ref that the corpus cannot contain", () => {
+    // Parts are structure, not provisions — there is no `part/7` row. Emitting
+    // one would spend a lookup that can never match. The instrument hint
+    // survives and semantic search does the work.
+    const parsed = parseCitation("what is in CPR Part 7?");
+    expect(parsed.provisionRefs).toEqual([]);
+    expect(parsed.instrumentHint).toBe("Civil Procedure Rules");
+  });
+
+  it("narrows to the right instrument without a year", () => {
+    // The rules carry no year in ordinary citation, so the abbreviation has to
+    // do the narrowing on its own.
+    expect(parseCitation("FPR 12.3").instrumentHint).toBe("Family Procedure Rules");
+    expect(parseCitation("CPR 27.4").instrumentHint).toBe("Civil Procedure Rules");
+  });
+
+  it("never reads a dotted number as a section", () => {
+    // "s. 12.3" is a rule miscited as a section. Returning section/12 would
+    // answer with an entirely unrelated provision, so the section pattern must
+    // not fire at all here.
+    for (const query of ["s. 12.3", "section 12.3", "s.7.5"]) {
+      expect(parseCitation(query).provisionRefs, query).not.toContain("section/12");
+      expect(parseCitation(query).provisionRefs, query).not.toContain("section/7");
+    }
+  });
+
+  it("still parses an ordinary section next to a rule", () => {
+    const parsed = parseCitation("CA 1989 s.8 and FPR 12.3");
+    expect(parsed.provisionRefs).toContain("section/8");
+    expect(parsed.provisionRefs).toContain("rule/12.3");
+  });
+
+  it("does not fire on prose that merely contains a number or the word rule", () => {
+    for (const query of [
+      "what are the rules about contact",
+      "the rule is that I must respond",
+      "as a rule 5 weeks is normal",
+      "I paid 12.50 for the form",
+      "it happened on 3.4 acres of land",
+      "part 1 of my problem is money",
+    ]) {
+      expect(hasCitation(parseCitation(query)), query).toBe(false);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

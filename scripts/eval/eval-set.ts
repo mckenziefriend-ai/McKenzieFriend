@@ -8,9 +8,10 @@
  * provision is retrieved, and we record which one and at what rank.
  *
  * Every expected provision below was verified against the live corpus on
- * 2026-08-03: all present, in force, not content-omitted, extent covering E&W.
- * An eval set that quietly points at repealed or non-E&W provisions would
- * measure the wrong thing.
+ * 2026-08-03 (the procedure rules on 2026-08-06, against the parsed source
+ * ahead of their first ingest): all present, in force, not content-omitted,
+ * extent covering E&W. An eval set that quietly points at repealed or non-E&W
+ * provisions would measure the wrong thing.
  *
  * Expand this set rather than tuning to any single case. A ranking change is
  * only acceptable if it improves the whole set with no regressions.
@@ -147,5 +148,49 @@ export const EVAL_SET: EvalCase[] = [
       "CPA 2004 Sch 5 is the financial relief regime for civil partnerships, " +
       "mirroring MCA 1973 s.25. Directly adversarial to the divorce-finances " +
       "case: the same text must rank DOWN there and UP here.",
+  },
+
+  // -------------------------------------------------------------------------
+  // Cases whose correct answer is a PROCEDURE RULE.
+  //
+  // The statute cases above all ask what the law is. A litigant in person asks
+  // at least as often what they have to DO — and the answer to that is in the
+  // FPR or CPR, not in an Act. These cases were misses before the rules were
+  // ingested, by construction: the corpus could not answer them at all.
+  //
+  // They also guard the reverse harm. Procedure rules are numerous, short and
+  // heavily cross-referential, so they are exactly the kind of content that
+  // could flood the results and bury the statute cases above.
+  // -------------------------------------------------------------------------
+  {
+    id: "child-application-parties",
+    question: "who has to be a party when I apply for a child arrangements order?",
+    expected: [{ legGovRef: "uksi/2010/2955", ref: "rule/12.3" }],
+    rationale:
+      "FPR r.12.3 is the table of who the parties are in proceedings under " +
+      "CA 1989 s.8. The Act creates the order; only the rule says who must be " +
+      "named as a respondent.",
+  },
+  {
+    id: "small-claims-hearing",
+    question: "how do I prepare for a small claims hearing and what happens at it?",
+    expected: [
+      { legGovRef: "uksi/1998/3132", ref: "rule/27.4" },
+      { legGovRef: "uksi/1998/3132", ref: "rule/27.8" },
+    ],
+    rationale:
+      "CPR r.27.4 governs preparation and directions for the hearing; r.27.8 " +
+      "governs how the hearing itself is conducted.",
+  },
+  {
+    id: "starting-a-civil-claim",
+    question: "how do I start a county court claim against someone who owes me money?",
+    expected: [
+      { legGovRef: "uksi/1998/3132", ref: "rule/7.1" },
+      { legGovRef: "uksi/1998/3132", ref: "rule/7.2" },
+    ],
+    rationale:
+      "CPR r.7.2 is how proceedings are started (issue of a claim form); " +
+      "r.7.1 is where they may be started.",
   },
 ];

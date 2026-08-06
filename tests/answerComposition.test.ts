@@ -249,4 +249,24 @@ describe("stripEmbeddingPrefix", () => {
     const occurrences = built.text.split(s.citationLabel!).length - 1;
     expect(occurrences).toBe(1);
   });
+
+  it("still strips the indexer's prefix once the label is a real citation", () => {
+    // The indexer writes "<title> <ref>"; citation_label now reads
+    // "Children Act 1989, s. 8". They no longer match, and matching only the
+    // label would leave the raw path at the top of every provision body.
+    const s = source({ citationLabel: "Children Act 1989, s. 8" });
+    const embedded = `Children Act 1989 section/8\n${s.heading}\n(1) In this Act—`;
+    expect(stripEmbeddingPrefix(embedded, s)).toBe("(1) In this Act—");
+  });
+
+  it("strips the indexer's prefix for a procedure rule too", () => {
+    const s = source({
+      title: "The Family Procedure Rules 2010",
+      citationLabel: "Family Procedure Rules 2010, r. 12.3",
+      provisionRef: "rule/12.3",
+      heading: "Who the parties are",
+    });
+    const embedded = `The Family Procedure Rules 2010 rule/12.3\n${s.heading}\n(1) In relation to—`;
+    expect(stripEmbeddingPrefix(embedded, s)).toBe("(1) In relation to—");
+  });
 });

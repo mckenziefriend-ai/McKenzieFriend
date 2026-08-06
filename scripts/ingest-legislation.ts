@@ -131,6 +131,8 @@ type InstrumentReport = {
   enumerated: number;
   sections: number;
   scheduleParas: number;
+  /** Procedure rules — the FPR and CPR have these where an Act has sections. */
+  rules: number;
   otherRefs: number;
   repealed: number;
   prospective: number;
@@ -274,6 +276,7 @@ async function main() {
       enumerated: provisions.length,
       sections: 0,
       scheduleParas: 0,
+      rules: 0,
       otherRefs: 0,
       repealed: 0,
       prospective: 0,
@@ -310,6 +313,7 @@ async function main() {
 
       if (provision.ref.startsWith("section")) report.sections++;
       else if (provision.ref.startsWith("schedule")) report.scheduleParas++;
+      else if (provision.ref.startsWith("rule")) report.rules++;
       else report.otherRefs++;
 
       if (provision.status === "Repealed") report.repealed++;
@@ -388,13 +392,13 @@ async function main() {
   console.log("PER-INSTRUMENT REPORT");
   console.log("=".repeat(96));
   console.log(
-    "ref              enum/own/decl    sec  sched | notInForce (rep/prosp/omit) unapp | non-E&W | unknown | flags"
+    "ref              enum/own/decl    sec  sched  rules | notInForce (rep/prosp/omit) unapp | non-E&W | unknown | flags"
   );
   console.log("-".repeat(96));
   for (const r of reports) {
     console.log(
       `${r.legGovRef.padEnd(15)} ${String(r.enumerated).padStart(4)}/${String(r.ownProvisions).padStart(4)}/${String(r.declared).padEnd(5)} ` +
-        `${String(r.sections).padStart(4)} ${String(r.scheduleParas).padStart(6)} | ` +
+        `${String(r.sections).padStart(4)} ${String(r.scheduleParas).padStart(6)} ${String(r.rules).padStart(6)} | ` +
         `${String(r.notInForce).padStart(10)} (${r.repealed}/${r.prospective}/${r.contentOmitted})`.padEnd(28) +
         `${String(r.outsideEnglandWales).padStart(7)} |` +
         `${String(r.unapplied).padStart(5)} | ${String(r.unknownTags.size).padStart(7)} | ${r.flags.join("; ") || "ok"}`
