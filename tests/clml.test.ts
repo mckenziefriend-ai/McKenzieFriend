@@ -397,8 +397,8 @@ describe("enumerateProvisions — procedure rules", () => {
     // Measured on the full instruments before this change: FPR 226/852 rules
     // were numbered correctly, and after it 852/852. The fixture holds the
     // shapes that produced the other 626.
-    expect(fpr).toHaveLength(5);
-    expect(fpr.map((p) => p.number)).toEqual(["1.1", "1.2", "1.3", "1.4", "1.5"]);
+    expect(fpr).toHaveLength(6);
+    expect(fpr.map((p) => p.number)).toEqual(["1.1", "1.2", "1.3", "1.4", "1.5", "12.3"]);
   });
 
   it("gives every rule a number matching its own ref", () => {
@@ -446,6 +446,113 @@ describe("enumerateProvisions — procedure rules", () => {
       expect(p.content, `${p.ref} has a jammed marker`).not.toMatch(
         /^[ \t]*\([0-9A-Za-z]{1,4}\)[A-Za-z]/m
       );
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+
+describe("table rendering", () => {
+  const cell = (text: string) => `<xhtml:td>${text}</xhtml:td>`;
+  const wrap = (rows: string) =>
+    `<P1group><P1><P1para><Tabular><xhtml:table><xhtml:tbody>${rows}</xhtml:tbody></xhtml:table></Tabular></P1para></P1></P1group>`;
+
+  it("separates header cells, which previously ran together with nothing between", () => {
+    // The reported defect: FPR r.12.3 rendered
+    // "Proceedings forApplicantsRespondents". <th> carried no separator at all.
+    const xml = wrap(
+      "<xhtml:tr><xhtml:th>Proceedings for</xhtml:th><xhtml:th>Applicants</xhtml:th>" +
+        "<xhtml:th>Respondents</xhtml:th></xhtml:tr>"
+    );
+    expect(extractProvisionText(xml)).toBe("Proceedings for | Applicants | Respondents");
+  });
+
+  it("separates data cells", () => {
+    const xml = wrap(`<xhtml:tr>${cell("Part 4 (premises)")}${cell("Schedule 4")}</xhtml:tr>`);
+    expect(extractProvisionText(xml)).toBe("Part 4 (premises) | Schedule 4");
+  });
+
+  it("never leaves a delimiter trailing off the end of a row", () => {
+    // An empty final cell used to produce "Equality Act 2010 (c. 15) |".
+    const xml = wrap(`<xhtml:tr>${cell("Equality Act 2010 (c. 15)")}${cell("")}</xhtml:tr>`);
+    expect(extractProvisionText(xml)).toBe("Equality Act 2010 (c. 15)");
+  });
+
+  it("does not carry a delimiter across a row boundary", () => {
+    const xml = wrap(
+      `<xhtml:tr>${cell("A")}${cell("")}</xhtml:tr><xhtml:tr>${cell("B")}${cell("C")}</xhtml:tr>`
+    );
+    expect(extractProvisionText(xml)).toBe("A\nB | C");
+  });
+
+  it("opens a multi-line cell with the delimiter so the column boundary survives", () => {
+    // A cell whose text starts on its own line still has to be marked, or the
+    // reader cannot tell where the previous column ended.
+    const xml = wrap(
+      `<xhtml:tr>${cell("<Text>first</Text>")}${cell("<Text>second</Text>")}</xhtml:tr>`
+    );
+    expect(extractProvisionText(xml)).toBe("first\n| second");
+  });
+
+  it("keeps rows on separate lines", () => {
+    const xml = wrap(
+      `<xhtml:tr>${cell("a")}${cell("b")}</xhtml:tr><xhtml:tr>${cell("c")}${cell("d")}</xhtml:tr>`
+    );
+    expect(extractProvisionText(xml)).toBe("a | b\nc | d");
+  });
+
+  it("fixes the reported rule on the real document", () => {
+    const fpr = enumerateProvisions(FPR_TRIMMED, "uksi/2010/2955");
+    const r123 = fpr.find((p) => p.ref === "rule/12.3")!;
+    expect(r123.content).toContain("Proceedings for | Applicants | Respondents");
+    expect(r123.content).not.toContain("Proceedings forApplicants");
+
+    const cpr = enumerateProvisions(CPR_TRIMMED, "uksi/1998/3132");
+    const r626 = cpr.find((p) => p.ref === "rule/6.26")!;
+    expect(r626.content).toContain("Method of service | Deemed date of service");
+  });
+
+  it("leaves no line ending in a delimiter anywhere in either instrument", () => {
+    const all = [
+      ...enumerateProvisions(FPR_TRIMMED, "uksi/2010/2955"),
+      ...enumerateProvisions(CPR_TRIMMED, "uksi/1998/3132"),
+      ...enumerateProvisions(CA89_TRIMMED, "ukpga/1989/41"),
+    ];
+    for (const p of all) {
+      expect(p.content, `${p.ref} ends a line with a delimiter`).not.toMatch(/\|[ \t]*$/m);
+    }
+  });
+});
+
+describe("editorial markers", () => {
+  it("drops a footnote reference without leaving its id in the text", () => {
+    const xml =
+      "<P1group><P1><P1para><Text>the Civil Procedure Act 1997" +
+      '<FootnoteRef Ref="f00001"/> applies</Text></P1para></P1></P1group>';
+    expect(extractProvisionText(xml)).toBe("the Civil Procedure Act 1997 applies");
+  });
+
+  it("keeps a Superior run, which carries the glossary marker", () => {
+    // FPR r.2.2: glossary words in the rules are followed by "GL". That "GL"
+    // is the content of a <Superior>, so dropping it would contradict the rule.
+    const xml =
+      "<P1group><P1><P1para><Text>stay<Superior>(GL) </Superior>the proceedings</Text>" +
+      "</P1para></P1></P1group>";
+    expect(extractProvisionText(xml)).toBe("stay(GL) the proceedings");
+  });
+
+  it("recognises every tag in the procedure rules", () => {
+    // The diagnostics collector flagged Superior and FootnoteRef when the rules
+    // were first parsed. Both are now declared, so nothing unfamiliar is left.
+    for (const [xml, ref] of [
+      [FPR_TRIMMED, "uksi/2010/2955"],
+      [CPR_TRIMMED, "uksi/1998/3132"],
+    ] as const) {
+      const diagnostics = createDiagnostics();
+      enumerateProvisions(xml, ref, diagnostics);
+      expect([...diagnostics.unknownTags.keys()], ref).toEqual([]);
     }
   });
 });

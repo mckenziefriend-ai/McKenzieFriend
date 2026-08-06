@@ -21,21 +21,26 @@ The FPR and CPR responses are 4.6 MB and 14 MB, far too large to commit, so
 each `-trimmed` file keeps the root element and `<ukm:Metadata>` verbatim and
 carries only a few provisions:
 
-- **FPR** — the whole of Part 1 (rules 1.1–1.5). These cover every `Pnumber`
-  shape the FPR uses: the split number (`<Pnumber PuncAfter=".1.">1</Pnumber>`,
-  which must yield `1.1`, not `1`) and the amended rule whose number sits
-  complete inside an `<Addition>`.
-- **CPR** — rules 7.1 and 7.2, plus the RSC schedule paragraph
+- **FPR** — the whole of Part 1 (rules 1.1–1.5), plus rule 12.3. Part 1 covers
+  every `Pnumber` shape the FPR uses: the split number
+  (`<Pnumber PuncAfter=".1.">1</Pnumber>`, which must yield `1.1`, not `1`) and
+  the amended rule whose number sits complete inside an `<Addition>`. Rule 12.3
+  is the three-column table of proceedings, applicants and respondents, whose
+  `<th>` header rendered `Proceedings forApplicantsRespondents` before table
+  cells were delimited.
+- **CPR** — rules 7.1, 7.2 and 6.26, plus the RSC schedule paragraph
   `schedule/5/paragraph/10`, whose `Pnumber` is bracketed
   (`PuncBefore="(" PuncAfter=")"`) rather than split. That is the case a naive
-  `PuncAfter` join corrupts to `10)`. Part 61's `<Number>` and `<Title>` come
-  along because the paragraph's heading is composed from them; rule 61.8 comes
-  along because the schedule paragraph shares its `P1group`.
+  `PuncAfter` join corrupts to `10)`. Rule 6.26 is the deemed-date-of-service
+  table — two columns with multi-line cells, a different table shape from FPR
+  r.12.3. Part 61's `<Number>` and `<Title>` come along because the schedule
+  paragraph's heading is composed from them; rule 61.8 comes along because that
+  paragraph shares its `P1group`.
 
 Every provision in both files was checked to parse to exactly the same `number`,
 `heading`, `content`, `extent`, `status` and `contentOmitted` as it does in the
-full document — 0 differences out of 9. The trimming removes provisions; it does
-not alter the ones that remain.
+full document — 0 differences out of 11. The trimming removes provisions; it
+does not alter the ones that remain.
 
 ## One deliberate modification
 
@@ -43,7 +48,7 @@ These files are otherwise byte-identical to the API responses, with a single
 exception:
 
 **`key-<32 hex>` → `lgid-<32 hex>`** (183 occurrences, 58 distinct ids in the
-Children Act files; 105/9 in the FPR file and 432/184 in the CPR file).
+Children Act files; 173/27 in the FPR file and 507/190 in the CPR file).
 
 legislation.gov.uk uses that form for opaque internal identifiers on
 `EffectId`, `ChangeId`, `CommentaryRef`, `id`, and effect `URI` attributes.

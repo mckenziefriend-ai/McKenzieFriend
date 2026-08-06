@@ -88,8 +88,16 @@ export type ProvisionParse = {
 // provisions; unknown tags fall through to "recurse", so content is never lost)
 // ---------------------------------------------------------------------------
 
-/** Dropped entirely — editorial annotation markers, not statutory text. */
-const SKIP_TAGS: ReadonlySet<string> = new Set(["CommentaryRef"]);
+/**
+ * Dropped entirely — editorial annotation markers, not statutory text.
+ *
+ * FootnoteRef is CommentaryRef's twin in the procedure rules: `<FootnoteRef
+ * Ref="f00002"/>` marks the footnote citing the enabling Act. Every one of the
+ * 58 in the CPR is self-closing, so dropping them changes nothing today; the
+ * point is that a variant carrying text could not leak a bare marker into the
+ * middle of a sentence.
+ */
+const SKIP_TAGS: ReadonlySet<string> = new Set(["CommentaryRef", "FootnoteRef"]);
 
 /** Unwrapped in place: their text joins the surrounding line. */
 const INLINE_TAGS: ReadonlySet<string> = new Set([
@@ -98,6 +106,10 @@ const INLINE_TAGS: ReadonlySet<string> = new Set([
   "Emphasis", "Strong", "Superscript", "Subscript", "Expanded", "Foreign",
   "InternalLink", "ExternalLink", "Span", "Inline", "Definition",
   "Uppercase", "SmallCaps", "Proviso",
+  // Superscript run. In the procedure rules this is the glossary marker —
+  // FPR r.2.2 says glossary words are followed by "GL", and that "GL" lives in
+  // a <Superior>. It is operative text, so it is unwrapped, not dropped.
+  "Superior",
 ]);
 
 /** Numbered levels: each starts a new line with its own marker and indent. */
@@ -160,6 +172,17 @@ const STRUCTURAL_TAGS: ReadonlySet<string> = new Set([
 const INDENT = "    ";
 
 /**
+ * Separates table cells.
+ *
+ * A table read as running prose is worse than useless in a legal answer: FPR
+ * r.12.3 is a three-column table of proceedings, applicants and respondents,
+ * and without a delimiter its header rendered "Proceedings forApplicantsRespondents"
+ * — the <th> cells carried no separator at all. A pipe is unambiguous, survives
+ * whitespace collapsing, and marks a column boundary the model can read.
+ */
+const CELL_SEPARATOR = " | ";
+
+/**
  * Records constructs the parser did not recognise, so scaling to a new
  * instrument surfaces unfamiliar markup rather than silently recursing.
  */
@@ -199,11 +222,19 @@ class LineBuilder {
   private parts: string[] = [];
   private indent = 0;
   private open = false;
+  /**
+   * A separator waiting for something to separate. Held rather than written so
+   * it can never trail off the end of a row: an empty last cell would otherwise
+   * leave "Equality Act 2010 (c. 15) |". It survives a flush on purpose, so a
+   * cell whose text began on its own line still opens with the delimiter.
+   */
+  private pending: string | null = null;
 
   startLine(indent: number, prefix: string) {
     this.flush();
     this.indent = indent;
     this.open = true;
+    this.takePending();
     if (prefix) this.parts.push(prefix);
   }
 
@@ -213,7 +244,24 @@ class LineBuilder {
       this.indent = indent;
       this.open = true;
     }
+    this.takePending();
     this.parts.push(text);
+  }
+
+  /** Queue a separator, to be written only if content follows it. */
+  separate(separator: string) {
+    this.pending = separator;
+  }
+
+  /** Discard an unwritten separator, so it cannot leak into the next row. */
+  clearPending() {
+    this.pending = null;
+  }
+
+  private takePending() {
+    if (this.pending === null) return;
+    this.parts.push(this.pending);
+    this.pending = null;
   }
 
   flush() {
@@ -345,18 +393,39 @@ function render(
       continue;
     }
 
+    // A table row owns the separation between its own cells, so the delimiter
+    // can be placed BETWEEN them and never trail off the end of the row.
+    if (tag === "tr") {
+      lb.flush();
+      lb.clearPending();
+      let seenCell = false;
+      for (const kid of kids) {
+        const kidTag = localOf(kid);
+        if (kidTag === "td" || kidTag === "th") {
+          if (seenCell) lb.separate(CELL_SEPARATOR);
+          seenCell = true;
+          render(childrenOf(kid), lb, indent, diagnostics);
+          continue;
+        }
+        render([kid], lb, indent, diagnostics);
+      }
+      lb.flush();
+      lb.clearPending();
+      continue;
+    }
+
     // `Where` sits inside `Formula` and explains its terms, so it must start
     // a new line rather than running on from the formula itself.
-    if (tag === "ListItem" || tag === "tr" || tag === "Where") {
+    if (tag === "ListItem" || tag === "Where") {
       lb.flush();
       render(kids, lb, indent, diagnostics);
       lb.flush();
       continue;
     }
 
-    if (tag === "td") {
+    // A cell reached outside a <tr> — malformed, but never drop its text.
+    if (tag === "td" || tag === "th") {
       render(kids, lb, indent, diagnostics);
-      lb.append(" ", indent);
       continue;
     }
 
