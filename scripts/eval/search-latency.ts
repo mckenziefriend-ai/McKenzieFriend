@@ -10,6 +10,14 @@
  * over every embedding, which stayed invisible to the eval until the corpus
  * grew enough for the whole run to time out. See supabase/trackb7_hnsw_two_stage.sql.
  *
+ * READ THE FIRST CALL, NOT THE MEDIAN. Once the embeddings are resident in
+ * memory even a full sequential scan is fast — measured at 175ms warm against
+ * 6,729-10,556ms cold on the same function. Running calls back to back is
+ * exactly what keeps them resident, so the median here flatters whatever it is
+ * measuring, and a green median is NOT evidence that the HNSW index is in use.
+ * Real traffic arrives minutes apart and lands cold. The first call is the
+ * closest thing this probe has to that, and EXPLAIN is the only actual proof.
+ *
  * Sends a deterministic pseudo-random unit vector rather than a real embedding.
  * The query plan and the work done do not depend on which vector arrives, so
  * this needs no OpenAI key and costs nothing. It is read-only.
@@ -86,20 +94,31 @@ async function main() {
   const sorted = [...timings].sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)];
   const slowest = sorted[sorted.length - 1];
+  const first = timings[0];
   console.log(
-    `\nmedian ${median} ms, slowest ${slowest} ms, budget ${BUDGET_MS} ms` +
-      (failures ? `, ${failures} of ${runs} calls did not complete` : "")
+    `\nfirst call ${first} ms (coldest, the one that matters)` +
+      `\nmedian ${median} ms, slowest ${slowest} ms, budget ${BUDGET_MS} ms` +
+      (failures ? `\n${failures} of ${runs} calls did not complete` : "")
   );
 
-  if (median > BUDGET_MS) {
+  // Judged on the first call, not the median: the later calls run against a
+  // warmed cache and a sequential scan passes that easily. See the header.
+  if (first > BUDGET_MS || failures > 0) {
     console.log(
       `\nOVER BUDGET. If this is a sequential scan, check that the two-stage\n` +
         `candidate selection in trackb7 is deployed — EXPLAIN should show\n` +
         `"Index Scan using legal_embeddings_hnsw", not "Seq Scan".`
     );
     process.exitCode = 1;
+  } else if (median > BUDGET_MS) {
+    console.log("\nfirst call within budget but the median is not — rerun");
+    process.exitCode = 1;
   } else {
-    console.log("within budget");
+    console.log(
+      `\nwithin budget on the first call. This does NOT by itself prove the index\n` +
+        `is in use — a warm sequential scan also passes. Confirm with the EXPLAIN\n` +
+        `in supabase/trackb7_hnsw_two_stage.sql.`
+    );
   }
 }
 

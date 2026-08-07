@@ -16,10 +16,24 @@
 -- than on the distance operator. So Postgres computes the distance for every
 -- row and sorts: a full sequential scan of the embeddings table.
 --
--- Measured on the live database at 9,905 embedding rows: 6,729ms and 10,556ms,
--- with one call in three dropping the connection after 18,348ms. That is live
--- retrieval failing for users, not only the eval timing out. It degrades
--- linearly with the corpus, so ingesting the procedure rules is what exposed it.
+-- Measured on the live database at 9,905 embedding rows, and the spread is the
+-- whole story:
+--
+--   cold / evicted   6,729ms, 10,556ms, and one call dropping the connection
+--                    outright after 18,348ms
+--   warm burst       127-286ms, median 175ms
+--
+-- The embeddings are roughly 61MB. Once they are resident a sequential scan is
+-- comfortably inside budget, which is why a tight measurement loop makes this
+-- look healthy — the loop is what keeps them resident. Real traffic arrives
+-- minutes apart on an instance with other demands on its memory, so the table
+-- is evicted between queries and the cold column is what users actually get.
+--
+-- Two things follow. First, do not accept a fast warm number as evidence the
+-- index is being used; only the EXPLAIN in check (2) settles that. Second, the
+-- cold cost grows linearly with the corpus while HNSW's does not, so this gets
+-- worse with every ingest even if a warm probe stays green. Ingesting the
+-- procedure rules is what pushed the cold case into connection drops.
 --
 -- THE FIX. Two stages, the standard pgvector filtered-search pattern.
 --
@@ -317,8 +331,10 @@ limit 200;
 reset hnsw.ef_search;
 
 -- (3) End-to-end latency, and it still returns sensible rows with every one of
---     them in force and extending to England & Wales. Expect 8 rows, all true,
---     well under 500ms; it was 6,729-10,556ms.
+--     them in force and extending to England & Wales. Expect 8 rows, all true.
+--     Read the timing against the COLD baseline of 6,729-10,556ms, not the warm
+--     one — a warm sequential scan already returns in ~175ms, so a fast number
+--     here on its own proves nothing. Check (2) is the real evidence.
 explain (analyze)
 select * from public.search_legal_semantic(
   (select embedding from public.legal_embeddings limit 1),
