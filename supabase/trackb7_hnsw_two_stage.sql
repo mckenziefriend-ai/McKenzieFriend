@@ -62,6 +62,23 @@
 -- reuses the connection next. A plain session SET would leak; a function
 -- attribute would be cleaner still, but is not available to us here.
 --
+-- VOLATILITY. The function is marked volatile, not stable, and this is forced:
+-- Postgres rejects SET inside a non-volatile function outright, with "SET is not
+-- allowed in a non-volatile function". The body is read-only in fact — nothing
+-- below writes — so the marking overstates what it does. Two consequences worth
+-- knowing, neither of which bites here:
+--
+--   * PostgREST will only route a volatile function over POST, not GET. Every
+--     caller goes through supabase-js .rpc(), which posts, so this changes
+--     nothing. Do not add a GET caller without revisiting this.
+--   * PostgREST runs volatile functions in a READ WRITE transaction rather than
+--     the read-only one a stable function would get. We lose that guard as a
+--     structural property, and are left relying on the body containing no
+--     writes. Keep it that way.
+--
+-- Volatile also means the planner will not fold or cache repeated calls, which
+-- is irrelevant for a top-level RPC invoked once per request.
+--
 -- Switching to plpgsql brings one hazard that does not exist in a SQL function,
 -- and it is the reason for the qualification churn in stage 2. The `returns
 -- table` columns become plpgsql variables, so a bare reference to `similarity`,
@@ -109,7 +126,7 @@ returns table (
   source_url text
 )
 language plpgsql
-stable
+volatile
 as $$
 #variable_conflict use_column
 begin
@@ -251,15 +268,29 @@ comment on function public.search_legal_semantic is
   'dedupe and the amending-content penalty to those candidates. Returns one '
   'row per provision, labelled with a real citation.';
 
+-- Volatility is part of what PostgREST caches about a function, and it has just
+-- changed. Supabase normally reloads on DDL by event trigger; this makes it
+-- certain, because a stale cache here surfaces as the RPC 404ing rather than as
+-- anything that looks like a schema problem.
+notify pgrst, 'reload schema';
+
 -- ===========================================================================
 -- VERIFICATION
 --
--- Run all four in order. plpgsql functions are never inlined, so an EXPLAIN of
+-- Run all of these in order. plpgsql functions are never inlined, so an EXPLAIN of
 -- the function call shows only "Function Scan" with no inner plan — hence check
 -- (2) runs stage 1 standalone, with its own session-level SET, to see the plan.
 -- ===========================================================================
 
--- (0) The body's SET LOCAL is accepted at runtime. This is the one thing that
+-- (0a) Volatility landed as intended. Expect exactly one row reading 'v'. An
+--      's' here means the create silently kept an older definition, and check
+--      (0b) is about to fail.
+select proname, provolatile
+from pg_proc
+where proname = 'search_legal_semantic'
+  and pronamespace = 'public'::regnamespace;
+
+-- (0b) The body's SET LOCAL is accepted at runtime. This is the one thing that
 --     could break every search at once, so check it before anything else. It
 --     returns rows if the parameter was settable, and errors with
 --     "unrecognized configuration parameter" if it was not.
