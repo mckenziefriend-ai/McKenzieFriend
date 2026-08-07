@@ -16,9 +16,10 @@
 -- than on the distance operator. So Postgres computes the distance for every
 -- row and sorts: a full sequential scan of the embeddings table.
 --
--- Measured on the live database: ~5s at 7,547 chunks, 7.3s at ~9,150, and the
--- eval times out. It degrades linearly with the corpus, so ingesting the
--- procedure rules is what pushed it over the edge.
+-- Measured on the live database at 9,905 embedding rows: 6,729ms and 10,556ms,
+-- with one call in three dropping the connection after 18,348ms. That is live
+-- retrieval failing for users, not only the eval timing out. It degrades
+-- linearly with the corpus, so ingesting the procedure rules is what exposed it.
 --
 -- THE FIX. Two stages, the standard pgvector filtered-search pattern.
 --
@@ -30,7 +31,8 @@
 --
 -- Nothing about the guarantees, the dedupe or the penalty changes. The stage-2
 -- block below is trackb6's body verbatim except that it reads from `candidates`
--- instead of scanning `legal_embeddings`.
+-- instead of scanning `legal_embeddings`, and that its references are now
+-- qualified (see LANGUAGE below).
 --
 -- APPROXIMATION. HNSW is approximate, so stage 1 can in principle miss a row an
 -- exact scan would have found. Two things keep that from mattering:
@@ -38,17 +40,42 @@
 --   * CANDIDATE_LIMIT is 200 for a match_limit the app sets to 8 and the eval
 --     to 20 — a 10-25x margin, so filtering and dedupe cannot starve the result
 --     set even if most candidates are dropped.
---   * hnsw.ef_search is raised to 400 on the function itself. This matters more
---     than it looks: pgvector's HNSW scan returns at most ef_search rows, and
---     the default is 40 — so without this, "limit 200" would quietly yield 40
---     candidates and recall would fall off a cliff. It is set as a function
---     attribute rather than a session GUC so every caller gets it, including
---     PostgREST, which pools connections and would not carry a SET.
+--   * hnsw.ef_search is raised to 400 for the duration of the call. This matters
+--     more than it looks: pgvector's HNSW scan returns at most ef_search rows,
+--     and the default is 40 — so without this, "limit 200" would quietly yield
+--     40 candidates and recall would fall off a cliff.
 --
 -- The eval is the correctness guard: statute cases must be UNCHANGED against
 -- the pre-rules baseline. If any of them regress, raise CANDIDATE_LIMIT and
 -- ef_search together (ef_search must stay >= the candidate limit) and re-run —
 -- do not accept a regression as the price of the speed-up.
+--
+-- LANGUAGE. This is plpgsql rather than SQL, for one reason: Supabase denies the
+-- function-level pin
+--
+--   create function ... set hnsw.ef_search = 400
+--
+-- while permitting the parameter itself. So the value is raised at runtime with
+-- SET LOCAL in the body instead. SET LOCAL is transaction-scoped and reverts at
+-- commit, which is precisely what makes it safe under PostgREST's connection
+-- pooling — each RPC is its own transaction, so no setting leaks into whatever
+-- reuses the connection next. A plain session SET would leak; a function
+-- attribute would be cleaner still, but is not available to us here.
+--
+-- Switching to plpgsql brings one hazard that does not exist in a SQL function,
+-- and it is the reason for the qualification churn in stage 2. The `returns
+-- table` columns become plpgsql variables, so a bare reference to `similarity`,
+-- `corpus`, `title` or `in_force` is ambiguous between the variable and the
+-- column — and plpgsql's default conflict resolution is to raise an error, at
+-- runtime, on every call. Every such reference below is therefore qualified with
+-- its CTE alias, and `#variable_conflict use_column` is declared as a guard so a
+-- later edit that forgets a qualifier resolves to the column rather than
+-- breaking. The IN parameters are unaffected: no column shares their names.
+--
+-- There is deliberately no exception handler around the SET LOCAL. A BEGIN
+-- ... EXCEPTION block opens a subtransaction on every single search call, which
+-- is a permanent cost to insure against a one-time deployment failure that
+-- check (0) below catches immediately.
 --
 -- Signature and returned columns are identical to trackb4/5/6, so
 -- create-or-replace is sufficient and no overload can linger.
@@ -81,13 +108,19 @@ returns table (
   up_to_date_to date,
   source_url text
 )
-language sql
+language plpgsql
 stable
--- Must be >= the candidate limit below, or the index returns fewer rows than
--- stage 1 asks for. See the APPROXIMATION note above.
-set hnsw.ef_search = 400
 as $$
-  -- ---------------------------------------------------------------------
+#variable_conflict use_column
+begin
+  -- Transaction-scoped, so it reverts when this RPC's transaction ends and
+  -- cannot leak into the next caller to reuse this pooled connection. Must be
+  -- >= the candidate limit below, or the index returns fewer rows than stage 1
+  -- asks for. See the APPROXIMATION note above.
+  set local hnsw.ef_search = 400;
+
+  return query
+  -- -------------------------------------------------------------------
   -- Stage 1: HNSW candidate selection.
   --
   -- Every clause here is load-bearing for index use. Do not add a filter on
@@ -95,7 +128,7 @@ as $$
   -- this back to a sequential scan. The corpus is deliberately NOT filtered
   -- here — provisions and guidance share the index, and post-filtering one out
   -- would shrink the candidate pool for the other.
-  -- ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------
   with candidates as (
     select
       e.provision_id,
@@ -108,9 +141,9 @@ as $$
     order by e.embedding <=> query_embedding
     limit 200
   ),
-  -- ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------
   -- Stage 2: trackb6's body, over the candidates only.
-  -- ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------
   matches as (
     select
       'provision'::text as corpus,
@@ -179,21 +212,36 @@ as $$
     select
       matches.*,
       row_number() over (
-        partition by dedupe_key
-        order by similarity desc
+        partition by matches.dedupe_key
+        order by matches.similarity desc
       ) as sub_chunk_rank
     from matches
   )
   select
-    corpus, similarity, title, jurisdiction, source_type, heading, content,
-    citation_label, leg_gov_ref, provision_ref, in_force, status,
-    content_omitted, extent, has_unapplied_amendments, amendment_note,
-    up_to_date_to, source_url
+    deduped.corpus,
+    deduped.similarity,
+    deduped.title,
+    deduped.jurisdiction,
+    deduped.source_type,
+    deduped.heading,
+    deduped.content,
+    deduped.citation_label,
+    deduped.leg_gov_ref,
+    deduped.provision_ref,
+    deduped.in_force,
+    deduped.status,
+    deduped.content_omitted,
+    deduped.extent,
+    deduped.has_unapplied_amendments,
+    deduped.amendment_note,
+    deduped.up_to_date_to,
+    deduped.source_url
   from deduped
-  where sub_chunk_rank = 1
+  where deduped.sub_chunk_rank = 1
   -- Rank on the adjusted score; return the true similarity.
-  order by (similarity - case when amending then 0.10 else 0 end) desc
+  order by (deduped.similarity - case when deduped.amending then 0.10 else 0 end) desc
   limit greatest(1, least(match_limit, 50));
+end;
 $$;
 
 comment on function public.search_legal_semantic is
@@ -206,12 +254,26 @@ comment on function public.search_legal_semantic is
 -- ===========================================================================
 -- VERIFICATION
 --
--- Run all three. The function carries a SET clause, which prevents SQL
--- inlining, so an EXPLAIN of the function call shows only "Function Scan" —
--- hence check (1) runs stage 1 standalone to see the plan itself.
+-- Run all four in order. plpgsql functions are never inlined, so an EXPLAIN of
+-- the function call shows only "Function Scan" with no inner plan — hence check
+-- (2) runs stage 1 standalone, with its own session-level SET, to see the plan.
 -- ===========================================================================
 
--- (1) The index is used. Look for "Index Scan using legal_embeddings_hnsw".
+-- (0) The body's SET LOCAL is accepted at runtime. This is the one thing that
+--     could break every search at once, so check it before anything else. It
+--     returns rows if the parameter was settable, and errors with
+--     "unrecognized configuration parameter" if it was not.
+select count(*) from public.search_legal_semantic(
+  (select embedding from public.legal_embeddings limit 1),
+  8, 0.35, false, 'text-embedding-3-large', false
+);
+
+-- (1) The setting did not leak out of the function's transaction. Expect the
+--     default (40), NOT 400. If this returns 400, SET LOCAL is behaving as a
+--     session SET and would contaminate pooled connections.
+show hnsw.ef_search;
+
+-- (2) The index is used. Look for "Index Scan using legal_embeddings_hnsw".
 --     A "Seq Scan on legal_embeddings" here means the fix did not take.
 set hnsw.ef_search = 400;
 explain (analyze, buffers)
@@ -221,16 +283,17 @@ from public.legal_embeddings e
 where ('text-embedding-3-large' is null or e.embedding_model = 'text-embedding-3-large')
 order by e.embedding <=> (select embedding from probe)
 limit 200;
+reset hnsw.ef_search;
 
--- (2) End-to-end latency. Expect well under 500ms; it was ~7,300ms.
+-- (3) End-to-end latency, and it still returns sensible rows with every one of
+--     them in force and extending to England & Wales. Expect 8 rows, all true,
+--     well under 500ms; it was 6,729-10,556ms.
 explain (analyze)
 select * from public.search_legal_semantic(
   (select embedding from public.legal_embeddings limit 1),
   8, 0.35, false, 'text-embedding-3-large', false
 );
 
--- (3) It still returns sensible rows, and every one of them is in force and
---     extends to England & Wales. Expect 8 rows, all true.
 select
   citation_label,
   round(similarity::numeric, 4) as similarity,
