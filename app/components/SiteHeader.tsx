@@ -113,7 +113,7 @@ export default function SiteHeader({ onHomeClick }: Props) {
     <NextImage
       src="/logo.png"
       alt="McKenzieFriend logo"
-      width={180}
+      width={508}
       height={48}
       priority
       className="h-[20px] sm:h-[28px] w-auto object-contain shrink-0"

@@ -32,8 +32,8 @@ export function CaseWorkspaceShell({
             <Image
               src="/logo.png"
               alt="McKenzie Friend AI"
-              width={96}
-              height={24}
+              width={508}
+              height={48}
               priority
               className="h-5 w-auto object-contain"
             />
