@@ -10,6 +10,7 @@ import {
   createDiagnostics,
   extractProvisionText,
   isContentOmitted,
+  joinPnumber,
   localName,
   parseInstrumentMeta,
   parseProvision,
@@ -25,6 +26,8 @@ const CA89_S1 = load("ukpga-1989-41-section-1.data.xml");
 const CA89_S8 = load("ukpga-1989-41-section-8.data.xml");
 const MCA73_S25 = load("ukpga-1973-18-section-25.data.xml");
 const CA89_TRIMMED = load("ukpga-1989-41-trimmed.data.xml");
+const FPR_TRIMMED = load("uksi-2010-2955-trimmed.data.xml");
+const CPR_TRIMMED = load("uksi-1998-3132-trimmed.data.xml");
 
 function effect(partial: Partial<UnappliedEffect>): UnappliedEffect {
   return {
@@ -353,6 +356,239 @@ describe("enumerateProvisions — whole-instrument", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Provision numbers split across Pnumber and PuncAfter
+// ---------------------------------------------------------------------------
+
+describe("joinPnumber", () => {
+  it("joins a rule number split between the text and PuncAfter", () => {
+    // FPR rule 1.1 is <Pnumber PuncAfter=".1.">1</Pnumber>. Reading the text
+    // alone yields "1" — a different rule.
+    expect(joinPnumber("1", ".1.")).toBe("1.1");
+    expect(joinPnumber("12", ".3.")).toBe("12.3");
+  });
+
+  it("ignores punctuation that carries no number", () => {
+    // The digit test is the whole safety property. CPR Sch 5 para 10 is
+    // <Pnumber PuncBefore="(" PuncAfter=")">10</Pnumber>: joining naively
+    // produces "10)".
+    expect(joinPnumber("10", ")")).toBe("10");
+    expect(joinPnumber("1.5", ".")).toBe("1.5");
+    expect(joinPnumber("8", ",")).toBe("8");
+  });
+
+  it("leaves a number alone when there is no PuncAfter at all", () => {
+    expect(joinPnumber("8", null)).toBe("8");
+    expect(joinPnumber("8", undefined)).toBe("8");
+    expect(joinPnumber("16A", "")).toBe("16A");
+  });
+
+  it("strips trailing dots and whitespace, never internal ones", () => {
+    expect(joinPnumber("1", ".1.")).toBe("1.1");
+    expect(joinPnumber(" 7 ", ".1A.")).toBe("7.1A");
+  });
+});
+
+describe("enumerateProvisions — procedure rules", () => {
+  const fpr = enumerateProvisions(FPR_TRIMMED, "uksi/2010/2955");
+  const cpr = enumerateProvisions(CPR_TRIMMED, "uksi/1998/3132");
+
+  it("numbers every rule as the rule it actually is", () => {
+    // Measured on the full instruments before this change: FPR 226/852 rules
+    // were numbered correctly, and after it 852/852. The fixture holds the
+    // shapes that produced the other 626.
+    expect(fpr).toHaveLength(6);
+    expect(fpr.map((p) => p.number)).toEqual(["1.1", "1.2", "1.3", "1.4", "1.5", "12.3"]);
+  });
+
+  // The Part is where a procedure rule's subject matter lives, and nowhere
+  // else: r.27.4 never says "small claims". Synthetic XML rather than the
+  // fixtures because the trimmed fixtures do not all retain their Part
+  // wrappers, and this needs to assert the wrapper is read when present.
+  const withPart = `<Legislation><Secondary><Body>
+    <Part><Number>PART 27</Number><Title>THE SMALL CLAIMS TRACK</Title>
+      <P1group><Title>Preparation for the hearing</Title>
+        <P1 DocumentURI="http://www.legislation.gov.uk/uksi/1998/3132/rule/27.4" id="rule-27.4">
+          <Pnumber>27.4</Pnumber><P1para><Text>After allocation the court will give directions.</Text></P1para>
+        </P1>
+      </P1group>
+    </Part>
+    <P1group><Title>How to start proceedings</Title>
+      <P1 DocumentURI="http://www.legislation.gov.uk/uksi/1998/3132/rule/7.2" id="rule-7.2">
+        <Pnumber>7.2</Pnumber><P1para><Text>Proceedings are started when the court issues a claim form.</Text></P1para>
+      </P1>
+    </P1group>
+  </Body></Secondary></Legislation>`;
+
+  it("captures the enclosing Part, which is a rule's only subject signal", () => {
+    const parsed = enumerateProvisions(withPart, "uksi/1998/3132");
+    const r274 = parsed.find((p) => p.ref === "rule/27.4")!;
+    expect(r274.partLabel).toBe("PART 27 (THE SMALL CLAIMS TRACK)");
+    // The Part does not leak into the heading, which stays the rule's own.
+    expect(r274.heading).toBe("Preparation for the hearing");
+  });
+
+  it("leaves partLabel null where a rule sits directly under the body", () => {
+    const parsed = enumerateProvisions(withPart, "uksi/1998/3132");
+    expect(parsed.find((p) => p.ref === "rule/7.2")!.partLabel).toBeNull();
+  });
+
+  it("gives every rule a number matching its own ref", () => {
+    for (const p of [...fpr, ...cpr]) {
+      if (!p.ref.startsWith("rule/")) continue;
+      expect(p.number, p.ref).toBe(p.ref.slice("rule/".length));
+    }
+  });
+
+  it("does not corrupt a bracketed schedule number", () => {
+    // The full CPR cannot be affected: not one of its 2,205 PuncAfter values
+    // contains a digit. A naive join would have renumbered this one to "10)".
+    const para = cpr.find((p) => p.ref === "schedule/5/paragraph/10")!;
+    expect(para.number).toBe("10");
+  });
+
+  it("leaves Act numbering untouched", () => {
+    // The join must not reach markers rendered inside the text. Verified on
+    // the whole corpus: 0 of 7,284 Act provisions changed content.
+    const act = enumerateProvisions(CA89_TRIMMED, "ukpga/1989/41");
+    expect(act.find((p) => p.ref === "section/8")!.number).toBe("8");
+    for (const p of act) {
+      if (p.number) expect(p.number, p.ref).toMatch(/^[0-9]+[A-Z]*$/);
+    }
+  });
+
+  it("reads a statutory instrument's own metadata and currency", () => {
+    const meta = parseInstrumentMeta(FPR_TRIMMED);
+    expect(meta.title).toBe("The Family Procedure Rules 2010");
+    expect(meta.type).toBe("si");
+    expect(meta.upToDateTo).toBe("2026-07-20");
+  });
+
+  it("carries extent and in-force through to rules like any other provision", () => {
+    for (const p of [...fpr, ...cpr]) {
+      expect(p.extent, p.ref).toBe("E+W");
+      expect(p.inForce, p.ref).toBe(true);
+      expect(p.contentOmitted, p.ref).toBe(false);
+      expect(p.content.length, p.ref).toBeGreaterThan(0);
+    }
+  });
+
+  it("has no line-start marker jamming in rules either", () => {
+    for (const p of [...fpr, ...cpr]) {
+      expect(p.content, `${p.ref} has a jammed marker`).not.toMatch(
+        /^[ \t]*\([0-9A-Za-z]{1,4}\)[A-Za-z]/m
+      );
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+
+describe("table rendering", () => {
+  const cell = (text: string) => `<xhtml:td>${text}</xhtml:td>`;
+  const wrap = (rows: string) =>
+    `<P1group><P1><P1para><Tabular><xhtml:table><xhtml:tbody>${rows}</xhtml:tbody></xhtml:table></Tabular></P1para></P1></P1group>`;
+
+  it("separates header cells, which previously ran together with nothing between", () => {
+    // The reported defect: FPR r.12.3 rendered
+    // "Proceedings forApplicantsRespondents". <th> carried no separator at all.
+    const xml = wrap(
+      "<xhtml:tr><xhtml:th>Proceedings for</xhtml:th><xhtml:th>Applicants</xhtml:th>" +
+        "<xhtml:th>Respondents</xhtml:th></xhtml:tr>"
+    );
+    expect(extractProvisionText(xml)).toBe("Proceedings for | Applicants | Respondents");
+  });
+
+  it("separates data cells", () => {
+    const xml = wrap(`<xhtml:tr>${cell("Part 4 (premises)")}${cell("Schedule 4")}</xhtml:tr>`);
+    expect(extractProvisionText(xml)).toBe("Part 4 (premises) | Schedule 4");
+  });
+
+  it("never leaves a delimiter trailing off the end of a row", () => {
+    // An empty final cell used to produce "Equality Act 2010 (c. 15) |".
+    const xml = wrap(`<xhtml:tr>${cell("Equality Act 2010 (c. 15)")}${cell("")}</xhtml:tr>`);
+    expect(extractProvisionText(xml)).toBe("Equality Act 2010 (c. 15)");
+  });
+
+  it("does not carry a delimiter across a row boundary", () => {
+    const xml = wrap(
+      `<xhtml:tr>${cell("A")}${cell("")}</xhtml:tr><xhtml:tr>${cell("B")}${cell("C")}</xhtml:tr>`
+    );
+    expect(extractProvisionText(xml)).toBe("A\nB | C");
+  });
+
+  it("opens a multi-line cell with the delimiter so the column boundary survives", () => {
+    // A cell whose text starts on its own line still has to be marked, or the
+    // reader cannot tell where the previous column ended.
+    const xml = wrap(
+      `<xhtml:tr>${cell("<Text>first</Text>")}${cell("<Text>second</Text>")}</xhtml:tr>`
+    );
+    expect(extractProvisionText(xml)).toBe("first\n| second");
+  });
+
+  it("keeps rows on separate lines", () => {
+    const xml = wrap(
+      `<xhtml:tr>${cell("a")}${cell("b")}</xhtml:tr><xhtml:tr>${cell("c")}${cell("d")}</xhtml:tr>`
+    );
+    expect(extractProvisionText(xml)).toBe("a | b\nc | d");
+  });
+
+  it("fixes the reported rule on the real document", () => {
+    const fpr = enumerateProvisions(FPR_TRIMMED, "uksi/2010/2955");
+    const r123 = fpr.find((p) => p.ref === "rule/12.3")!;
+    expect(r123.content).toContain("Proceedings for | Applicants | Respondents");
+    expect(r123.content).not.toContain("Proceedings forApplicants");
+
+    const cpr = enumerateProvisions(CPR_TRIMMED, "uksi/1998/3132");
+    const r626 = cpr.find((p) => p.ref === "rule/6.26")!;
+    expect(r626.content).toContain("Method of service | Deemed date of service");
+  });
+
+  it("leaves no line ending in a delimiter anywhere in either instrument", () => {
+    const all = [
+      ...enumerateProvisions(FPR_TRIMMED, "uksi/2010/2955"),
+      ...enumerateProvisions(CPR_TRIMMED, "uksi/1998/3132"),
+      ...enumerateProvisions(CA89_TRIMMED, "ukpga/1989/41"),
+    ];
+    for (const p of all) {
+      expect(p.content, `${p.ref} ends a line with a delimiter`).not.toMatch(/\|[ \t]*$/m);
+    }
+  });
+});
+
+describe("editorial markers", () => {
+  it("drops a footnote reference without leaving its id in the text", () => {
+    const xml =
+      "<P1group><P1><P1para><Text>the Civil Procedure Act 1997" +
+      '<FootnoteRef Ref="f00001"/> applies</Text></P1para></P1></P1group>';
+    expect(extractProvisionText(xml)).toBe("the Civil Procedure Act 1997 applies");
+  });
+
+  it("keeps a Superior run, which carries the glossary marker", () => {
+    // FPR r.2.2: glossary words in the rules are followed by "GL". That "GL"
+    // is the content of a <Superior>, so dropping it would contradict the rule.
+    const xml =
+      "<P1group><P1><P1para><Text>stay<Superior>(GL) </Superior>the proceedings</Text>" +
+      "</P1para></P1></P1group>";
+    expect(extractProvisionText(xml)).toBe("stay(GL) the proceedings");
+  });
+
+  it("recognises every tag in the procedure rules", () => {
+    // The diagnostics collector flagged Superior and FootnoteRef when the rules
+    // were first parsed. Both are now declared, so nothing unfamiliar is left.
+    for (const [xml, ref] of [
+      [FPR_TRIMMED, "uksi/2010/2955"],
+      [CPR_TRIMMED, "uksi/1998/3132"],
+    ] as const) {
+      const diagnostics = createDiagnostics();
+      enumerateProvisions(xml, ref, diagnostics);
+      expect([...diagnostics.unknownTags.keys()], ref).toEqual([]);
+    }
+  });
+});
+
 describe("deriveInForce", () => {
   it("is false for captured Repealed or Prospective status", () => {
     expect(deriveInForce("Repealed", false)).toBe(false);
@@ -380,6 +616,32 @@ describe("provisionLabel", () => {
   it("renders section and schedule-paragraph refs readably", () => {
     expect(provisionLabel("section/8")).toBe("s. 8");
     expect(provisionLabel("schedule/14/paragraph/33")).toBe("Sch. 14 para. 33");
+  });
+
+  it("cites a procedure rule as a rule, never as a section", () => {
+    // "s. 12.3" would point a litigant at a section of an Act that does not
+    // exist. This is a correctness requirement, not a formatting preference.
+    expect(provisionLabel("rule/12.3")).toBe("r. 12.3");
+    expect(provisionLabel("rule/7.1A")).toBe("r. 7.1A");
+  });
+
+  it("renders parts and bare schedules", () => {
+    expect(provisionLabel("part/7")).toBe("Part 7");
+    expect(provisionLabel("part/7/paragraph/2")).toBe("Part 7, para. 2");
+    expect(provisionLabel("schedule/1")).toBe("Sch. 1");
+  });
+
+  it("brackets subdivisions rather than leaving them unclosed", () => {
+    expect(provisionLabel("section/8/3")).toBe("s. 8(3)");
+    expect(provisionLabel("section/8/3/a")).toBe("s. 8(3)(a)");
+  });
+
+  it("returns the raw ref for a shape it cannot cite unambiguously", () => {
+    // HRA 1998 Sch 1 nests part and chapter above the paragraph. Collapsing
+    // that to "Sch. 1 para. 1" would give two different Convention Articles
+    // the same citation, which is worse than showing the path.
+    const ref = "schedule/1/part/I/chapter/5/paragraph/1";
+    expect(provisionLabel(ref)).toBe(ref);
   });
 });
 

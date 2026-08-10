@@ -13,6 +13,8 @@ export type ProvisionSource = {
   content: string;
   contentOmitted: boolean;
   instrumentTitle: string;
+  /** Enclosing Part or Chapter, e.g. "PART 27 (THE SMALL CLAIMS TRACK)". */
+  partLabel: string | null;
 };
 
 export type GuidanceSource = {
@@ -44,15 +46,42 @@ export function hashContent(text: string): string {
  * there is nothing meaningful to embed and a vector for an empty provision
  * would only pollute results.
  */
+/**
+ * Whether the Part label belongs in this provision's embedding text.
+ *
+ * Procedure rules only, and deliberately so. In an Act the instrument title
+ * states the subject — "Children Act 1989" tells you what section 8 is about,
+ * so a section can be found on title and heading alone. In the CPR and FPR the
+ * instrument title is identical across every one of the ~1,800 rules and says
+ * nothing about subject matter, and rule headings are short and reused across
+ * Parts ("Starting the claim" appears in Parts 55, 56, 62 and 63). For those
+ * the Part is the ONLY statement of subject anywhere in the provision: without
+ * it, r.27.4 never mentions small claims, because that lives in the title of
+ * Part 27 and nowhere else.
+ *
+ * Note this is not about heading collisions as such — those are commoner in the
+ * statutes (56.7% of Consumer Rights Act provisions share a heading against
+ * 23.6% of CPR rules). It is that the Act title resolves them and "The Civil
+ * Procedure Rules 1998" cannot.
+ *
+ * Schedule paragraphs are excluded because composeHeading already folds the
+ * Part into their heading — adding it here would duplicate it.
+ */
+function shouldIncludePartLabel(ref: string): boolean {
+  return ref.startsWith("rule/");
+}
+
 export function provisionToPending(provision: ProvisionSource): PendingEmbedding[] {
   if (provision.contentOmitted) return [];
   if (!provision.content.trim()) return [];
 
   const citation = `${provision.instrumentTitle} ${provision.ref}`;
+  const partLabel = shouldIncludePartLabel(provision.ref) ? provision.partLabel : null;
 
   return chunkProvisionText(provision.content).map((chunk) => {
     const content = buildEmbeddingText({
       citation,
+      partLabel,
       heading: provision.heading,
       content: chunk.content,
     });

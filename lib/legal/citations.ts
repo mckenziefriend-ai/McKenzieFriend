@@ -39,7 +39,17 @@ const ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bHRA\s*1998\b/i, "Human Rights Act 1998"],
   [/\bEA\s*2010\b/i, "Equality Act 2010"],
   [/\bLASPO\b/i, "Legal Aid, Sentencing and Punishment of Offenders Act 2012"],
+  // Procedure rules. Matched before a bare year so "FPR 12.3" narrows to the
+  // right instrument even though the citation carries no year at all.
+  [/\bFPR\b/i, "Family Procedure Rules"],
+  [/\bCPR\b/i, "Civil Procedure Rules"],
 ];
+
+/**
+ * Instruments whose provisions are rules rather than sections. Written as a
+ * source fragment so the rule and Part patterns below cannot drift from it.
+ */
+const RULE_INSTRUMENT = String.raw`(?:FPR|CPR|family procedure rules|civil procedure rules)`;
 
 /**
  * Matches "s.8", "s. 8", "s 8", "ss. 8", "section 8", "sections 8".
@@ -50,11 +60,41 @@ const ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
  */
 // Longest alternatives first: "sch" must not match the start of "schedule",
 // which would leave "edule 1" and capture nonsense.
-const SECTION_PATTERN = /\b(?:sections?|ss?\.?)\s*(\d+[A-Z]*)\b/gi;
+// The negative lookahead stops "s. 12.3" being read as section 12. A dotted
+// number is a rule citation, not a section — sections subdivide as "s. 12(3)".
+const SECTION_PATTERN = /\b(?:sections?|ss?\.?)\s*(\d+[A-Z]*)(?!\.\d)\b/gi;
 
 /** Matches "sch. 1 para. 2", "schedule 1 paragraph 2", "Sch 1". */
 const SCHEDULE_PATTERN =
   /\b(?:schedules?|sch\.?)\s*([0-9A-Z]+)(?:\s*,?\s*(?:paragraphs?|paras?\.?)\s*([0-9A-Z]+))?\b/gi;
+
+/**
+ * Explicit rule citations: "r. 12.3", "rule 12.3", "rules 27.1".
+ *
+ * Requires the dotted form (12.3) so a bare "rule 5" — far more likely to be
+ * ordinary prose than a citation — does not fire.
+ */
+const RULE_PATTERN = /\b(?:rules?|rr?\.)\s*(\d+\.\d+[A-Z]*)\b/gi;
+
+/**
+ * A rule number qualified by its instrument: "FPR 12.3", "CPR 27.1".
+ * The instrument name is what makes this safe to treat as a citation without
+ * the word "rule".
+ */
+const QUALIFIED_RULE_PATTERN = new RegExp(
+  String.raw`\b${RULE_INSTRUMENT}\s+(?:rules?\s+|rr?\.\s*)?(\d+\.\d+[A-Z]*)\b`,
+  "gi"
+);
+
+/**
+ * "CPR Part 7" is deliberately NOT turned into a provision ref.
+ *
+ * Parts are structure, not provisions: the corpus holds no `part/7` row, and
+ * the only part-shaped refs in it are `part/54/paragraph/54.1A` — a rule that
+ * happens to be filed under a Part. Emitting `part/7` would set hasCitation
+ * and spend a lookup that cannot match anything. The abbreviation still gives
+ * an instrumentHint, and semantic search answers the question.
+ */
 
 /** A four-digit year, used to narrow the instrument when no abbreviation matched. */
 const YEAR_PATTERN = /\b(?:1[89]|20)\d{2}\b/;
@@ -77,6 +117,14 @@ export function parseCitation(query: string): ParsedCitation {
       ? `schedule/${schedule}/paragraph/${paragraph}`
       : `schedule/${schedule}`;
     if (!refs.includes(ref)) refs.push(ref);
+  }
+
+  // Rules: "r. 12.3", "rule 12.3", and the instrument-qualified "FPR 12.3".
+  for (const pattern of [RULE_PATTERN, QUALIFIED_RULE_PATTERN]) {
+    for (const match of text.matchAll(pattern)) {
+      const ref = `rule/${match[1].toUpperCase()}`;
+      if (!refs.includes(ref)) refs.push(ref);
+    }
   }
 
   return {

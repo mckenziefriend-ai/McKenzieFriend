@@ -116,10 +116,19 @@ function currencyLineFor(source: ContextSource): string | null {
  * semantic RPC returns it. We already render citation and heading as their own
  * lines, so leaving it in the body would repeat them and waste budget. The
  * citation lookup returns the raw provision and is unaffected.
+ *
+ * The indexer writes the prefix as "<title> <ref>" (see provisionToPending),
+ * which is NOT the same string as citation_label since trackb6 started
+ * formatting real citations. Both forms are stripped: matching only the label
+ * would leave the raw path in the body of every semantically-matched
+ * provision, and re-embedding the whole corpus to realign the two would move
+ * every vector for a cosmetic reason.
  */
 export function stripEmbeddingPrefix(content: string, source: ContextSource): string {
   let text = content.trimStart();
-  for (const prefix of [source.citationLabel, source.heading]) {
+  const indexed =
+    source.provisionRef && source.title ? `${source.title} ${source.provisionRef}` : null;
+  for (const prefix of [source.citationLabel, indexed, source.heading]) {
     if (!prefix) continue;
     const trimmed = prefix.trim();
     if (trimmed && text.startsWith(trimmed)) {

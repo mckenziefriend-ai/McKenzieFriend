@@ -1,0 +1,2111 @@
+[
+  {
+    "id": "divorce-finances",
+    "question": "what factors does the court consider when dividing finances on divorce?",
+    "rank": 5,
+    "matched": {
+      "legGovRef": "ukpga/1973/18",
+      "ref": "section/25"
+    },
+    "rowsAbove": 4,
+    "top": [
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/5",
+        "similarity": 0.566955,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/22ZB",
+        "similarity": 0.554013,
+        "title": "Matrimonial Causes Act 1973"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/21",
+        "similarity": 0.552794,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/4",
+        "similarity": 0.550287,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/25",
+        "similarity": 0.544554,
+        "title": "Matrimonial Causes Act 1973"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/20",
+        "similarity": 0.532065,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/6",
+        "similarity": 0.53126,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/4",
+        "similarity": 0.529095,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/10",
+        "similarity": 0.52581,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/22",
+        "similarity": 0.52544,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/34",
+        "similarity": 0.521829,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/59",
+        "similarity": 0.516799,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/19",
+        "similarity": 0.512625,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/5",
+        "similarity": 0.512377,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/25A",
+        "similarity": 0.4912,
+        "title": "Matrimonial Causes Act 1973"
+      },
+      {
+        "legGovRef": "ukpga/2012/10",
+        "provisionRef": "section/50",
+        "similarity": 0.487486,
+        "title": "Legal Aid, Sentencing and Punishment of Offenders Act 2012"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/38B",
+        "similarity": 0.485642,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/8",
+        "similarity": 0.484736,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/7",
+        "similarity": 0.484327,
+        "title": "Matrimonial Causes Act 1973"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/23",
+        "similarity": 0.484075,
+        "title": "Matrimonial Causes Act 1973"
+      }
+    ]
+  },
+  {
+    "id": "welfare-checklist",
+    "question": "what is the welfare checklist the court uses for decisions about a child?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1989/41",
+      "ref": "section/1"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/1",
+        "similarity": 0.597996,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/7",
+        "similarity": 0.560837,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "section/2",
+        "similarity": 0.550134,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/4",
+        "similarity": 0.525666,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/25",
+        "similarity": 0.515399,
+        "title": "Matrimonial Causes Act 1973"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/1",
+        "similarity": 0.506848,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/2/paragraph/3",
+        "similarity": 0.503136,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/22",
+        "similarity": 0.49567,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/20",
+        "similarity": 0.495005,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/45",
+        "similarity": 0.493965,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/6",
+        "similarity": 0.490232,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/1",
+        "similarity": 0.479572,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/14",
+        "similarity": 0.478596,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/4",
+        "similarity": 0.476074,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/2/paragraph/10",
+        "similarity": 0.473789,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2014/6",
+        "provisionRef": "section/13",
+        "similarity": 0.473017,
+        "title": "Children and Families Act 2014"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/64",
+        "similarity": 0.466286,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/34",
+        "similarity": 0.466029,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/10",
+        "similarity": 0.465463,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/2/paragraph/14",
+        "similarity": 0.465023,
+        "title": "Children Act 1989"
+      }
+    ]
+  },
+  {
+    "id": "child-arrangements-order",
+    "question": "how do I apply for a child arrangements order about who my child lives with?",
+    "rank": 7,
+    "matched": {
+      "legGovRef": "ukpga/1989/41",
+      "ref": "section/8"
+    },
+    "rowsAbove": 6,
+    "top": [
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/10",
+        "similarity": 0.584139,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/14",
+        "similarity": 0.58113,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/41",
+        "similarity": 0.567317,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/12.33",
+        "similarity": 0.560339,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/12.3",
+        "similarity": 0.559056,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.38",
+        "similarity": 0.552998,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/8",
+        "similarity": 0.549124,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/1",
+        "similarity": 0.547337,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/9.10",
+        "similarity": 0.543397,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/10",
+        "similarity": 0.538422,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/31.4",
+        "similarity": 0.536584,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/6.14",
+        "similarity": 0.53385,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/22",
+        "similarity": 0.532635,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/14.20",
+        "similarity": 0.532605,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/8",
+        "similarity": 0.531775,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/12",
+        "similarity": 0.531704,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/2/paragraph/19",
+        "similarity": 0.526459,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/13",
+        "similarity": 0.523548,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/31.3",
+        "similarity": 0.52258,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/32.25",
+        "similarity": 0.52139,
+        "title": "The Family Procedure Rules 2010"
+      }
+    ]
+  },
+  {
+    "id": "non-molestation-order",
+    "question": "how can I get a non-molestation order against my ex-partner?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1996/27",
+      "ref": "section/42"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/42",
+        "similarity": 0.626422,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/42A",
+        "similarity": 0.568037,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/45",
+        "similarity": 0.533028,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/10.5",
+        "similarity": 0.50865,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/10.2",
+        "similarity": 0.508539,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/10.10",
+        "similarity": 0.502237,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.38",
+        "similarity": 0.485272,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/10.12",
+        "similarity": 0.484643,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.43",
+        "similarity": 0.477238,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/63D",
+        "similarity": 0.475362,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/49",
+        "similarity": 0.475176,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/2021/17",
+        "provisionRef": "section/31",
+        "similarity": 0.47481,
+        "title": "Domestic Abuse Act 2021"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/9/paragraph/10",
+        "similarity": 0.47455,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.36",
+        "similarity": 0.472821,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.29",
+        "similarity": 0.471655,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.26",
+        "similarity": 0.471569,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/2021/17",
+        "provisionRef": "section/28",
+        "similarity": 0.470844,
+        "title": "Domestic Abuse Act 2021"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/47",
+        "similarity": 0.460522,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/43",
+        "similarity": 0.458894,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.49",
+        "similarity": 0.457276,
+        "title": "The Civil Procedure Rules 1998"
+      }
+    ]
+  },
+  {
+    "id": "occupation-order",
+    "question": "can I get an order to stay in the family home and exclude my partner?",
+    "rank": 10,
+    "matched": {
+      "legGovRef": "ukpga/1996/27",
+      "ref": "section/33"
+    },
+    "rowsAbove": 9,
+    "top": [
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/37",
+        "similarity": 0.569279,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/4",
+        "similarity": 0.547409,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/36",
+        "similarity": 0.542689,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/2",
+        "similarity": 0.541445,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/35",
+        "similarity": 0.536783,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/15",
+        "similarity": 0.517875,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/30",
+        "similarity": 0.512181,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/3",
+        "similarity": 0.511639,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/38",
+        "similarity": 0.511068,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/33",
+        "similarity": 0.510773,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/11",
+        "similarity": 0.505908,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/6",
+        "similarity": 0.502845,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/45",
+        "similarity": 0.501991,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/7",
+        "similarity": 0.500123,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/13",
+        "similarity": 0.499046,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/8",
+        "similarity": 0.494735,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/14",
+        "similarity": 0.490943,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/44A",
+        "similarity": 0.490587,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "schedule/7/paragraph/9",
+        "similarity": 0.489128,
+        "title": "Family Law Act 1996"
+      },
+      {
+        "legGovRef": "ukpga/1996/27",
+        "provisionRef": "section/54",
+        "similarity": 0.487993,
+        "title": "Family Law Act 1996"
+      }
+    ]
+  },
+  {
+    "id": "parental-responsibility",
+    "question": "what is parental responsibility and how does a father get it?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1989/41",
+      "ref": "section/4"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/4",
+        "similarity": 0.64356,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/2",
+        "similarity": 0.600169,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/3",
+        "similarity": 0.576698,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/12",
+        "similarity": 0.565679,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/4A",
+        "similarity": 0.549902,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/112",
+        "similarity": 0.539401,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/14/paragraph/4",
+        "similarity": 0.52763,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/25",
+        "similarity": 0.515651,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/4ZA",
+        "similarity": 0.510464,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/84",
+        "similarity": 0.498293,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/111",
+        "similarity": 0.596368,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/14/paragraph/6",
+        "similarity": 0.59175,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/14.21",
+        "similarity": 0.485161,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/3/paragraph/1",
+        "similarity": 0.465826,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "section/26",
+        "similarity": 0.459673,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/2002/38",
+        "provisionRef": "section/46",
+        "similarity": 0.450121,
+        "title": "Adoption and Children Act 2002"
+      },
+      {
+        "legGovRef": "ukpga/2014/6",
+        "provisionRef": "schedule/2/paragraph/21",
+        "similarity": 0.539329,
+        "title": "Children and Families Act 2014"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/12.3",
+        "similarity": 0.436171,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/13.4",
+        "similarity": 0.433167,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/14.4",
+        "similarity": 0.430119,
+        "title": "The Family Procedure Rules 2010"
+      }
+    ]
+  },
+  {
+    "id": "limitation-contract",
+    "question": "how long do I have to bring a claim for breach of contract?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1980/58",
+      "ref": "section/5"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/5",
+        "similarity": 0.557609,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/19A",
+        "similarity": 0.522545,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/5A",
+        "similarity": 0.510317,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/23",
+        "similarity": 0.490898,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/8",
+        "similarity": 0.484647,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/4B",
+        "similarity": 0.484168,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/2",
+        "similarity": 0.479147,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/3",
+        "similarity": 0.47331,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/11",
+        "similarity": 0.471213,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/10",
+        "similarity": 0.468175,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/7",
+        "similarity": 0.465649,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/22",
+        "similarity": 0.463297,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/9",
+        "similarity": 0.462838,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/2010/15",
+        "provisionRef": "schedule/17/paragraph/4",
+        "similarity": 0.460833,
+        "title": "Equality Act 2010"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/14B",
+        "similarity": 0.460771,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/4A",
+        "similarity": 0.459953,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/21",
+        "similarity": 0.455009,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/54.5",
+        "similarity": 0.454502,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "schedule/1/paragraph/12",
+        "similarity": 0.445449,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/6",
+        "similarity": 0.444814,
+        "title": "Limitation Act 1980"
+      }
+    ]
+  },
+  {
+    "id": "limitation-personal-injury",
+    "question": "what is the time limit for making a personal injury claim?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1980/58",
+      "ref": "section/11"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/11",
+        "similarity": 0.626577,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/33",
+        "similarity": 0.528789,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/12",
+        "similarity": 0.527492,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/2",
+        "similarity": 0.52613,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/11ZA",
+        "similarity": 0.522807,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/14B",
+        "similarity": 0.515601,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/22",
+        "similarity": 0.513368,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/5A",
+        "similarity": 0.509863,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/11B",
+        "similarity": 0.500071,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/10",
+        "similarity": 0.49969,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/23",
+        "similarity": 0.498889,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/14A",
+        "similarity": 0.490999,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/5",
+        "similarity": 0.489418,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/10A",
+        "similarity": 0.486935,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/4A",
+        "similarity": 0.480858,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/4B",
+        "similarity": 0.477254,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/7",
+        "similarity": 0.476651,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1997/40",
+        "provisionRef": "section/6",
+        "similarity": 0.473581,
+        "title": "Protection from Harassment Act 1997"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/3",
+        "similarity": 0.467207,
+        "title": "Limitation Act 1980"
+      },
+      {
+        "legGovRef": "ukpga/1980/58",
+        "provisionRef": "section/11ZB",
+        "similarity": 0.459597,
+        "title": "Limitation Act 1980"
+      }
+    ]
+  },
+  {
+    "id": "faulty-goods",
+    "question": "the item I bought is faulty, what am I entitled to?",
+    "rank": 2,
+    "matched": {
+      "legGovRef": "ukpga/2015/15",
+      "ref": "section/20"
+    },
+    "rowsAbove": 1,
+    "top": [
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/45",
+        "similarity": 0.439996,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/20",
+        "similarity": 0.42912,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/44",
+        "similarity": 0.41745,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/43",
+        "similarity": 0.413598,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/24",
+        "similarity": 0.411429,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/46",
+        "similarity": 0.406183,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/23",
+        "similarity": 0.404627,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/56",
+        "similarity": 0.402916,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/25",
+        "similarity": 0.400362,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/42",
+        "similarity": 0.398241,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/21",
+        "similarity": 0.392282,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/30",
+        "similarity": 0.390371,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/19",
+        "similarity": 0.386484,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/22",
+        "similarity": 0.376975,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/55",
+        "similarity": 0.375333,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/14",
+        "similarity": 0.367443,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/16",
+        "similarity": 0.365897,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/13",
+        "similarity": 0.365505,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "section/28",
+        "similarity": 0.364072,
+        "title": "Consumer Rights Act 2015"
+      },
+      {
+        "legGovRef": "ukpga/2015/15",
+        "provisionRef": "schedule/5/paragraph/39",
+        "similarity": 0.354399,
+        "title": "Consumer Rights Act 2015"
+      }
+    ]
+  },
+  {
+    "id": "evicting-ast",
+    "question": "how do I evict an assured shorthold tenant from my property?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1988/50",
+      "ref": "section/21"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/21",
+        "similarity": 0.538336,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/5",
+        "similarity": 0.533484,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/20",
+        "similarity": 0.49356,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/2A/paragraph/2",
+        "similarity": 0.492306,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/20B",
+        "similarity": 0.491913,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/2A/paragraph/7",
+        "similarity": 0.489475,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.11",
+        "similarity": 0.484048,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/7",
+        "similarity": 0.483772,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/6A",
+        "similarity": 0.476987,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/8",
+        "similarity": 0.475401,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/2A/paragraph/1",
+        "similarity": 0.475081,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/2A/paragraph/3",
+        "similarity": 0.474753,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/19A",
+        "similarity": 0.469813,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/1",
+        "similarity": 0.462282,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/2A/paragraph/5",
+        "similarity": 0.461476,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/15A",
+        "similarity": 0.460585,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "section/20C",
+        "similarity": 0.459467,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.12",
+        "similarity": 0.458466,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/1/paragraph/21",
+        "similarity": 0.45467,
+        "title": "Housing Act 1988"
+      },
+      {
+        "legGovRef": "ukpga/1988/50",
+        "provisionRef": "schedule/2A/paragraph/8",
+        "similarity": 0.450998,
+        "title": "Housing Act 1988"
+      }
+    ]
+  },
+  {
+    "id": "child-financial-provision",
+    "question": "how do I apply for financial support for my child from the other parent?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1989/41",
+      "ref": "schedule/1/paragraph/1"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/1",
+        "similarity": 0.525462,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/9.10",
+        "similarity": 0.512377,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/4",
+        "similarity": 0.510472,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/8",
+        "similarity": 0.493242,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "schedule/1/paragraph/2",
+        "similarity": 0.492009,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "section/4",
+        "similarity": 0.488065,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/10",
+        "similarity": 0.487652,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1973/18",
+        "provisionRef": "section/27",
+        "similarity": 0.485041,
+        "title": "Matrimonial Causes Act 1973"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/11O",
+        "similarity": 0.483294,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/9",
+        "similarity": 0.481257,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/15",
+        "similarity": 0.472198,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "schedule/1/paragraph/12",
+        "similarity": 0.471265,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "section/27",
+        "similarity": 0.470122,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "schedule/4A/paragraph/4",
+        "similarity": 0.469724,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/15",
+        "similarity": 0.46489,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "section/47",
+        "similarity": 0.463898,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/2/paragraph/21",
+        "similarity": 0.463192,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "schedule/1/paragraph/14",
+        "similarity": 0.460282,
+        "title": "Child Support Act 1991"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/14",
+        "similarity": 0.458947,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "ukpga/1991/48",
+        "provisionRef": "schedule/1/paragraph/4",
+        "similarity": 0.457064,
+        "title": "Child Support Act 1991"
+      }
+    ]
+  },
+  {
+    "id": "fair-trial-right",
+    "question": "do I have a right to a fair hearing in court?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "ukpga/1998/42",
+      "ref": "schedule/1/part/I/chapter/5/paragraph/1"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "ukpga/1998/42",
+        "provisionRef": "schedule/1/part/I/chapter/5/paragraph/1",
+        "similarity": 0.555727,
+        "title": "Human Rights Act 1998"
+      },
+      {
+        "legGovRef": "ukpga/1998/42",
+        "provisionRef": "schedule/1/part/I/chapter/5/paragraph/3",
+        "similarity": 0.538725,
+        "title": "Human Rights Act 1998"
+      },
+      {
+        "legGovRef": "ukpga/1998/42",
+        "provisionRef": "schedule/1/part/I/chapter/4/paragraph/3",
+        "similarity": 0.465262,
+        "title": "Human Rights Act 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.8",
+        "similarity": 0.459357,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1998/42",
+        "provisionRef": "schedule/1/part/I/chapter/5/paragraph/2",
+        "similarity": 0.45257,
+        "title": "Human Rights Act 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/33.9",
+        "similarity": 0.445311,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/39.2",
+        "similarity": 0.444241,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/37.8",
+        "similarity": 0.44341,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.18",
+        "similarity": 0.440665,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/79.17",
+        "similarity": 0.437602,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/77.26",
+        "similarity": 0.436103,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/76.21",
+        "similarity": 0.43293,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/80.17",
+        "similarity": 0.428962,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1998/42",
+        "provisionRef": "schedule/1/paragraph/4",
+        "similarity": 0.42387,
+        "title": "Human Rights Act 1998"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/7.30",
+        "similarity": 0.423394,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/54.17",
+        "similarity": 0.421933,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/54.11A",
+        "similarity": 0.421767,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/77.15",
+        "similarity": 0.418854,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/30.12",
+        "similarity": 0.417476,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/52.25",
+        "similarity": 0.417391,
+        "title": "The Civil Procedure Rules 1998"
+      }
+    ]
+  },
+  {
+    "id": "civil-partnership-finances",
+    "question": "how are finances divided when a civil partnership is dissolved?",
+    "rank": 4,
+    "matched": {
+      "legGovRef": "ukpga/2004/33",
+      "ref": "schedule/5/paragraph/21"
+    },
+    "rowsAbove": 3,
+    "top": [
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/5",
+        "similarity": 0.634633,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/19",
+        "similarity": 0.624735,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/2",
+        "similarity": 0.623096,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/21",
+        "similarity": 0.622336,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/9",
+        "similarity": 0.615683,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "section/72",
+        "similarity": 0.611998,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/11",
+        "similarity": 0.61168,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/38",
+        "similarity": 0.609015,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/1",
+        "similarity": 0.606926,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/17",
+        "similarity": 0.602497,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/23",
+        "similarity": 0.601213,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/19C",
+        "similarity": 0.600145,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/9",
+        "similarity": 0.599632,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/7/paragraph/10",
+        "similarity": 0.598696,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/14",
+        "similarity": 0.597115,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/1",
+        "similarity": 0.595933,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/4",
+        "similarity": 0.593712,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/16",
+        "similarity": 0.593253,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/6/paragraph/15",
+        "similarity": 0.592447,
+        "title": "Civil Partnership Act 2004"
+      },
+      {
+        "legGovRef": "ukpga/2004/33",
+        "provisionRef": "schedule/5/paragraph/6",
+        "similarity": 0.591857,
+        "title": "Civil Partnership Act 2004"
+      }
+    ]
+  },
+  {
+    "id": "child-application-parties",
+    "question": "who has to be a party when I apply for a child arrangements order?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "uksi/2010/2955",
+      "ref": "rule/12.3"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/12.3",
+        "similarity": 0.68898,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/14.3",
+        "similarity": 0.674737,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/13.3",
+        "similarity": 0.669386,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/9.21",
+        "similarity": 0.648517,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/32.29",
+        "similarity": 0.647717,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/18.3",
+        "similarity": 0.645034,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/9.10",
+        "similarity": 0.63456,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/11.6",
+        "similarity": 0.627209,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/8.20",
+        "similarity": 0.620266,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/16.1",
+        "similarity": 0.616732,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/6.14",
+        "similarity": 0.616092,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/8.38",
+        "similarity": 0.611191,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/7.2",
+        "similarity": 0.607928,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.40",
+        "similarity": 0.60272,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/12.14",
+        "similarity": 0.602025,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "section/10",
+        "similarity": 0.598314,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/18.5",
+        "similarity": 0.596456,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "ukpga/1989/41",
+        "provisionRef": "schedule/1/paragraph/14",
+        "similarity": 0.590803,
+        "title": "Children Act 1989"
+      },
+      {
+        "legGovRef": "uksi/2010/2955",
+        "provisionRef": "rule/16.2",
+        "similarity": 0.59049,
+        "title": "The Family Procedure Rules 2010"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.38",
+        "similarity": 0.588759,
+        "title": "The Civil Procedure Rules 1998"
+      }
+    ]
+  },
+  {
+    "id": "small-claims-hearing",
+    "question": "how do I prepare for a small claims hearing and what happens at it?",
+    "rank": 1,
+    "matched": {
+      "legGovRef": "uksi/1998/3132",
+      "ref": "rule/27.4"
+    },
+    "rowsAbove": 0,
+    "top": [
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.4",
+        "similarity": 0.551794,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.6",
+        "similarity": 0.547558,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.8",
+        "similarity": 0.543123,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.9",
+        "similarity": 0.520932,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.18",
+        "similarity": 0.519155,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.36",
+        "similarity": 0.506731,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.8",
+        "similarity": 0.488341,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.10",
+        "similarity": 0.487566,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.11",
+        "similarity": 0.485073,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/71.6",
+        "similarity": 0.47765,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/12.6",
+        "similarity": 0.468293,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.1",
+        "similarity": 0.465507,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.2",
+        "similarity": 0.463855,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.22",
+        "similarity": 0.45175,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/71.7",
+        "similarity": 0.441689,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/39.3",
+        "similarity": 0.43769,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/26.3",
+        "similarity": 0.436649,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/85.5",
+        "similarity": 0.43662,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/3.5A",
+        "similarity": 0.433514,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/27.14",
+        "similarity": 0.433353,
+        "title": "The Civil Procedure Rules 1998"
+      }
+    ]
+  },
+  {
+    "id": "starting-a-civil-claim",
+    "question": "how do I start a county court claim against someone who owes me money?",
+    "rank": null,
+    "matched": null,
+    "rowsAbove": 20,
+    "top": [
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.32",
+        "similarity": 0.567575,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/12.6",
+        "similarity": 0.555879,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/55.3",
+        "similarity": 0.553423,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.14",
+        "similarity": 0.538656,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "schedule/2/part/15/paragraph/Rule1",
+        "similarity": 0.535406,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/56.2",
+        "similarity": 0.533112,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/65.28",
+        "similarity": 0.523263,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/26.3",
+        "similarity": 0.523209,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/63.5",
+        "similarity": 0.516711,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/74.17",
+        "similarity": 0.505817,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/72.3",
+        "similarity": 0.502349,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "ukpga/1984/28",
+        "provisionRef": "section/85",
+        "similarity": 0.500531,
+        "title": "County Courts Act 1984"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/57.3",
+        "similarity": 0.49945,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/14.7",
+        "similarity": 0.499259,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/3.5A",
+        "similarity": 0.497055,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/60.4",
+        "similarity": 0.496993,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/56.6",
+        "similarity": 0.494222,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/62.13",
+        "similarity": 0.491973,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/73.3",
+        "similarity": 0.49114,
+        "title": "The Civil Procedure Rules 1998"
+      },
+      {
+        "legGovRef": "uksi/1998/3132",
+        "provisionRef": "rule/64.3",
+        "similarity": 0.491053,
+        "title": "The Civil Procedure Rules 1998"
+      }
+    ]
+  }
+]

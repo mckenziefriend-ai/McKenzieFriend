@@ -122,6 +122,7 @@ async function main() {
     heading: string | null;
     content: string;
     content_omitted: boolean;
+    part_label: string | null;
     legal_instruments: { title: string } | null;
   };
   type GuidanceRow = {
@@ -138,7 +139,7 @@ async function main() {
     const provisions = await readAll<ProvisionRow>(
       client,
       "legal_provisions",
-      "id,ref,heading,content,content_omitted,legal_instruments(title)"
+      "id,ref,heading,content,content_omitted,part_label,legal_instruments(title)"
     );
     let omitted = 0;
     for (const row of provisions) {
@@ -151,6 +152,7 @@ async function main() {
           content: row.content ?? "",
           contentOmitted: Boolean(row.content_omitted),
           instrumentTitle: row.legal_instruments?.title ?? "Legislation",
+          partLabel: row.part_label,
         })
       );
     }

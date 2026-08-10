@@ -10,7 +10,8 @@
     "test": "vitest run",
     "ingest:legislation": "tsx scripts/ingest-legislation.ts",
     "embed:corpus": "tsx scripts/embed-corpus.ts",
-    "eval:retrieval": "tsx scripts/eval/retrieval-eval.ts"
+    "eval:retrieval": "tsx scripts/eval/retrieval-eval.ts",
+    "eval:latency": "tsx scripts/eval/search-latency.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",

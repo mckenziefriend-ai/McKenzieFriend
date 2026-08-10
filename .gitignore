@@ -49,5 +49,12 @@ next-env.d.ts
 # downloaded legislation XML cache (re-fetchable; multi-MB)
 /scripts/.cache/
 
-# retrieval eval run snapshots (regenerated; not source)
-/scripts/eval/runs/
+# retrieval eval run snapshots — scratch runs are regenerated, not source
+# (contents, not the directory — git will not descend into an excluded
+# directory, so a negation below it would never be reached)
+/scripts/eval/runs/*
+# ...except the reference a change is measured against. Reproducing one needs
+# the live corpus and an OPENAI_API_KEY, so it does not regenerate the way the
+# rest of this list does, and a comparison is only meaningful against the state
+# the numbers in the commit message were taken from. Track those explicitly.
+!/scripts/eval/runs/part-context.json

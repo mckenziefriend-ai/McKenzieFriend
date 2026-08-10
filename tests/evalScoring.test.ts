@@ -138,8 +138,8 @@ describe("EVAL_SET integrity", () => {
       expect(c.expected.length, c.id).toBeGreaterThan(0);
       expect(c.rationale.length, c.id).toBeGreaterThan(0);
       for (const e of c.expected) {
-        expect(e.legGovRef, c.id).toMatch(/^ukpga\/\d{4}\/\d+$/);
-        expect(e.ref, c.id).toMatch(/^(section|schedule)\//);
+        expect(e.legGovRef, c.id).toMatch(/^(ukpga|uksi)\/\d{4}\/\d+$/);
+        expect(e.ref, c.id).toMatch(/^(section|schedule|rule|part)\//);
       }
     }
   });
@@ -151,5 +151,14 @@ describe("EVAL_SET integrity", () => {
       c.expected.every((e) => e.ref.startsWith("schedule/"))
     );
     expect(scheduleCases.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("covers cases whose correct answer is a PROCEDURE RULE, not only statute", () => {
+    // The same guard, one level out. Litigants ask what they must DO at least
+    // as often as what the law is, and only the FPR/CPR answer that. A set
+    // without rule cases would let a change that buries the rules — or drops
+    // them from the corpus — look free.
+    const ruleCases = EVAL_SET.filter((c) => c.expected.every((e) => e.ref.startsWith("rule/")));
+    expect(ruleCases.length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -68,6 +68,16 @@ export type EnumeratedProvision = {
   contentOmitted: boolean;
   inForce: boolean;
   position: number;
+  /**
+   * The enclosing Part or Chapter, e.g. "PART 27 (THE SMALL CLAIMS TRACK)".
+   *
+   * Already folded into `heading` for schedule paragraphs, where it is what
+   * makes "paragraph 1" identifiable. Carried separately here because body
+   * provisions need it too, for a different reason: in a procedure rule it is
+   * the only statement of subject matter anywhere in the provision. Null where
+   * the provision sits directly under the body with no Part above it.
+   */
+  partLabel: string | null;
 };
 
 export type ProvisionParse = {
@@ -88,8 +98,16 @@ export type ProvisionParse = {
 // provisions; unknown tags fall through to "recurse", so content is never lost)
 // ---------------------------------------------------------------------------
 
-/** Dropped entirely — editorial annotation markers, not statutory text. */
-const SKIP_TAGS: ReadonlySet<string> = new Set(["CommentaryRef"]);
+/**
+ * Dropped entirely — editorial annotation markers, not statutory text.
+ *
+ * FootnoteRef is CommentaryRef's twin in the procedure rules: `<FootnoteRef
+ * Ref="f00002"/>` marks the footnote citing the enabling Act. Every one of the
+ * 58 in the CPR is self-closing, so dropping them changes nothing today; the
+ * point is that a variant carrying text could not leak a bare marker into the
+ * middle of a sentence.
+ */
+const SKIP_TAGS: ReadonlySet<string> = new Set(["CommentaryRef", "FootnoteRef"]);
 
 /** Unwrapped in place: their text joins the surrounding line. */
 const INLINE_TAGS: ReadonlySet<string> = new Set([
@@ -98,6 +116,10 @@ const INLINE_TAGS: ReadonlySet<string> = new Set([
   "Emphasis", "Strong", "Superscript", "Subscript", "Expanded", "Foreign",
   "InternalLink", "ExternalLink", "Span", "Inline", "Definition",
   "Uppercase", "SmallCaps", "Proviso",
+  // Superscript run. In the procedure rules this is the glossary marker —
+  // FPR r.2.2 says glossary words are followed by "GL", and that "GL" lives in
+  // a <Superior>. It is operative text, so it is unwrapped, not dropped.
+  "Superior",
 ]);
 
 /** Numbered levels: each starts a new line with its own marker and indent. */
@@ -160,6 +182,17 @@ const STRUCTURAL_TAGS: ReadonlySet<string> = new Set([
 const INDENT = "    ";
 
 /**
+ * Separates table cells.
+ *
+ * A table read as running prose is worse than useless in a legal answer: FPR
+ * r.12.3 is a three-column table of proceedings, applicants and respondents,
+ * and without a delimiter its header rendered "Proceedings forApplicantsRespondents"
+ * — the <th> cells carried no separator at all. A pipe is unambiguous, survives
+ * whitespace collapsing, and marks a column boundary the model can read.
+ */
+const CELL_SEPARATOR = " | ";
+
+/**
  * Records constructs the parser did not recognise, so scaling to a new
  * instrument surfaces unfamiliar markup rather than silently recursing.
  */
@@ -199,11 +232,19 @@ class LineBuilder {
   private parts: string[] = [];
   private indent = 0;
   private open = false;
+  /**
+   * A separator waiting for something to separate. Held rather than written so
+   * it can never trail off the end of a row: an empty last cell would otherwise
+   * leave "Equality Act 2010 (c. 15) |". It survives a flush on purpose, so a
+   * cell whose text began on its own line still opens with the delimiter.
+   */
+  private pending: string | null = null;
 
   startLine(indent: number, prefix: string) {
     this.flush();
     this.indent = indent;
     this.open = true;
+    this.takePending();
     if (prefix) this.parts.push(prefix);
   }
 
@@ -213,7 +254,24 @@ class LineBuilder {
       this.indent = indent;
       this.open = true;
     }
+    this.takePending();
     this.parts.push(text);
+  }
+
+  /** Queue a separator, to be written only if content follows it. */
+  separate(separator: string) {
+    this.pending = separator;
+  }
+
+  /** Discard an unwritten separator, so it cannot leak into the next row. */
+  clearPending() {
+    this.pending = null;
+  }
+
+  private takePending() {
+    if (this.pending === null) return;
+    this.parts.push(this.pending);
+    this.pending = null;
   }
 
   flush() {
@@ -229,11 +287,58 @@ class LineBuilder {
   }
 }
 
-/** The marker text of a node's own <Pnumber>, e.g. "2A" or "a". */
+/**
+ * Reassembles a provision number that CLML has split across the <Pnumber> text
+ * and its PuncAfter attribute.
+ *
+ * The Family Procedure Rules encode rule 1.1 as
+ *   <Pnumber PuncAfter=".1.">1</Pnumber>
+ * so reading the text alone yields "1" — wrong for 626 of the FPR's 852 rules,
+ * and inconsistently, since the remaining 226 carry the whole number in the
+ * text.
+ *
+ * PuncAfter is only appended when it CONTAINS A DIGIT, because it is not always
+ * a continuation of the number. CPR schedule/5/paragraph/10 carries
+ * PuncBefore="(" PuncAfter=")" — it renders as "(10)" — and appending blindly
+ * produces "10)". That single case is why this is a digit test rather than a
+ * simple concatenation.
+ *
+ * Effect measured across both instruments: FPR 626 numbers corrected, 852/852
+ * now match their own DocumentURI. The CPR cannot be affected at all — not one
+ * of its 2,205 PuncAfter values contains a digit.
+ */
+export function joinPnumber(text: string, puncAfter?: string | null): string {
+  const base = collapseWhitespace(text ?? "");
+  if (!puncAfter || !/[0-9]/.test(puncAfter)) return base;
+  return collapseWhitespace(base + puncAfter).replace(/[.\s]+$/, "");
+}
+
+/**
+ * The marker text of a node's own <Pnumber>, e.g. "2A" or "a".
+ *
+ * Deliberately does NOT apply joinPnumber. render() wraps this in brackets to
+ * produce "(2A)", and some subsections carry the entire marker in PuncAfter
+ * (text empty, PuncAfter="(1)"), which joining would turn into "((1))".
+ * Six Acts were corrupted this way before the split — see provisionNumberOf.
+ */
 function markerOf(node: ClmlNode): string {
   const pnumber = childByLocal(node, "Pnumber");
   if (!pnumber) return "";
   return collapseWhitespace(deepText(childrenOf(pnumber), SKIP_TAGS));
+}
+
+/**
+ * The provision's own citable number — "8", "16A", or the FPR's "1.1".
+ *
+ * Only this reassembles a split PuncAfter number. Confining the join here keeps
+ * it out of rendered text entirely: it changes the `number` field and nothing
+ * a user reads, so existing embeddings stay valid.
+ */
+function provisionNumberOf(node: ClmlNode): string {
+  const pnumber = childByLocal(node, "Pnumber");
+  if (!pnumber) return "";
+  const text = collapseWhitespace(deepText(childrenOf(pnumber), SKIP_TAGS));
+  return joinPnumber(text, attrsOf(pnumber).PuncAfter);
 }
 
 function render(
@@ -298,18 +403,39 @@ function render(
       continue;
     }
 
+    // A table row owns the separation between its own cells, so the delimiter
+    // can be placed BETWEEN them and never trail off the end of the row.
+    if (tag === "tr") {
+      lb.flush();
+      lb.clearPending();
+      let seenCell = false;
+      for (const kid of kids) {
+        const kidTag = localOf(kid);
+        if (kidTag === "td" || kidTag === "th") {
+          if (seenCell) lb.separate(CELL_SEPARATOR);
+          seenCell = true;
+          render(childrenOf(kid), lb, indent, diagnostics);
+          continue;
+        }
+        render([kid], lb, indent, diagnostics);
+      }
+      lb.flush();
+      lb.clearPending();
+      continue;
+    }
+
     // `Where` sits inside `Formula` and explains its terms, so it must start
     // a new line rather than running on from the formula itself.
-    if (tag === "ListItem" || tag === "tr" || tag === "Where") {
+    if (tag === "ListItem" || tag === "Where") {
       lb.flush();
       render(kids, lb, indent, diagnostics);
       lb.flush();
       continue;
     }
 
-    if (tag === "td") {
+    // A cell reached outside a <tr> — malformed, but never drop its text.
+    if (tag === "td" || tag === "th") {
       render(kids, lb, indent, diagnostics);
-      lb.append(" ", indent);
       continue;
     }
 
@@ -599,7 +725,7 @@ export function enumerateProvisions(
           provisions.push({
             ref,
             id,
-            number: markerOf(node) || null,
+            number: provisionNumberOf(node) || null,
             heading: composeHeading(next, isSchedule),
             content,
             versionDate: next.versionDate ?? null,
@@ -608,6 +734,7 @@ export function enumerateProvisions(
             contentOmitted,
             inForce: deriveInForce(status, contentOmitted),
             position: provisions.length + 1,
+            partLabel: next.partLabel ?? null,
           });
           // Do not descend further: nested P1s do not occur inside a provision.
           continue;
@@ -661,12 +788,44 @@ export function deriveInForce(status: string | null, contentOmitted: boolean): b
   return !contentOmitted;
 }
 
-/** Human label for a provision, used in amendment notes. */
+/**
+ * Subdivisions of a provision number: "8/3/a" is cited "8(3)(a)".
+ * The head is the number itself; every further segment is a bracketed level.
+ */
+function subdivide(number: string): string {
+  const [head, ...levels] = number.split("/");
+  return head + levels.map((level) => `(${level})`).join("");
+}
+
+/**
+ * Human label for a provision, used in amendment notes and mirrored in SQL by
+ * public.provision_citation_label (supabase/trackb6_citation_labels.sql). Keep
+ * the two in step — they are read by the model and by the user respectively.
+ *
+ * An unrecognised shape returns the raw ref rather than a guess. Human Rights
+ * Act 1998 Sch 1 nests part and chapter above the paragraph, and collapsing
+ * that to "Sch. 1 para. 1" would give two different Articles the same citation.
+ */
 export function provisionLabel(ref: string): string {
   const section = ref.match(/^section\/(.+)$/);
-  if (section) return `s. ${section[1].replace(/\//g, "(")}`;
+  if (section) return `s. ${subdivide(section[1])}`;
+
+  // Procedure rules cite as "r. 12.3", never "s. 12.3".
+  const rule = ref.match(/^rule\/(.+)$/);
+  if (rule) return `r. ${subdivide(rule[1])}`;
+
+  const partPara = ref.match(/^part\/([^/]+)\/paragraph\/(.+)$/);
+  if (partPara) return `Part ${partPara[1]}, para. ${partPara[2]}`;
+
+  const part = ref.match(/^part\/([^/]+)$/);
+  if (part) return `Part ${part[1]}`;
+
   const schedulePara = ref.match(/^schedule\/([^/]+)\/paragraph\/(.+)$/);
   if (schedulePara) return `Sch. ${schedulePara[1]} para. ${schedulePara[2]}`;
+
+  const schedule = ref.match(/^schedule\/([^/]+)$/);
+  if (schedule) return `Sch. ${schedule[1]}`;
+
   return ref;
 }
 
@@ -681,7 +840,7 @@ export function parseProvision(xml: string, sectionNumber: string): ProvisionPar
 
   const attrs = attrsOf(provision);
   const inner = childByLocal(provision, "P1");
-  const number = markerOf(inner ?? provision) || sectionNumber;
+  const number = provisionNumberOf(inner ?? provision) || sectionNumber;
   const status = attrs.Status ?? attrsOf(inner ?? provision).Status ?? null;
 
   const allEffects = parseUnappliedEffects(xml);

@@ -36,6 +36,8 @@ export type ProvisionRow = {
   amendmentNote: string | null;
   sourceUrl: string;
   position: number;
+  /** Enclosing Part or Chapter — see EnumeratedProvision.partLabel. */
+  partLabel: string | null;
 };
 
 export type SqlChunk = { filename: string; sql: string };
@@ -101,14 +103,16 @@ function provisionStatement(p: ProvisionRow): string[] {
     `-- ${p.legGovRef} ${p.ref}${flags.length ? `  [${flags.join(", ")}]` : ""}`,
     "insert into public.legal_provisions",
     "  (instrument_id, ref, number, heading, content, version_date, in_force, status,",
-    "   extent, content_omitted, has_unapplied_amendments, amendment_note, source_url, position)",
+    "   extent, content_omitted, has_unapplied_amendments, amendment_note, source_url, position,",
+    "   part_label)",
     "select",
     `  i.id, ${sql(p.ref)}, ${sql(p.number)}, ${sql(p.heading)},`,
     `  ${sql(p.content)},`,
     `  ${sqlDate(p.versionDate)}, ${sqlBool(p.inForce)}, ${sql(p.status)},`,
     `  ${sql(p.extent)},`,
     `  ${sqlBool(p.contentOmitted)}, ${sqlBool(p.hasUnappliedAmendments)}, ${sql(p.amendmentNote)},`,
-    `  ${sql(p.sourceUrl)}, ${p.position}`,
+    `  ${sql(p.sourceUrl)}, ${p.position},`,
+    `  ${sql(p.partLabel)}`,
     "from public.legal_instruments i",
     `where i.leg_gov_ref = ${sql(p.legGovRef)}`,
     "on conflict (instrument_id, ref) do update set",
@@ -124,6 +128,7 @@ function provisionStatement(p: ProvisionRow): string[] {
     "  amendment_note = excluded.amendment_note,",
     "  source_url = excluded.source_url,",
     "  position = excluded.position,",
+    "  part_label = excluded.part_label,",
     "  updated_at = now();",
     "",
   ];
@@ -250,6 +255,7 @@ export function provisionToRecord(
     amendment_note: provision.amendmentNote,
     source_url: provision.sourceUrl,
     position: provision.position,
+    part_label: provision.partLabel,
     updated_at: syncedAt,
   };
 }
