@@ -180,17 +180,68 @@ export const EVAL_SET: EvalCase[] = [
     ],
     rationale:
       "CPR r.27.4 governs preparation and directions for the hearing; r.27.8 " +
-      "governs how the hearing itself is conducted.",
+      "governs how the hearing itself is conducted. Neither rule says 'small " +
+      "claims' anywhere in its text — that is in the title of Part 27 — which " +
+      "is what the part_label change in trackb8 exists to fix.",
   },
   {
     id: "starting-a-civil-claim",
     question: "how do I start a county court claim against someone who owes me money?",
     expected: [
-      { legGovRef: "uksi/1998/3132", ref: "rule/7.1" },
       { legGovRef: "uksi/1998/3132", ref: "rule/7.2" },
+      { legGovRef: "uksi/1998/3132", ref: "rule/7.5" },
     ],
     rationale:
-      "CPR r.7.2 is how proceedings are started (issue of a claim form); " +
-      "r.7.1 is where they may be started.",
+      "CPR r.7.2 is how proceedings are started (issue of a claim form) and " +
+      "r.7.5 is service of it. ACCEPTED MISS — see the note below.",
   },
 ];
+
+/**
+ * ACCEPTED RESIDUALS
+ *
+ * Three cases below are knowingly not at their ideal rank. They are recorded
+ * here, with reasons, because the alternative was tuning the ranker until the
+ * numbers looked right, and a ranker tuned to 18 cases is not a better ranker.
+ * Do not "fix" these without reading why they are here.
+ *
+ * 1. starting-a-civil-claim — MISS, accepted.
+ *
+ *    r.7.2 is 560 characters and court-agnostic. The query's distinguishing
+ *    terms, "county court" and "owes me money", appear literally in SPECIALIST
+ *    rules — r.55.3 (possession), r.12.6 (County Court Money Claims Centre),
+ *    r.26.3 (transfer of money claims) — so the general rule loses to the
+ *    special ones. Adding Part context moved it #11 -> #10 among its
+ *    competitors: real, and nowhere near enough.
+ *
+ *    This is the generic-vs-specialist inversion, a known limit of pure dense
+ *    retrieval, and the remedy is hybrid lexical + vector retrieval. That is a
+ *    separate track to be measured across the whole set, NOT bolted on here.
+ *
+ *    r.7.1 was dropped as an expectation on 2026-08-10. Its entire text is
+ *    "Restrictions on where proceedings may be started are set out in the
+ *    relevant practice directions supplementing this Part" — a 121-character
+ *    signpost with no substantive content, which would not answer the question
+ *    even if retrieved first. The case still misses honestly on r.7.2 and
+ *    r.7.5, so this is a correction to a bad expectation, not a way to pass.
+ *
+ * 2. child-arrangements-order — CA 1989 s.8 at rank 7, was 4. Accepted.
+ *
+ *    Exactly three procedure rules moved above it: FPR r.12.3, FPR r.12.33 and
+ *    CPR r.65.38. The first two are legitimate — r.12.3 is the parties table
+ *    for s.8 proceedings and the question asks how to apply.
+ *
+ *    CPR r.65.38 is a genuine false neighbour: Part 65 is anti-social
+ *    behaviour, where "parenting order" means something else entirely. Part
+ *    context demotes it by 0.028, which is not enough to clear s.8 (0.551 vs
+ *    0.545). DO NOT hand-tune this. s.8 remains inside the app's top-8, and a
+ *    rule that special-cases one bad neighbour would not generalise.
+ *
+ * 3. child-financial-provision — CA 1989 Sch 1 para 1 at rank 2, was 1.
+ *    Accepted.
+ *
+ *    Displaced by FPR r.9.10, "Application by parent, guardian etc. for
+ *    financial provision", which is precisely the procedure rule for this
+ *    question. The margin is 0.001. Closing it would be pure tuning, and the
+ *    schedule paragraph stays at rank 2.
+ */

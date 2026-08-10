@@ -36,6 +36,7 @@ function provision(overrides: Partial<ProvisionRow> = {}): ProvisionRow {
     amendmentNote: "3 changes not yet applied to s. 8: …",
     sourceUrl: "https://www.legislation.gov.uk/ukpga/1989/41/section/8",
     position: 2,
+    partLabel: null,
     ...overrides,
   };
 }
@@ -46,6 +47,33 @@ describe("row mapping", () => {
     expect(record.leg_gov_ref).toBe("ukpga/1989/41");
     expect(record.up_to_date_to).toBe("2026-07-15");
     expect(record.last_synced).toBe("2026-07-31T00:00:00.000Z");
+  });
+
+  // There are two write paths — the generated SQL and the direct upsert — and a
+  // column carried by only one of them fails silently, leaving the Part context
+  // absent from exactly the rules that need it. Both are asserted.
+  it("carries the Part label on the upsert path", () => {
+    const record = provisionToRecord(
+      provision({ ref: "rule/27.4", partLabel: "PART 27 (THE SMALL CLAIMS TRACK)" }),
+      "abc-123",
+      "2026-07-31T00:00:00.000Z"
+    );
+    expect(record.part_label).toBe("PART 27 (THE SMALL CLAIMS TRACK)");
+  });
+
+  it("carries the Part label on the SQL path", () => {
+    // Instruments go to file 00, provisions to the numbered files after it.
+    const sql = buildSqlChunks(
+      [instrument],
+      [provision({ ref: "rule/27.4", partLabel: "PART 27 (THE SMALL CLAIMS TRACK)" })],
+      "STAMP",
+      10
+    )
+      .map((c) => c.sql)
+      .join("\n");
+    expect(sql).toContain("part_label");
+    expect(sql).toContain("PART 27 (THE SMALL CLAIMS TRACK)");
+    expect(sql).toContain("part_label = excluded.part_label");
   });
 
   it("maps a provision, carrying both not-in-force signals separately", () => {

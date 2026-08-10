@@ -252,6 +252,7 @@ const provision = {
   content: "(1) In this Act—\n(2) More text.",
   contentOmitted: false,
   instrumentTitle: "Children Act 1989",
+  partLabel: "PART II (ORDERS WITH RESPECT TO CHILDREN IN FAMILY PROCEEDINGS)",
 };
 
 describe("provisionToPending", () => {
@@ -279,6 +280,60 @@ describe("provisionToPending", () => {
     expect(pending.length).toBeGreaterThan(1);
     for (const item of pending) expect(item.provisionId).toBe("prov-1");
     expect(pending.map((p) => p.subChunkIndex)).toEqual(pending.map((_, i) => i));
+  });
+
+  // The Part label is the only statement of subject matter a procedure rule
+  // has: CPR r.27.4 never says "small claims", Part 27's title does. A section
+  // gets its subject from the Act title instead, so adding the Part there would
+  // be noise — and for a schedule paragraph it is already in the heading.
+  const rule = {
+    id: "rule-1",
+    ref: "rule/27.4",
+    heading: "Preparation for the hearing",
+    content: "(1) After allocation the court will give standard directions.",
+    contentOmitted: false,
+    instrumentTitle: "The Civil Procedure Rules 1998",
+    partLabel: "PART 27 (THE SMALL CLAIMS TRACK)",
+  };
+
+  it("gives a procedure rule its Part, so the subject is in the text at all", () => {
+    const [pending] = provisionToPending(rule);
+    expect(pending.content).toContain("PART 27 (THE SMALL CLAIMS TRACK)");
+    expect(pending.content.toLowerCase()).toContain("small claims");
+    // Outermost context first: instrument, Part, heading, provision.
+    expect(pending.content.indexOf("The Civil Procedure Rules 1998")).toBeLessThan(
+      pending.content.indexOf("PART 27")
+    );
+    expect(pending.content.indexOf("PART 27")).toBeLessThan(
+      pending.content.indexOf("Preparation for the hearing")
+    );
+  });
+
+  it("leaves a section's text alone, so the statute corpus is unchanged", () => {
+    const [pending] = provisionToPending(provision);
+    expect(pending.content).not.toContain("PART II");
+    expect(pending.content).toBe(
+      "Children Act 1989 section/8\nChild arrangements orders\n(1) In this Act—\n(2) More text."
+    );
+  });
+
+  it("does not repeat the Part for a schedule paragraph, which has it already", () => {
+    const [pending] = provisionToPending({
+      ...provision,
+      ref: "schedule/1/paragraph/1",
+      // What composeHeading builds for a schedule paragraph: the Part is
+      // already folded in.
+      heading: "SCHEDULE 1 (Financial Provision for Children), PART I (ORDERS) — Orders",
+      partLabel: "PART I (ORDERS)",
+    });
+    expect(pending.content).toContain("SCHEDULE 1");
+    expect(pending.content.match(/PART I \(ORDERS\)/g)).toHaveLength(1);
+  });
+
+  it("changes the hash for a rule, so re-embedding picks exactly those rows up", () => {
+    const before = provisionToPending({ ...rule, partLabel: null })[0];
+    const after = provisionToPending(rule)[0];
+    expect(after.contentHash).not.toBe(before.contentHash);
   });
 });
 

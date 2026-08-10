@@ -84,13 +84,23 @@ export function chunkProvisionText(
  * Text actually sent to the embedding model. Prefixing the citation and heading
  * gives the vector some of the context a bare fragment lacks, which materially
  * helps short provisions ("(1) In this Act ...") match a plain-English question.
+ *
+ * The optional part label sits between the two, so the text reads outermost
+ * context first: instrument, Part, heading, then the provision itself. Callers
+ * decide when to supply it — see shouldIncludePartLabel in embedRows.
  */
 export function buildEmbeddingText(input: {
   citation?: string | null;
+  partLabel?: string | null;
   heading?: string | null;
   content: string;
 }): string {
-  return [input.citation?.trim(), input.heading?.trim(), input.content.trim()]
+  return [
+    input.citation?.trim(),
+    input.partLabel?.trim(),
+    input.heading?.trim(),
+    input.content.trim(),
+  ]
     .filter((part): part is string => Boolean(part))
     .join("\n");
 }

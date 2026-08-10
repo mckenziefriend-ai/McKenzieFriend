@@ -401,6 +401,38 @@ describe("enumerateProvisions — procedure rules", () => {
     expect(fpr.map((p) => p.number)).toEqual(["1.1", "1.2", "1.3", "1.4", "1.5", "12.3"]);
   });
 
+  // The Part is where a procedure rule's subject matter lives, and nowhere
+  // else: r.27.4 never says "small claims". Synthetic XML rather than the
+  // fixtures because the trimmed fixtures do not all retain their Part
+  // wrappers, and this needs to assert the wrapper is read when present.
+  const withPart = `<Legislation><Secondary><Body>
+    <Part><Number>PART 27</Number><Title>THE SMALL CLAIMS TRACK</Title>
+      <P1group><Title>Preparation for the hearing</Title>
+        <P1 DocumentURI="http://www.legislation.gov.uk/uksi/1998/3132/rule/27.4" id="rule-27.4">
+          <Pnumber>27.4</Pnumber><P1para><Text>After allocation the court will give directions.</Text></P1para>
+        </P1>
+      </P1group>
+    </Part>
+    <P1group><Title>How to start proceedings</Title>
+      <P1 DocumentURI="http://www.legislation.gov.uk/uksi/1998/3132/rule/7.2" id="rule-7.2">
+        <Pnumber>7.2</Pnumber><P1para><Text>Proceedings are started when the court issues a claim form.</Text></P1para>
+      </P1>
+    </P1group>
+  </Body></Secondary></Legislation>`;
+
+  it("captures the enclosing Part, which is a rule's only subject signal", () => {
+    const parsed = enumerateProvisions(withPart, "uksi/1998/3132");
+    const r274 = parsed.find((p) => p.ref === "rule/27.4")!;
+    expect(r274.partLabel).toBe("PART 27 (THE SMALL CLAIMS TRACK)");
+    // The Part does not leak into the heading, which stays the rule's own.
+    expect(r274.heading).toBe("Preparation for the hearing");
+  });
+
+  it("leaves partLabel null where a rule sits directly under the body", () => {
+    const parsed = enumerateProvisions(withPart, "uksi/1998/3132");
+    expect(parsed.find((p) => p.ref === "rule/7.2")!.partLabel).toBeNull();
+  });
+
   it("gives every rule a number matching its own ref", () => {
     for (const p of [...fpr, ...cpr]) {
       if (!p.ref.startsWith("rule/")) continue;

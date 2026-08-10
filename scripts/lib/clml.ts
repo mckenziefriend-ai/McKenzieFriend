@@ -68,6 +68,16 @@ export type EnumeratedProvision = {
   contentOmitted: boolean;
   inForce: boolean;
   position: number;
+  /**
+   * The enclosing Part or Chapter, e.g. "PART 27 (THE SMALL CLAIMS TRACK)".
+   *
+   * Already folded into `heading` for schedule paragraphs, where it is what
+   * makes "paragraph 1" identifiable. Carried separately here because body
+   * provisions need it too, for a different reason: in a procedure rule it is
+   * the only statement of subject matter anywhere in the provision. Null where
+   * the provision sits directly under the body with no Part above it.
+   */
+  partLabel: string | null;
 };
 
 export type ProvisionParse = {
@@ -724,6 +734,7 @@ export function enumerateProvisions(
             contentOmitted,
             inForce: deriveInForce(status, contentOmitted),
             position: provisions.length + 1,
+            partLabel: next.partLabel ?? null,
           });
           // Do not descend further: nested P1s do not occur inside a provision.
           continue;

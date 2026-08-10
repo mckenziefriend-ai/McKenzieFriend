@@ -309,6 +309,7 @@ async function main() {
         amendmentNote: buildAmendmentNote(matched, provisionLabel(provision.ref)),
         sourceUrl: `${BASE_URL}/${target.legGovRef}/${provision.ref}`,
         position: provision.position,
+        partLabel: provision.partLabel,
       });
 
       if (provision.ref.startsWith("section")) report.sections++;
