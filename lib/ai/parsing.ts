@@ -55,6 +55,7 @@ export function makeActionLabel(type: string): string {
   if (type === "create_calendar_item") return "Add to calendar";
   if (type === "create_bundle_item") return "Add to bundle";
   if (type === "create_statement") return "Save to Statements";
+  if (type === "create_note") return "Save to Notes";
   return "Save";
 }
 

@@ -10,6 +10,8 @@ const navItems = [
   { label: "Documents", href: "documents" },
   { label: "Calendar", href: "calendar" },
   { label: "Bundle", href: "bundle" },
+  { label: "Notes", href: "notes" },
+  { label: "Support", href: "support" },
 ];
 
 export function CaseWorkspaceShell({
