@@ -7,6 +7,7 @@ import { getOpenAI } from "@/lib/ai/openai";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { type ProposedAction } from "@/lib/ai/actions";
 import { safeJson, cleanVisibleAnswer, normaliseAction } from "@/lib/ai/parsing";
+import { londonToday, relativeDayTag } from "@/lib/ai/caseDates";
 
 type CaseEvent = {
   event_date: string | null;
@@ -272,8 +273,14 @@ export async function POST(req: Request) {
       })
       .join("\n");
 
+    const today = londonToday();
+
     const calendarText = calendar
-      .map((item, index) => `${index + 1}. ${item.starts_at || "No date"} — ${item.title || "Untitled"} (${item.item_type || "Other"})${item.notes ? ` — ${item.notes}` : ""}`)
+      .map((item, index) => {
+        const tag = relativeDayTag(item.starts_at, today.key);
+        const when = item.starts_at ? `${item.starts_at}${tag ? ` [${tag}]` : ""}` : "No date";
+        return `${index + 1}. ${when} — ${item.title || "Untitled"} (${item.item_type || "Other"})${item.notes ? ` — ${item.notes}` : ""}`;
+      })
       .join("\n");
 
     const bundleText = bundle
@@ -314,11 +321,15 @@ export async function POST(req: Request) {
       ? `IMPORTANT: The following parts of the case file could not be loaded this turn: ${contextErrors.join(", ")}. Treat those sections as UNKNOWN, not empty. Do not draft a witness statement or rely on the missing sections; tell the user those parts could not be loaded and to try again.\n\n`
       : "";
 
-    const context = `${contextWarning}Current case:
+    const hearingTag = relativeDayTag(caseRow.hearing_datetime, today.key);
+
+    const context = `${contextWarning}Today's date: ${today.label}. Use this as "now" — a date marked PAST has already happened, so never describe it as upcoming. If the next hearing is in the past, it is probably out of date: ask the user whether it went ahead and what the outcome was, or whether a new date has been set, rather than treating it as still to come.
+
+Current case:
 Title: ${caseRow.title || "Untitled case"}
 Court: ${caseRow.court_name || "Not added"}
 Case number: ${caseRow.case_number || "Not added"}
-Next hearing: ${caseRow.hearing_datetime || "Not added"}
+Next hearing: ${caseRow.hearing_datetime ? `${caseRow.hearing_datetime}${hearingTag ? ` [${hearingTag}]` : ""}` : "Not added"}
 
 Recent conversation:
 ${chatHistoryText || "No previous chat in this case."}
