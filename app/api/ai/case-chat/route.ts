@@ -351,7 +351,7 @@ ${message}
       : context;
 
     const response = await getOpenAI().chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5",
       response_format: { type: "json_object" },
       messages: [
         {
