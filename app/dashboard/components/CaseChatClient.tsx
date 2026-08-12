@@ -21,6 +21,7 @@ function actionTitle(action: ProposedAction) {
   if (action.type === "create_calendar_item") return "Proposed calendar item";
   if (action.type === "create_bundle_item") return "Proposed bundle item";
   if (action.type === "create_statement") return "Draft statement preview";
+  if (action.type === "create_note") return "Proposed note";
   return "Proposed entry";
 }
 
@@ -60,6 +61,13 @@ function actionRows(action: ProposedAction) {
     ];
   }
 
+  if (action.type === "create_note") {
+    return [
+      ["Title", payload.title || "None"],
+      ["Note", payload.body ? String(payload.body).slice(0, 900) : "No text"],
+    ];
+  }
+
   return Object.entries(payload).map(([key, value]) => [key, value ? String(value) : "—"]);
 }
 
@@ -68,6 +76,7 @@ function editPrompt(action: ProposedAction) {
   if (action.type === "create_calendar_item") return "Edit the proposed calendar item. ";
   if (action.type === "create_bundle_item") return "Edit the proposed bundle item. ";
   if (action.type === "create_statement") return "Edit the proposed statement draft. ";
+  if (action.type === "create_note") return "Edit the proposed note. ";
   return "Edit the proposed entry. ";
 }
 

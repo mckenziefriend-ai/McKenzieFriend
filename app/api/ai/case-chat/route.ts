@@ -51,6 +51,13 @@ type ChatMessage = {
   created_at?: string | null;
 };
 
+type CaseNote = {
+  title: string | null;
+  body: string | null;
+  pinned: boolean | null;
+  created_at: string | null;
+};
+
 type ImagePart = { type: "image_url"; image_url: { url: string } };
 type TextPart = { type: "text"; text: string };
 
@@ -189,7 +196,7 @@ export async function POST(req: Request) {
       content: userMessage,
     });
 
-    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, chatResult] = await Promise.all([
+    const [eventsResult, statementsResult, documentsResult, calendarResult, bundleResult, notesResult, chatResult] = await Promise.all([
       supabase
         .from("case_events")
         .select("event_date,date_unknown,summary,evidence")
@@ -221,6 +228,13 @@ export async function POST(req: Request) {
         .order("position", { ascending: true })
         .limit(80),
       supabase
+        .from("case_notes")
+        .select("title,body,pinned,created_at")
+        .eq("case_id", caseId)
+        .order("pinned", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(30),
+      supabase
         .from("case_chat_messages")
         .select("role,content,action,created_at")
         .eq("case_id", caseId)
@@ -247,6 +261,7 @@ export async function POST(req: Request) {
     const documents = noteError("documents", documentsResult) ? [] : ((documentsResult.data ?? []) as CaseDocument[]);
     const calendar = noteError("calendar", calendarResult) ? [] : ((calendarResult.data ?? []) as CalendarItem[]);
     const bundle = noteError("bundle", bundleResult) ? [] : ((bundleResult.data ?? []) as BundleItem[]);
+    const notes = noteError("notes", notesResult) ? [] : ((notesResult.data ?? []) as CaseNote[]);
     const chatHistory = noteError("chat history", chatResult)
       ? []
       : ([...((chatResult.data ?? []) as ChatMessage[])].reverse());
@@ -286,6 +301,14 @@ export async function POST(req: Request) {
     const bundleText = bundle
       .map((item, index) => `${index + 1}. ${item.section || "General"} — ${item.title || "Untitled"} (${item.item_type || "Other"})${item.notes ? ` — ${item.notes}` : ""}`)
       .join("\n");
+
+    const notesText = notes
+      .map((note, index) => {
+        const pin = note.pinned ? "[pinned] " : "";
+        const heading = note.title ? `${note.title}: ` : "";
+        return `${index + 1}. ${pin}${heading}${(note.body || "").slice(0, 1200)}`;
+      })
+      .join("\n\n");
 
     const chatHistoryText = chatHistory
       .map((item) => {
@@ -348,6 +371,9 @@ ${calendarText || "No calendar entries."}
 
 Bundle:
 ${bundleText || "No bundle items."}
+
+Notes (the user's private, freeform notes for this case):
+${notesText || "No notes added."}
 ${uploadedText}
 
 Retrieved legal sources:
@@ -377,7 +403,7 @@ Return valid JSON only. Do not include markdown code fences. Do not put the acti
 {
   "answer": "natural answer, including any proposed item preview if action is not null",
   "action": null or {
-    "type": "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement",
+    "type": "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement" | "create_note",
     "label": "button label",
     "payload": { }
   }
@@ -393,7 +419,10 @@ Payload rules:
 create_chronology_event: {"event_date":"YYYY-MM-DD" or null,"date_unknown":boolean,"summary":"...","evidence":"..." or null}
 create_calendar_item: {"title":"...","item_type":"Hearing"|"Deadline"|"Appointment"|"Reminder"|"Other","starts_at":"YYYY-MM-DDTHH:mm" or null,"notes":"..." or null}
 create_bundle_item: {"title":"...","section":"A"|"B"|"C"|"D"|"E"|"General","item_type":"Document"|"Chronology"|"Statement"|"Evidence"|"Other","notes":"..." or null}
-create_statement: {"title":"...","body":"draft text..."}`,
+create_statement: {"title":"...","body":"draft text..."}
+create_note: {"title":"..." or null,"body":"the note text the user wants kept"}
+
+Offer create_note when the user says something worth keeping for their own reference — how they are feeling, what happened on a call or at a hearing, a question to raise next time — and a chronology event, calendar item or statement is not the better fit. Notes are private and freeform; do not force a note into a formal shape.`,
         },
         { role: "user", content: userContent },
       ],

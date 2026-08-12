@@ -7,7 +7,12 @@ import { clean } from "@/lib/coerce";
 type ActionRequest = {
   caseId: string;
   action: {
-    type: "create_chronology_event" | "create_calendar_item" | "create_bundle_item" | "create_statement";
+    type:
+      | "create_chronology_event"
+      | "create_calendar_item"
+      | "create_bundle_item"
+      | "create_statement"
+      | "create_note";
     payload: Record<string, unknown>;
   };
 };
@@ -110,6 +115,21 @@ export async function POST(req: Request) {
 
       if (error) throw error;
       return NextResponse.json({ message: "Statement created." });
+    }
+
+    if (action.type === "create_note") {
+      const noteBody = clean(payload.body);
+      if (!noteBody) return NextResponse.json({ error: "Note text is required." }, { status: 400 });
+
+      const { error } = await supabase.from("case_notes").insert({
+        case_id: caseId,
+        user_id: user.id,
+        title: clean(payload.title),
+        body: noteBody,
+      });
+
+      if (error) throw error;
+      return NextResponse.json({ message: "Saved to notes." });
     }
 
     return NextResponse.json({ error: "Unsupported action." }, { status: 400 });

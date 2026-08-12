@@ -8,13 +8,15 @@ export type ActionType =
   | "create_chronology_event"
   | "create_calendar_item"
   | "create_bundle_item"
-  | "create_statement";
+  | "create_statement"
+  | "create_note";
 
 export const ACTION_TYPES: ActionType[] = [
   "create_chronology_event",
   "create_calendar_item",
   "create_bundle_item",
   "create_statement",
+  "create_note",
 ];
 
 export type ActionPayload = Record<string, unknown>;
