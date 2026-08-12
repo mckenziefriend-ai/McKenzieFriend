@@ -46,12 +46,6 @@ const GROUPS: HelplineGroup[] = [
         tel: "08082000247",
         detail: "Free, 24 hours a day, run by Refuge. Support and a safe space to talk.",
       },
-      {
-        name: "Men's Advice Line",
-        number: "0808 8010 327",
-        tel: "08088010327",
-        detail: "For men experiencing domestic abuse.",
-      },
     ],
   },
   {
